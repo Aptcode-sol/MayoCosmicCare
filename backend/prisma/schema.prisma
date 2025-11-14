@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  username         String   @unique
+  email            String   @unique
+  phone            String?  @unique
+  password         String
+  sponsorId        String?  // immediate sponsor
+  sponsor          User?    @relation("Sponsorship", fields: [sponsorId], references: [id])
+  referrals        User[]   @relation("Sponsorship")
+  role             Role     @default(USER)
+  isEmailVerified  Boolean  @default(false)
+  emailVerifyToken String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  isBlocked        Boolean  @default(false)
+  fraudFlag        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  // left/right child ids removed - use sponsorId + position to model tree relations
+  leftBV           Int      @default(0)
+  rightBV          Int      @default(0)
+  leftCarryBV      Int      @default(0)
+  rightCarryBV     Int      @default(0)
+  position         Position? 
+  wallet           Wallet?
+  transactions     Transaction[]
+  withdrawals      Withdrawal[]
+  pairPayouts      PairPayoutRecord[]
+  dailyPairCounters DailyPairCounter[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  bv          Int
+  description String?
+  stock       Int      @default(0)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+}
+
+model Wallet {
+  id        String  @id @default(cuid())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String  @unique
+  balance   Int     @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      TxType
+  amount    Int
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  actorId   String?
+  meta      String?
+  createdAt DateTime @default(now())
+}
+
+model PairPayoutRecord {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  date      DateTime
+  pairs     Int      @default(0)
+  amount    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model DailyPairCounter {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  date      DateTime
+  pairs     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@unique([userId, date])
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum TxType {
+  PURCHASE
+  DIRECT_BONUS
+  MATCHING_BONUS
+  WITHDRAW
+  REFUND
+  ADMIN_CREDIT
+  ADMIN_DEBIT
+}
+
+enum Position {
+  LEFT
+  RIGHT
+  ROOT
+}
+
+model Withdrawal {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Int
+  status    WithdrawalStatus @default(PENDING)
+  bankDetails String?
+  createdAt DateTime @default(now())
+  approvedAt DateTime?
+  approvedBy String?
+
+  @@index([userId, status])
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

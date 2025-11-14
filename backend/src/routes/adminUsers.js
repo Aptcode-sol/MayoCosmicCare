@@ -1,0 +1,169 @@
+const express = require('express');
+const router = express.Router();
+const { authenticate } = require('../middleware/authMiddleware');
+const { requireAdmin } = require('../middleware/adminMiddleware');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// Get all users (admin only)
+router.get('/', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                phone: true,
+                sponsorId: true,
+                role: true,
+                isBlocked: true,
+                fraudFlag: true,
+                leftBV: true,
+                rightBV: true,
+                createdAt: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ users });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Block/unblock user
+router.patch('/:id/block', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isBlocked } = req.body;
+
+        const user = await prisma.user.update({
+            where: { id },
+            data: { isBlocked: Boolean(isBlocked) }
+        });
+
+        await prisma.auditLog.create({
+            data: {
+                action: `User ${isBlocked ? 'blocked' : 'unblocked'}`,
+                actorId: req.user.id,
+                meta: JSON.stringify({ targetUserId: id })
+            }
+        });
+
+        res.json({ user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update user' });
+    }
+});
+
+// Flag fraud
+router.patch('/:id/fraud', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fraudFlag } = req.body;
+
+        const user = await prisma.user.update({
+            where: { id },
+            data: { fraudFlag: Boolean(fraudFlag) }
+        });
+
+        await prisma.auditLog.create({
+            data: {
+                action: `Fraud flag ${fraudFlag ? 'set' : 'cleared'}`,
+                actorId: req.user.id,
+                meta: JSON.stringify({ targetUserId: id })
+            }
+        });
+
+        res.json({ user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update fraud flag' });
+    }
+});
+
+// Approve/reject withdrawal
+router.patch('/withdrawals/:id', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // APPROVED or REJECTED
+
+        if (!['APPROVED', 'REJECTED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        const withdrawal = await prisma.withdrawal.findUnique({ where: { id } });
+        if (!withdrawal) {
+            return res.status(404).json({ error: 'Withdrawal not found' });
+        }
+
+        if (withdrawal.status !== 'PENDING') {
+            return res.status(400).json({ error: 'Withdrawal already processed' });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            if (status === 'APPROVED') {
+                // Deduct from wallet
+                await tx.wallet.update({
+                    where: { userId: withdrawal.userId },
+                    data: { balance: { decrement: withdrawal.amount } }
+                });
+
+                // Record transaction
+                await tx.transaction.create({
+                    data: {
+                        userId: withdrawal.userId,
+                        type: 'WITHDRAW',
+                        amount: -withdrawal.amount,
+                        detail: `Withdrawal approved by admin`
+                    }
+                });
+            }
+
+            // Update withdrawal status
+            await tx.withdrawal.update({
+                where: { id },
+                data: {
+                    status,
+                    approvedAt: new Date(),
+                    approvedBy: req.user.id
+                }
+            });
+
+            await tx.auditLog.create({
+                data: {
+                    action: `Withdrawal ${status}`,
+                    actorId: req.user.id,
+                    meta: JSON.stringify({ withdrawalId: id, amount: withdrawal.amount })
+                }
+            });
+        });
+
+        res.json({ message: `Withdrawal ${status}` });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to process withdrawal' });
+    }
+});
+
+// Get all pending withdrawals
+router.get('/withdrawals', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const withdrawals = await prisma.withdrawal.findMany({
+            where: { status: 'PENDING' },
+            include: {
+                user: {
+                    select: { id: true, username: true, email: true }
+                }
+            },
+            orderBy: { createdAt: 'asc' }
+        });
+        res.json({ withdrawals });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch withdrawals' });
+    }
+});
+
+module.exports = router;

@@ -1,0 +1,46 @@
+{
+  "name": "mlm-backend",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "monitor": "node src/monitor.js",
+    "prisma": "prisma",
+    "placement-test": "node placement_test.js",
+    "seed": "node prisma/seed.js",
+    "worker:matching": "node src/queues/workers/matchingWorker.js",
+    "enqueue-matching": "node enqueue_matching.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "axios": "^1.4.0",
+    "bcrypt": "^5.1.0",
+    "bullmq": "^1.86.0",
+    "cloudinary": "^1.31.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "express-validator": "^7.3.0",
+    "helmet": "^7.0.0",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.0",
+    "pg": "^8.10.0",
+    "prisma": "^5.0.0",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "optionalDependencies": {
+    "@bull-board/express": "^4.0.0",
+    "winston": "^3.8.2"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}

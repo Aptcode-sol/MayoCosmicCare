@@ -1,4 +1,98 @@
-MLM Binary Plan Project - Scaffold
+# MLM Binary Plan Project
+
+Minimal full-stack example implementing a binary MLM plan.
+
+Repository layout
+
+- `backend/` — Node.js + Express API with Prisma
+- `frontend/` — Next.js (TypeScript)
+- `docker-compose.yml` — Postgres + Redis for development
+
+Quick start (development)
+
+1. Start supporting services:
+
+```bash
+docker-compose up -d
+```
+
+1. Backend
+
+```powershell
+cd backend
+Copy-Item .env.example .env
+npm install
+npx prisma generate
+# If you have migrations and want to apply them:
+npx prisma migrate dev --name init
+npm run dev
+```
+
+1. Frontend
+
+```powershell
+cd frontend
+Copy-Item .env.example .env.local
+npm install
+npm run dev
+```
+
+Notes
+
+- Set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` to point at the backend (default: `http://localhost:4000`).
+- Use `backend/.env.example` and `frontend/.env.example` as starting points for local development.
+
+License
+
+- Check with the repository owner for licensing and usage terms.
+
+# MLM (Example Full-stack App)
+
+This repository contains a full-stack MLM demo application with a Node.js backend (Express/Prisma) and a Next.js frontend.
+
+Quick links
+
+- Backend: `/backend`
+- Frontend: `/frontend`
+- Dev compose: `docker-compose.yml` (Postgres + Redis)
+
+Quick start (recommended)
+
+1. Start dependent services:
+
+```bash
+docker-compose up -d
+```
+
+2. Backend
+
+```powershell
+cd backend
+Copy-Item .env.example .env
+npm install
+npx prisma generate
+npx prisma migrate dev --name init   # optional if migrations exist
+npm run dev
+```
+
+3. Frontend
+
+```powershell
+cd frontend
+Copy-Item .env.example .env.local
+npm install
+npm run dev
+```
+
+Development notes
+
+- API base URL is controlled by `NEXT_PUBLIC_API_URL` in the frontend.
+- Backend uses `DATABASE_URL` and `REDIS_URL`.
+
+License
+
+- Check `LICENSE` or contact the repo owner. (No license file included by default.)
+  MLM Binary Plan Project - Scaffold
 
 This workspace contains a starter implementation of the requested MLM binary plan app.
 

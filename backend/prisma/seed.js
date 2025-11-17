@@ -3,16 +3,19 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 
 async function main() {
-    const pass = await bcrypt.hash('adminpass', 10);
+    // NOTE: This creates a seed admin for development only.
+    // Change the password below or remove this script for production deployments.
+    const seedPassword = 'Admin@2';
+    const pass = await bcrypt.hash(seedPassword, 10);
 
     // Check if admin already exists
-    let admin = await prisma.user.findUnique({ where: { email: 'admin@example.com' } });
+    let admin = await prisma.user.findUnique({ where: { email: 'admin@gmail.com' } });
 
     if (!admin) {
         admin = await prisma.user.create({
             data: {
-                username: 'admin',
-                email: 'admin@example.com',
+                username: 'root',
+                email: 'admin@gmail.com',
                 password: pass,
                 role: 'ADMIN',
                 isEmailVerified: true,
@@ -22,9 +25,9 @@ async function main() {
 
         // Create admin wallet
         await prisma.wallet.create({ data: { userId: admin.id } });
-        console.log('✓ Admin user created');
+        console.log('✓ Admin user created: admin@gmail.com (password: Admin@2)');
     } else {
-        console.log('✓ Admin user already exists');
+        console.log('✓ Admin user already exists (admin@gmail.com)');
     }
 
     const existingProduct = await prisma.product.findFirst({ where: { name: 'Standard Mattress' } });

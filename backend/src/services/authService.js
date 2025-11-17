@@ -27,11 +27,22 @@ async function register({ username, email, phone, password, sponsorId }) {
         throw new Error('Sponsor ID required for registration');
     }
 
-    // Validate sponsor exists
+    // Validate sponsor exists. Accept sponsor identifier as id, email, or username.
+    let resolvedSponsorId = null;
     if (sponsorId) {
-        const sponsor = await prisma.user.findUnique({ where: { id: sponsorId } });
-        if (!sponsor) throw new Error('Invalid sponsor ID');
+        // try id first
+        let sponsor = await prisma.user.findUnique({ where: { id: sponsorId } });
+        if (!sponsor) {
+            // try email
+            sponsor = await prisma.user.findUnique({ where: { email: sponsorId } }).catch(() => null);
+        }
+        if (!sponsor) {
+            // try username
+            sponsor = await prisma.user.findFirst({ where: { username: sponsorId } }).catch(() => null);
+        }
+        if (!sponsor) throw new Error('Invalid sponsor identifier');
         if (sponsor.isBlocked) throw new Error('Sponsor account is blocked');
+        resolvedSponsorId = sponsor.id;
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -44,15 +55,15 @@ async function register({ username, email, phone, password, sponsorId }) {
             email,
             phone,
             password: hashed,
-            sponsorId: sponsorId || null,
+            sponsorId: resolvedSponsorId || null,
             emailVerifyToken,
             role: isFirstUser ? 'ADMIN' : 'USER'
         }
     });
 
     // Place user in binary tree (skip for first admin user)
-    if (sponsorId) {
-        await placeNewUser(user.id, sponsorId);
+    if (resolvedSponsorId) {
+        await placeNewUser(user.id, resolvedSponsorId);
     }
 
     // Create wallet
@@ -61,7 +72,11 @@ async function register({ username, email, phone, password, sponsorId }) {
     // TODO: Send verification email with token
     console.log(`Email verification token for ${email}: ${emailVerifyToken}`);
 
-    return { id: user.id, username: user.username, email: user.email };
+    const result = { id: user.id, username: user.username, email: user.email };
+    if (process.env.NODE_ENV !== 'production') {
+        result.emailVerifyToken = emailVerifyToken;
+    }
+    return result;
 }
 
 async function login({ email, password }) {

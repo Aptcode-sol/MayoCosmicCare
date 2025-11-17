@@ -1,14 +1,14 @@
 "use client"
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { me } from '../../lib/services/auth'
 import { getWallet } from '../../lib/services/users'
-import { getMyPayouts } from '../../lib/services/pairPayouts'
-import { useRouter } from 'next/navigation'
 
 interface User {
     id: string
     username: string
+    name?: string
     email: string
     role: string
     leftBV: number
@@ -17,281 +17,267 @@ interface User {
     rightCarryBV: number
 }
 
-interface Wallet {
-    balance: number
-}
-
 interface Transaction {
     id: string
     type: string
-    amount: number
-    detail: string
-    createdAt: string
-}
-
-interface PayoutRecord {
-    id: string
-    amount: number
-    pairs?: number
-    createdAt: string
-    leftBv?: number
-    rightBv?: number
-    date?: string
-}
-
-interface Notification {
-    id: string
-    ts: number
-    message: string
+    detail?: string
+    amount?: number
+    createdAt?: string
 }
 
 export default function Dashboard() {
-    const router = useRouter();
-    const [user, setUser] = useState<User | null>(null);
-    const [wallet, setWallet] = useState<Wallet | null>(null);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
-    const lastPayoutIdsRef = useRef<Set<string>>(new Set())
+    const router = useRouter()
+    const [user, setUser] = useState<User | null>(null)
+    const [wallet, setWallet] = useState<{ balance?: number } | null>(null)
+    const [transactions, setTransactions] = useState<Transaction[]>([])
+    const [loading, setLoading] = useState(true)
 
-    // initial load and periodic payout polling
-    useEffect(() => {
-        let mounted = true
-        const run = async () => {
+    const loadDashboard = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('accessToken')
+            if (!token) {
+                router.push('/login')
+                return
+            }
+
+            const userRes = await me()
+            // Support both shapes: { user: {...} } or direct user object
+            const fetchedUser = userRes?.user || userRes || null
+            setUser(fetchedUser)
+
+            const userId = fetchedUser?.id
+            const walletRes = userId ? await getWallet(userId) : await getWallet(fetchedUser?.user?.id)
+            setWallet(walletRes.wallet)
+            setTransactions((walletRes.transactions || []).slice(0, 10))
+
+            setLoading(false)
+        } catch (err) {
+            let status: number | null = null
+            let message = 'Failed to load dashboard'
             try {
-                const token = localStorage.getItem('accessToken');
-                if (!token) {
-                    router.push('/login');
-                    return;
-                }
+                const e = err as unknown as { response?: { status?: number; data?: { error?: string } }; message?: string }
+                status = e?.response?.status || null
+                message = e?.response?.data?.error || e?.message || message
+                console.debug('loadDashboard error status:', status, 'message:', message)
+                console.debug('loadDashboard error details:', e?.response?.data ?? e)
+            } catch (inner) {
+                console.debug('loadDashboard unknown error', inner)
+            }
 
-                // Fetch user
-                const userRes = await me()
-                if (!mounted) return
-                setUser(userRes.user);
-
-                // Fetch wallet and txs
-                const walletRes = await getWallet(userRes.user.id)
-                if (!mounted) return
-                setWallet(walletRes.wallet);
-                const txs = (walletRes.transactions || []).slice(0, 10);
-
-                // Fetch recent pair payouts and merge
-                try {
-                    const payoutsRes = await getMyPayouts()
-                    const payoutTxs: Transaction[] = (payoutsRes.records || []).map((p: PayoutRecord) => ({
-                        id: p.id,
-                        type: 'MATCHING_BONUS',
-                        amount: p.amount,
-                        detail: `Pair payout (${p.leftBv || 0}-${p.rightBv || 0})`,
-                        createdAt: p.createdAt,
-                    }));
-                    if (!mounted) return
-                    setTransactions([...payoutTxs, ...txs]);
-                    const recs: PayoutRecord[] = payoutsRes.records || []
-                    setPayouts(recs);
-                    lastPayoutIdsRef.current = new Set(recs.map(r => r.id))
-                } catch (err) {
-                    console.log(err)
-                    if (!mounted) return
-                    setTransactions(txs);
-                }
-
-                if (!mounted) return
-                setLoading(false);
-            } catch (error) {
-                console.error(error);
-                router.push('/login');
+            if (status === 401) {
+                toast.error('Session expired')
+                router.push('/login')
+            } else {
+                toast.error(message)
             }
         }
-
-        run()
-
-        const iv = setInterval(async () => {
-            try {
-                const res = await getMyPayouts()
-                const records: PayoutRecord[] = res.records || [];
-                const existingIds = lastPayoutIdsRef.current || new Set<string>();
-                const newOnes = records.filter((r: PayoutRecord) => !existingIds.has(r.id));
-                if (newOnes.length) {
-                    const created = newOnes.map((r: PayoutRecord) => ({ id: r.id, ts: Date.now(), message: `You received ₹${r.amount} for ${r.pairs || 0} pairs` }));
-                    created.forEach(c => toast.success(c.message));
-                    setNotifications(n => [...created, ...n].slice(0, 5));
-                }
-                setPayouts(records);
-                // update seen ids
-                lastPayoutIdsRef.current = new Set(records.map(r => r.id))
-            } catch (err) {
-                console.log(err)
-            }
-        }, 15000)
-
-        return () => { mounted = false; clearInterval(iv) }
     }, [router])
 
-    //
-    function logout() {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        router.push('/login');
-    }
+    useEffect(() => {
+        // defer initial call to avoid sync setState within effect
+        const t = setTimeout(() => loadDashboard(), 0)
+        const interval = setInterval(loadDashboard, 30000)
+        return () => { clearTimeout(t); clearInterval(interval) }
+    }, [loadDashboard])
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-gray-600">Loading...</p>
+            <div className="min-h-screen bg-[#fdfcfb] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-[#8b7355] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading dashboard...</p>
+                </div>
             </div>
-        );
+        )
     }
 
-    const totalBV = (user?.leftBV || 0) + (user?.leftCarryBV || 0) + (user?.rightBV || 0) + (user?.rightCarryBV || 0);
+    const totalBV = (user?.leftBV || 0) + (user?.leftCarryBV || 0) + (user?.rightBV || 0) + (user?.rightCarryBV || 0)
+    const leftTotal = (user?.leftBV || 0) + (user?.leftCarryBV || 0)
+    const rightTotal = (user?.rightBV || 0) + (user?.rightCarryBV || 0)
 
     return (
-        <main className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-gray-800">MLM Dashboard</h1>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600">Hello, {user?.username}</span>
+        <div className="min-h-screen bg-[#fdfcfb]">
+            {/* Page Header */}
+            <div className="border-b border-gray-200 bg-white">
+                <div className="container mx-auto px-4 lg:px-6 py-8">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
+                            <p className="text-gray-600">Welcome back, {user?.username || user?.name || user?.email || 'User'}</p>
+                        </div>
                         {user?.role === 'ADMIN' && (
-                            <a href="/admin/products" className="text-sm px-3 py-1 bg-purple-600 text-white rounded">Admin Panel</a>
+                            <a
+                                href="/admin/products"
+                                className="btn-primary"
+                            >
+                                Admin Panel
+                            </a>
                         )}
-                        <button onClick={logout} className="text-sm px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Logout</button>
                     </div>
                 </div>
-            </nav>
+            </div>
 
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">Wallet Balance</h3>
-                        <p className="text-3xl font-bold text-green-600">₹{wallet?.balance || 0}</p>
+            <div className="container mx-auto px-4 lg:px-6 py-12">
+                {/* Stats Grid */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    <div className="elegant-card rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-[#8b7355]/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-[#8b7355]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Wallet</span>
+                        </div>
+                        <div className="text-3xl font-bold text-gray-900 mb-1">₹{wallet?.balance?.toLocaleString() || 0}</div>
+                        <p className="text-sm text-gray-600">Available Balance</p>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">Total BV</h3>
-                        <p className="text-3xl font-bold text-blue-600">{totalBV}</p>
+                    <div className="elegant-card rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total BV</span>
+                        </div>
+                        <div className="text-3xl font-bold text-gray-900 mb-1">{totalBV.toLocaleString()}</div>
+                        <p className="text-sm text-gray-600">Business Volume</p>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">Left BV</h3>
-                        <p className="text-2xl font-bold text-indigo-600">{(user?.leftBV || 0) + (user?.leftCarryBV || 0)}</p>
-                        <p className="text-xs text-gray-500 mt-1">Carry: {user?.leftCarryBV || 0}</p>
+                    <div className="elegant-card rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-indigo-500/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                </svg>
+                            </div>
+                            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Left Leg</span>
+                        </div>
+                        <div className="text-3xl font-bold text-gray-900 mb-1">{leftTotal.toLocaleString()}</div>
+                        <p className="text-sm text-gray-600">Carry: {user?.leftCarryBV || 0}</p>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-2">Right BV</h3>
-                        <p className="text-2xl font-bold text-pink-600">{(user?.rightBV || 0) + (user?.rightCarryBV || 0)}</p>
-                        <p className="text-xs text-gray-500 mt-1">Carry: {user?.rightCarryBV || 0}</p>
+                    <div className="elegant-card rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-pink-500/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                </svg>
+                            </div>
+                            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Right Leg</span>
+                        </div>
+                        <div className="text-3xl font-bold text-gray-900 mb-1">{rightTotal.toLocaleString()}</div>
+                        <p className="text-sm text-gray-600">Carry: {user?.rightCarryBV || 0}</p>
                     </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <a href="/products" className="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition">
-                        <h3 className="text-lg font-semibold text-gray-800">Browse Products</h3>
-                        <p className="text-sm text-gray-500 mt-2">Purchase mattresses and earn BV</p>
+                {/* Quick Actions */}
+                <div className="grid md:grid-cols-3 gap-6 mb-12">
+                    <a href="/products" className="elegant-card rounded-xl p-6 group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-[#8b7355]/10 rounded-lg flex items-center justify-center group-hover:bg-[#8b7355]/20 transition">
+                                <svg className="w-6 h-6 text-[#8b7355]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">Browse Products</h3>
+                                <p className="text-sm text-gray-600">Purchase and earn BV</p>
+                            </div>
+                            <svg className="w-5 h-5 text-gray-400 group-hover:text-[#8b7355] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
                     </a>
 
-                    <a href="/tree" className="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition">
-                        <h3 className="text-lg font-semibold text-gray-800">View Binary Tree</h3>
-                        <p className="text-sm text-gray-500 mt-2">See your downline structure</p>
+                    <a href="/tree" className="elegant-card rounded-xl p-6 group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-[#8b7355]/10 rounded-lg flex items-center justify-center group-hover:bg-[#8b7355]/20 transition">
+                                <svg className="w-6 h-6 text-[#8b7355]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">Network Tree</h3>
+                                <p className="text-sm text-gray-600">View binary structure</p>
+                            </div>
+                            <svg className="w-5 h-5 text-gray-400 group-hover:text-[#8b7355] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
                     </a>
 
-                    <a href="/withdraw" className="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition">
-                        <h3 className="text-lg font-semibold text-gray-800">Request Withdrawal</h3>
-                        <p className="text-sm text-gray-500 mt-2">Withdraw your earnings</p>
-                    </a>
+                    <div className="elegant-card rounded-xl p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">Referral Link</h3>
+                                <p className="text-sm text-gray-600 truncate">...{user?.id.slice(-8)}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}`)
+                                    toast.success('Link copied!')
+                                }}
+                                className="px-3 py-1 bg-[#8b7355] hover:bg-[#755d45] text-white text-sm rounded-lg transition"
+                            >
+                                Copy
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Recent Transactions */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Transactions</h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b">
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Type</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Detail</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {transactions.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="text-center py-6 text-gray-500">No transactions yet</td>
-                                    </tr>
-                                ) : (
-                                    transactions.map((tx) => (
-                                        <tr key={tx.id} className="border-b hover:bg-gray-50">
-                                            <td className="py-3 px-4">
-                                                <span className={`px-2 py-1 text-xs rounded ${tx.type === 'PURCHASE' ? 'bg-red-100 text-red-800' :
-                                                    tx.type === 'DIRECT_BONUS' ? 'bg-green-100 text-green-800' :
-                                                        tx.type === 'MATCHING_BONUS' ? 'bg-blue-100 text-blue-800' :
-                                                            'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {tx.type.replace('_', ' ')}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 font-semibold">
-                                                <span className={tx.amount < 0 ? 'text-red-600' : 'text-green-600'}>
-                                                    ₹{tx.amount}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-sm text-gray-600">{tx.detail}</td>
-                                            <td className="py-3 px-4 text-sm text-gray-500">{new Date(tx.createdAt).toLocaleString()}</td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <div className="elegant-card rounded-xl p-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Transactions</h2>
 
-                {/* Matching Payouts */}
-                <div className="bg-white rounded-lg shadow p-6 mt-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Matching Payouts</h2>
-                    {payouts.length === 0 ? (
-                        <p className="text-gray-500">No payouts yet</p>
-                    ) : (
-                        <ul className="space-y-3">
-                            {payouts.map(p => (
-                                <li key={p.id} className="flex items-center justify-between p-3 border rounded">
-                                    <div>
-                                        <div className="font-semibold">₹{p.amount}</div>
-                                        <div className="text-sm text-gray-500">{p.pairs} pairs — {new Date(p.createdAt).toLocaleString()}</div>
+                    {transactions.length > 0 ? (
+                        <div className="space-y-3">
+                            {transactions.map((tx) => (
+                                <div key={tx.id} className="flex items-center justify-between p-4 bg-[#f5f3f0] rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tx.type === 'MATCHING_BONUS' || tx.type === 'DIRECT_BONUS' ? 'bg-green-100' :
+                                            tx.type === 'PURCHASE' ? 'bg-blue-100' : 'bg-gray-100'
+                                            }`}>
+                                            <svg className={`w-5 h-5 ${tx.type === 'MATCHING_BONUS' || tx.type === 'DIRECT_BONUS' ? 'text-green-600' :
+                                                tx.type === 'PURCHASE' ? 'text-blue-600' : 'text-gray-600'
+                                                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                {tx.type.includes('BONUS') ? (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                ) : (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                )}
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-gray-900">{tx.type.replace(/_/g, ' ')}</div>
+                                            <div className="text-sm text-gray-600">{tx.detail || 'Transaction'}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-sm text-gray-400">{p.date ? new Date(p.date).toLocaleDateString() : ''}</div>
-                                </li>
+                                    <div className={`text-lg font-semibold ${tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? 'text-green-600' : 'text-red-600'}`}>
+                                        {tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? '+' : '-'}₹{tx.amount}
+                                    </div>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                            </div>
+                            <p className="text-gray-600">No transactions yet</p>
+                        </div>
                     )}
                 </div>
-
-                {/* Notifications */}
-                <div className="fixed bottom-6 right-6 w-80 space-y-2 z-50">
-                    {notifications.map(n => (
-                        <div key={`${n.id}_${n.ts}`} className="bg-white p-3 rounded shadow flex items-start gap-3">
-                            <div className="flex-1">
-                                <div className="font-medium">{n.message}</div>
-                            </div>
-                            <button onClick={() => setNotifications(ns => ns.filter(x => x.id !== n.id))} className="text-sm text-gray-400">Dismiss</button>
-                        </div>
-                    ))}
-                </div>
-
-                {/* User ID for referrals */}
-                <div className="mt-8 bg-linear-to-r from-blue-500 to-purple-600 rounded-lg shadow p-6 text-white">
-                    <h3 className="text-lg font-semibold mb-2">Your Referral ID</h3>
-                    <p className="text-sm mb-3">Share this ID with new members to earn direct referral bonuses</p>
-                    <div className="bg-white/20 rounded p-3 font-mono text-lg">
-                        {user?.id}
-                    </div>
-                </div>
             </div>
-        </main>
+        </div>
     )
 }

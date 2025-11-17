@@ -18,22 +18,41 @@ export default function TreeView({ data, onNodeClick, onAdd, onSponsor }: { data
         }
     }, [])
 
-    const renderNode = ({ nodeDatum, toggleNode }: any) => (
-        <g>
-            <rect width={180} height={70} x={-90} y={-35} rx={8} ry={8} fill="#fff" stroke="#e5e7eb" />
-            <text fill="#111827" x={0} y={-8} fontSize={14} fontWeight={700} textAnchor="middle">{nodeDatum.name}</text>
-            {nodeDatum.attributes && (
-                <text fill="#6b7280" x={0} y={12} fontSize={12} textAnchor="middle">{nodeDatum.attributes.position || ''} • ₹{nodeDatum.attributes.wallet || 0}</text>
-            )}
-            <foreignObject x={60} y={-30} width={80} height={80}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <button onClick={() => onNodeClick?.(nodeDatum)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded">View</button>
-                    <button onClick={() => onAdd?.(nodeDatum)} className="text-xs bg-green-600 text-white px-2 py-1 rounded">Add</button>
-                    <button onClick={() => onSponsor?.(nodeDatum)} className="text-xs bg-purple-600 text-white px-2 py-1 rounded">Sponsor</button>
-                </div>
-            </foreignObject>
-        </g>
-    )
+    const renderNode = ({ nodeDatum, toggleNode }: any) => {
+        const initials = (nodeDatum.name || '')
+            .split(' ')
+            .map((s: string) => s[0] || '')
+            .join('')
+            .toUpperCase()
+            .slice(0, 2) || 'U'
+
+        return (
+            <g>
+                <rect width={220} height={86} x={-110} y={-43} rx={10} ry={10} fill="#fff" stroke="#e5e7eb" />
+
+                <foreignObject x={-100} y={-35} width={60} height={60}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '60px', height: '60px' }}>
+                        <div className="w-12 h-12 rounded-full bg-[#8b7355] flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-200">
+                            {initials}
+                        </div>
+                    </div>
+                </foreignObject>
+
+                <text fill="#111827" x={-10} y={-6} fontSize={14} fontWeight={700} textAnchor="start">{nodeDatum.name}</text>
+                {nodeDatum.attributes && (
+                    <text fill="#6b7280" x={-10} y={12} fontSize={12} textAnchor="start">{nodeDatum.attributes.position || ''} • ₹{nodeDatum.attributes.wallet || 0}</text>
+                )}
+
+                <foreignObject x={60} y={-30} width={120} height={80}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                        <button onClick={() => onNodeClick?.(nodeDatum)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded">View</button>
+                        <button onClick={() => onAdd?.(nodeDatum)} className="text-xs bg-green-600 text-white px-2 py-1 rounded">Add</button>
+                        <button onClick={() => onSponsor?.(nodeDatum)} className="text-xs bg-purple-600 text-white px-2 py-1 rounded">Sponsor</button>
+                    </div>
+                </foreignObject>
+            </g>
+        )
+    }
 
     return (
         <div ref={containerRef} style={{ width: '100%', height: '600px' }}>

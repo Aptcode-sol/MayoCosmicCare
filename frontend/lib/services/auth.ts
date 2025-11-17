@@ -2,7 +2,14 @@ import api from '../api'
 
 export async function login(payload: { email: string, password: string }) {
     const res = await api.post('/api/auth/login', payload)
-    return res.data
+    const data = res.data || {}
+    // Support both { accessToken, refreshToken } and { tokens: { accessToken, refreshToken } }
+    const tokens = data.tokens || data
+    return {
+        ...data,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+    }
 }
 
 export async function register(payload: any) {

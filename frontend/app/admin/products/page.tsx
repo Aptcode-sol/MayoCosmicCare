@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import api from '../../../lib/api'
 import { adminProducts, setSponsor } from '../../../lib/services/admin'
 
@@ -106,13 +107,13 @@ export default function AdminPanel() {
     return (
         <main className="min-h-screen bg-gray-50">
             <nav className="bg-purple-600 text-white shadow-lg">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <div className="container px-4 py-4 flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Admin Panel</h1>
-                    <a href="/dashboard" className="px-4 py-2 bg-white text-purple-600 rounded hover:bg-gray-100">Back to Dashboard</a>
+                    <Link href="/dashboard" className="px-4 py-2 bg-white text-purple-600 rounded hover:bg-gray-100">Back to Dashboard</Link>
                 </div>
             </nav>
 
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="container py-8">
                 {/* Tabs */}
                 <div className="flex gap-4 mb-6 border-b">
                     <button
@@ -204,23 +205,31 @@ export default function AdminPanel() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {products.map(product => (
-                                <div key={product.id} className="bg-white rounded-lg shadow overflow-hidden">
-                                    <img src={product.imageUrl || 'https://via.placeholder.com/400x300'} alt={product.name} className="w-full h-48 object-cover" />
-                                    <div className="p-4">
-                                        <h3 className="text-lg font-semibold">{product.name}</h3>
-                                        <p className="text-sm text-gray-600 mt-1">{product.description}</p>
-                                        <div className="mt-3 flex justify-between text-sm">
-                                            <span className="font-semibold">₹{product.price}</span>
-                                            <span className="text-blue-600">BV: {product.bv}</span>
+                                <div key={product.id} className="bg-white rounded-lg shadow overflow-hidden flex flex-col">
+                                    <div className="w-full h-52 bg-gray-100 overflow-hidden">
+                                        <img src={product.imageUrl || 'https://via.placeholder.com/400x300'} alt={product.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="p-4 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold">{product.name}</h3>
+                                            <p className="text-sm text-gray-600 mt-1 line-clamp-3">{product.description}</p>
                                         </div>
-                                        <div className="mt-2 flex justify-between items-center">
-                                            <span className="text-sm text-gray-500">Stock: {product.stock}</span>
-                                            <button
-                                                onClick={() => deleteProduct(product.id)}
-                                                className="text-sm text-red-600 hover:text-red-800"
-                                            >
-                                                Delete
-                                            </button>
+
+                                        <div className="mt-3 flex items-center justify-between">
+                                            <div>
+                                                <div className="font-semibold">₹{product.price}</div>
+                                                <div className="text-xs text-blue-600">BV: {product.bv}</div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm text-gray-500">Stock: {product.stock}</span>
+                                                <button
+                                                    onClick={() => deleteProduct(product.id)}
+                                                    className="px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

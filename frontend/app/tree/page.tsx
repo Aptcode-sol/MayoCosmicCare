@@ -30,7 +30,7 @@ type TreeNodeReturn = {
 function mapToTree(node: Node): TreeNodeReturn {
     return {
         id: node.id,
-        name: node.username || '—',
+        name: node.username || node.id || '—',
         attributes: {
             position: node.position,
             wallet: node.walletBalance,

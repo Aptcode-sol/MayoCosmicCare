@@ -125,3 +125,17 @@ Copy-Item .env.example .env
 ```
 
 Note: Do not commit `.env` files or real credentials to the repository. Use CI secrets or a vault for production deployments.
+
+## Running database seeds (Neon/Postgres)
+
+- The project contains a seed script at `backend/prisma/seed.js` that creates an admin user and a sample product for development.
+- Before running seeds against a remote DB (like Neon), double-check `backend/.env` points to the intended database and that migrations are applied.
+- To run the seed script:
+
+```powershell
+cd backend
+# ensure DATABASE_URL points to your Neon DB and REDIS_URL is set
+npm run seed
+```
+
+- After seeding, you should see a message that the admin user `admin@gmail.com` was created with password `Admin@2` (change immediately in production).

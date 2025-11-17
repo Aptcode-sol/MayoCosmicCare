@@ -3,13 +3,24 @@ const router = express.Router();
 const { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword } = require('../services/authService');
 const { authenticate } = require('../middleware/authMiddleware');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 router.post('/register', async (req, res) => {
     try {
         const parsed = registerSchema.parse(req.body);
-        const user = await register(parsed);
-        res.json({ ok: true, user });
+        const result = await register(parsed);
+        // result may include emailVerifyToken in dev for simulation
+        res.json({ ok: true, ...result });
     } catch (err) {
+        if (err.name === 'ZodError') {
+            const errors = {};
+            for (const e of err.errors) {
+                errors[e.path[0]] = e.message;
+            }
+            res.status(400).json({ ok: false, errors });
+            return;
+        }
         res.status(400).json({ ok: false, error: err.message });
     }
 });
@@ -20,6 +31,14 @@ router.post('/login', async (req, res) => {
         const tokens = await login(parsed);
         res.json({ ok: true, tokens });
     } catch (err) {
+        if (err.name === 'ZodError') {
+            const errors = {};
+            for (const e of err.errors) {
+                errors[e.path[0]] = e.message;
+            }
+            res.status(400).json({ ok: false, errors });
+            return;
+        }
         res.status(400).json({ ok: false, error: err.message });
     }
 });
@@ -45,7 +64,20 @@ router.post('/logout', authenticate, async (req, res) => {
 });
 
 router.get('/me', authenticate, async (req, res) => {
-    res.json({ ok: true, user: req.user });
+    try {
+        const id = req.user?.id
+        if (!id) return res.status(401).json({ ok: false, error: 'Not authenticated' })
+        const userRec = await prisma.user.findUnique({
+            where: { id },
+            select: { id: true, username: true, email: true, role: true, createdAt: true }
+        })
+        // maintain legacy `name` field for API consumers by deriving from username
+        const user = userRec ? { ...userRec, name: userRec.username } : null
+        if (!user) return res.status(404).json({ ok: false, error: 'User not found' })
+        res.json({ ok: true, user })
+    } catch (err) {
+        res.status(400).json({ ok: false, error: err.message })
+    }
 });
 
 router.get('/verify-email/:token', async (req, res) => {

@@ -1,84 +1,93 @@
 "use client"
 import { useState } from 'react'
-import { login } from '../../lib/services/auth'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import toast from 'react-hot-toast'
+import { login } from '../../lib/services/auth'
 
 export default function Login() {
-    const router = useRouter();
-    const [form, setForm] = useState({ email: '', password: '' });
-    const [msg, setMsg] = useState('');
-    const [loading, setLoading] = useState(false);
+    const router = useRouter()
+    const [formData, setFormData] = useState({
+        username: '',
+        password: '',
+    })
+    const [loading, setLoading] = useState(false)
 
-    async function submit(e: React.FormEvent) {
-        e.preventDefault();
-        setLoading(true);
-        setMsg('');
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
 
         try {
-            const res = await login(form)
-            // Store tokens
-            localStorage.setItem('accessToken', res.tokens.accessToken);
-            localStorage.setItem('refreshToken', res.tokens.refreshToken);
-
-            setMsg('✓ Login successful! Redirecting...');
-            setTimeout(() => router.push('/dashboard'), 1000);
-        } catch (err: any) {
-            setMsg('✗ ' + (err.response?.data?.error || err.message));
+            const response = await login({ email: formData.username, password: formData.password })
+            console.debug('login response:', response)
+            localStorage.setItem('accessToken', response.accessToken)
+            localStorage.setItem('refreshToken', response.refreshToken)
+            toast.success('Welcome back!')
+            router.push('/dashboard')
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Invalid credentials')
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     }
 
     return (
-        <main className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-                <h1 className="text-3xl font-bold text-gray-800 mb-6">Login</h1>
+        <div className="min-h-screen flex items-center justify-center py-16 px-4">
+            <div className="w-full max-w-md">
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+                    <p className="text-gray-600">Sign in to continue your journey</p>
+                </div>
 
-                <form onSubmit={submit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input
-                            type="email"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Enter email"
-                            value={form.email}
-                            onChange={e => setForm({ ...form, email: e.target.value })}
-                            required
-                        />
+                <div className="elegant-card rounded-xl p-8">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Username
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
+                                placeholder="Enter your username"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
+                                placeholder="Enter your password"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'Signing in...' : 'Sign In'}
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center text-sm">
+                        <p className="text-gray-600">
+                            Don't have an account?{' '}
+                            <Link href="/register" className="text-[#8b7355] font-medium hover:underline">
+                                Create Account
+                            </Link>
+                        </p>
                     </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <input
-                            type="password"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Enter password"
-                            value={form.password}
-                            onChange={e => setForm({ ...form, password: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                    >
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                </form>
-
-                {msg && (
-                    <div className={`mt-4 p-3 rounded ${msg.startsWith('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {msg}
-                    </div>
-                )}
-
-                <div className="mt-4 text-sm text-center text-gray-600">
-                    <p>Don&apos;t have an account? <a href="/register" className="text-blue-600 hover:underline">Register</a></p>
-                    <p className="mt-2"><a href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</a></p>
                 </div>
             </div>
-        </main>
+        </div>
     )
 }

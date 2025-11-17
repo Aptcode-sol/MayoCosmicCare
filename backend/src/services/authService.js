@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { placeNewUser } = require('./placementService');
 
@@ -48,18 +48,31 @@ async function register({ username, email, phone, password, sponsorId }) {
     const hashed = await bcrypt.hash(password, 10);
     const emailVerifyToken = crypto.randomBytes(32).toString('hex');
 
-    // Create user
-    const user = await prisma.user.create({
-        data: {
-            username,
-            email,
-            phone,
-            password: hashed,
-            sponsorId: resolvedSponsorId || null,
-            emailVerifyToken,
-            role: isFirstUser ? 'ADMIN' : 'USER'
+    // Create user (handle unique constraint errors for friendlier messages)
+    let user;
+    try {
+        user = await prisma.user.create({
+            data: {
+                username,
+                email,
+                phone,
+                password: hashed,
+                sponsorId: resolvedSponsorId || null,
+                emailVerifyToken,
+                role: isFirstUser ? 'ADMIN' : 'USER'
+            }
+        });
+    } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+            // extract the target field(s) if available
+            const target = (e.meta && e.meta.target) || []
+            const fields = Array.isArray(target) ? target : [target]
+            if (fields.includes('email')) throw new Error('Email already registered')
+            if (fields.includes('username')) throw new Error('Username already taken')
+            throw new Error('A unique constraint failed. Please check your input')
         }
-    });
+        throw e
+    }
 
     // Place user in binary tree (skip for first admin user)
     if (resolvedSponsorId) {

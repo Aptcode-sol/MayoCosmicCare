@@ -16,6 +16,17 @@ function idTo32(userId) {
 async function creditDirectBonus(prismaClient, sponsorId, bv) {
     const bonusAmount = parseInt(process.env.DIRECT_BONUS_AMOUNT || '500', 10)
     const db = prismaClient || prisma
+    // If a transaction client was provided, run the operations directly on it
+    if (prismaClient) {
+        await prismaClient.transaction.create({ data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail: `Direct bonus for referral (BV ${bv})` } })
+        await prismaClient.wallet.upsert({
+            where: { userId: sponsorId },
+            update: { balance: { increment: bonusAmount } },
+            create: { userId: sponsorId, balance: bonusAmount }
+        })
+        await prismaClient.auditLog.create({ data: { action: 'DIRECT_BONUS', actorId: sponsorId, meta: `amount:${bonusAmount},bv:${bv}` } })
+        return
+    }
 
     await db.$transaction(async (tx) => {
         await tx.transaction.create({ data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail: `Direct bonus for referral (BV ${bv})` } })
@@ -42,6 +53,62 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
 
     // hash userId to 32-bit key
     const lockKey = idTo32(userId)
+
+    // If a transaction client is provided, perform operations directly on it
+    if (prismaClient) {
+        const tx = prismaClient
+        try {
+            // acquire advisory lock for the duration of this transaction if supported
+            try { await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BigInt(lockKey)})` } catch (e) { }
+            const user = await tx.user.findUnique({ where: { id: userId } })
+            if (!user) return
+
+            const left = (user.leftBV || 0) + (user.leftCarryBV || 0)
+            const right = (user.rightBV || 0) + (user.rightCarryBV || 0)
+            const possiblePairsBV = Math.min(left, right)
+            if (possiblePairsBV <= 0) return
+
+            const maxPossiblePairs = Math.floor(possiblePairsBV / pairUnitBV)
+            if (maxPossiblePairs <= 0) return
+
+            const today = new Date(); today.setUTCHours(0, 0, 0, 0)
+            let counter = await tx.dailyPairCounter.findFirst({ where: { userId, date: today } })
+            const alreadyToday = counter ? counter.pairs : 0
+            const availablePairsToday = Math.max(0, cap - alreadyToday)
+            const pairsToPay = Math.min(maxPossiblePairs, availablePairsToday)
+            if (pairsToPay <= 0) return
+
+            const matchedBV = pairsToPay * pairUnitBV
+            const bonus = Math.floor(matchedBV * bonusPercent)
+
+            await tx.transaction.create({ data: { userId, type: 'MATCHING_BONUS', amount: bonus, detail: `Matching bonus for ${pairsToPay} pairs (${matchedBV} BV)` } })
+            await tx.wallet.upsert({ where: { userId }, update: { balance: { increment: bonus } }, create: { userId, balance: bonus } })
+
+            const newLeft = left - matchedBV
+            const newRight = right - matchedBV
+            await tx.user.update({ where: { id: userId }, data: { leftBV: 0, rightBV: 0, leftCarryBV: newLeft, rightCarryBV: newRight } })
+
+            const payout = await tx.pairPayoutRecord.create({ data: { userId, date: today, pairs: pairsToPay, amount: bonus } })
+
+            if (counter) {
+                await tx.dailyPairCounter.update({ where: { id: counter.id }, data: { pairs: counter.pairs + pairsToPay } })
+            } else {
+                await tx.dailyPairCounter.create({ data: { userId, date: today, pairs: pairsToPay } })
+            }
+
+            await tx.auditLog.create({ data: { action: 'MATCHING_PAYOUT', actorId: userId, meta: `pairs:${pairsToPay},bv:${matchedBV},bonus:${bonus}` } })
+
+            try {
+                const { broadcastPayout } = require('../routes/sse')
+                broadcastPayout(payout).catch?.(() => { })
+            } catch (e) { }
+
+            try { const { info } = require('../logger'); info('pair-payout', { userId, payoutId: payout.id, amount: bonus }) } catch (e) { }
+        } finally {
+            // nothing extra to do; advisory lock is session-scoped
+        }
+        return
+    }
 
     await db.$transaction(async (tx) => {
         // acquire advisory lock for the duration of this transaction

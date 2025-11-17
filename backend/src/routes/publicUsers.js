@@ -11,6 +11,7 @@ router.get('/search', async (req, res) => {
         const users = await prisma.user.findMany({
             where: {
                 OR: [
+                    { id: q },
                     { username: { contains: q, mode: 'insensitive' } },
                     { email: { contains: q, mode: 'insensitive' } }
                 ]

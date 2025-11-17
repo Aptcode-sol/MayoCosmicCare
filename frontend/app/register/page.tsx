@@ -8,12 +8,56 @@ import useDebounce from '@/lib/useDebounce'
 
 export default function Register() {
     const router = useRouter()
+    // we read query params from window.location.search inside useEffect
+    // to avoid next.js prerender/suspense issues with useSearchParams at build time
     const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '' })
     const [loading, setLoading] = useState(false)
     const [sponsorQuery, setSponsorQuery] = useState('')
     const [sponsorSuggestions, setSponsorSuggestions] = useState<Array<{ id: string, username: string, email: string }>>([])
     const [selectedSponsor, setSelectedSponsor] = useState<{ id: string, username: string, email: string } | null>(null)
     const debouncedSponsor = useDebounce(sponsorQuery, 300)
+
+    // Try to prefill sponsor from query params: sponsor, sponsorId, ref, referrer
+    useEffect(() => {
+        const tryPrefill = async () => {
+            if (typeof window === 'undefined') return
+            const sp = new URLSearchParams(window.location.search)
+            const candidates = [
+                sp.get('sponsor'),
+                sp.get('sponsorId'),
+                sp.get('ref'),
+                sp.get('referrer')
+            ].filter(Boolean)
+            if (candidates.length === 0) return
+            const val = String(candidates[0])
+            console.debug('Register prefill candidates', candidates, 'using', val)
+            // Always set the input so pasted/raw ids show up and are submitted (backend resolves id)
+            setSponsorQuery(val)
+            setForm(f => ({ ...f, sponsorId: val }))
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/users/search?q=${encodeURIComponent(val)}`)
+                if (!res.ok) return
+                const data = await res.json()
+                console.debug('Register prefill search result', data)
+                const users: Array<{ id: string; username: string; email: string }> = (data.users || [])
+                if (users.length === 1) {
+                    const s = users[0]
+                    setSelectedSponsor(s)
+                    setForm(f => ({ ...f, sponsorId: s.id }))
+                } else if (users.length > 1) {
+                    // try to find exact match by id/email/username
+                    const exact = users.find(u => u.id === val || u.email === val || u.username === val)
+                    if (exact) {
+                        setSelectedSponsor(exact)
+                        setForm(f => ({ ...f, sponsorId: exact.id }))
+                    }
+                }
+            } catch (err) {
+                console.debug('Register prefill search error', err)
+            }
+        }
+        tryPrefill()
+    }, [])
 
     useEffect(() => {
         let mounted = true
@@ -24,7 +68,8 @@ export default function Register() {
                 if (!res.ok) return
                 const data = await res.json()
                 if (!mounted) return
-                setSponsorSuggestions(data.users || [])
+                const users: Array<{ id: string; username: string; email: string }> = (data.users || [])
+                setSponsorSuggestions(users)
             } catch (err) {
                 console.error('Sponsor search error', err)
             }
@@ -35,7 +80,7 @@ export default function Register() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         if (form.password !== form.confirmPassword) {
             toast.error('Passwords do not match')
             return
@@ -48,11 +93,15 @@ export default function Register() {
 
         setLoading(true)
         try {
-            await register({ ...form, sponsorId: selectedSponsor?.id || form.sponsorId })
+            const payload = { ...form, sponsorId: selectedSponsor?.id || form.sponsorId }
+            console.debug('Register payload', payload)
+            await register(payload)
             toast.success('Registration successful! Please login.')
             router.push('/login')
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Registration failed')
+            const msg = error.response?.data?.error || error.response?.data?.message || 'Registration failed'
+            console.debug('Registration error', error.response?.data || error)
+            toast.error(msg)
         } finally {
             setLoading(false)
         }
@@ -147,7 +196,7 @@ export default function Register() {
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Sponsor (Optional)
                             </label>
-                            
+
                             {selectedSponsor ? (
                                 <div className="flex items-center gap-2 px-4 py-3 bg-[#8b7355]/10 border border-[#8b7355]/30 rounded-lg">
                                     <div className="flex-1">
@@ -172,11 +221,15 @@ export default function Register() {
                                     <input
                                         type="text"
                                         value={sponsorQuery}
-                                        onChange={(e) => setSponsorQuery(e.target.value)}
+                                        onChange={(e) => {
+                                            const v = e.target.value
+                                            setSponsorQuery(v)
+                                            setForm(f => ({ ...f, sponsorId: v }))
+                                        }}
                                         placeholder="Search by username or email..."
                                         className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                                     />
-                                    
+
                                     {sponsorSuggestions.length > 0 && (
                                         <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                             {sponsorSuggestions.map((sponsor) => (
@@ -191,6 +244,10 @@ export default function Register() {
                                                 </button>
                                             ))}
                                         </div>
+                                    )}
+                                    {/* If user typed a sponsor but didn't pick a suggestion, show a note */}
+                                    {sponsorQuery && !selectedSponsor && (
+                                        <div className="mt-2 text-sm text-yellow-700">Using typed sponsor value — ensure this is a valid sponsor id, username, or email. If invalid, registration will fail.</div>
                                     )}
                                 </>
                             )}

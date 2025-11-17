@@ -1,4 +1,3 @@
-/**
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const crypto = require('crypto');
@@ -51,8 +50,8 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
     const bonusPercent = parseFloat(process.env.MATCHING_PERCENT || '0.10')
     const cap = dailyPairCap === null ? parseInt(process.env.DAILY_PAIR_CAP || '10', 10) : dailyPairCap
 
-    // hash userId to 32-bit key
-    const lockKey = idTo32(userId)
+    // hash userId to 32-bit key (inline to avoid module-scope issues in worker)
+    const lockKey = parseInt(crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8), 16)
 
     // If a transaction client is provided, perform operations directly on it
     if (prismaClient) {
@@ -93,7 +92,22 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
             if (counter) {
                 await tx.dailyPairCounter.update({ where: { id: counter.id }, data: { pairs: counter.pairs + pairsToPay } })
             } else {
-                await tx.dailyPairCounter.create({ data: { userId, date: today, pairs: pairsToPay } })
+                // creation can race under concurrency; attempt create and fall back to update if unique constraint triggers
+                try {
+                    await tx.dailyPairCounter.create({ data: { userId, date: today, pairs: pairsToPay } })
+                } catch (e) {
+                    // Prisma P2002 indicates unique constraint (userId+date) - in that case update the existing row
+                    try {
+                        const { Prisma } = require('@prisma/client')
+                        if (e?.code === 'P2002' || e?.message?.includes('Unique constraint')) {
+                            await tx.dailyPairCounter.updateMany({ where: { userId, date: today }, data: { pairs: { increment: pairsToPay } } })
+                        } else {
+                            throw e
+                        }
+                    } catch (inner) {
+                        throw inner
+                    }
+                }
             }
 
             await tx.auditLog.create({ data: { action: 'MATCHING_PAYOUT', actorId: userId, meta: `pairs:${pairsToPay},bv:${matchedBV},bonus:${bonus}` } })

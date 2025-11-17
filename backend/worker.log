@@ -1,3 +1,49 @@
 Shutting down matching worker...
 {"err":"db.$transaction is not a function","level":"error","message":"direct-bonus-deferred"}
 {"err":"db.$transaction is not a function","level":"error","message":"direct-bonus-deferred"}
+{"err":"idTo32 is not defined","jobId":"7","level":"error","message":"matching_job_failed","userId":"cmi01y6xa0000yk3qh1tp87en"}
+{"err":"idTo32 is not defined","jobId":"8","level":"error","message":"matching_job_failed","userId":"cmi01y6xa0000yk3qh1tp87en"}
+{"err":"idTo32 is not defined","jobId":"9","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"10","level":"error","message":"matching_job_failed"}
+{"err":"idTo32 is not defined","jobId":"11","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"14","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"13","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"idTo32 is not defined","jobId":"12","level":"error","message":"matching_job_failed"}
+{"err":"idTo32 is not defined","jobId":"15","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"idTo32 is not defined","jobId":"16","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"17","level":"error","message":"matching_job_failed","userId":"cmi37h5ua000j1rci98q1as6d"}
+{"err":"idTo32 is not defined","jobId":"18","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"idTo32 is not defined","jobId":"20","level":"error","message":"matching_job_failed","userId":"cmi379ahl000n1438hbs840m6"}
+{"err":"idTo32 is not defined","jobId":"19","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"21","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"idTo32 is not defined","jobId":"22","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"23","level":"error","message":"matching_job_failed","userId":"cmi379ahl000n1438hbs840m6"}
+{"err":"idTo32 is not defined","jobId":"24","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"idTo32 is not defined","jobId":"25","level":"error","message":"matching_job_failed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"idTo32 is not defined","jobId":"26","level":"error","message":"matching_job_failed","userId":"test-user"}
+{"amount":700,"level":"info","message":"pair-payout","payoutId":"cmi39nmdg0005novna4k4irz0","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"jobId":"26","level":"info","message":"matching_job_completed","userId":"test-user"}
+{"jobId":"22","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"jobId":"23","level":"info","message":"matching_job_completed","userId":"cmi379ahl000n1438hbs840m6"}
+{"jobId":"25","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"jobId":"20","level":"info","message":"matching_job_completed","userId":"cmi379ahl000n1438hbs840m6"}
+{"jobId":"19","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"jobId":"17","level":"info","message":"matching_job_completed","userId":"cmi37h5ua000j1rci98q1as6d"}
+{"jobId":"16","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"jobId":"15","level":"info","message":"matching_job_completed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"jobId":"14","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"err":"The \"data\" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined","jobId":"12","level":"error","message":"matching_job_failed"}
+{"jobId":"13","level":"info","message":"matching_job_completed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"The \"data\" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined","jobId":"10","level":"error","message":"matching_job_failed"}
+{"jobId":"11","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"jobId":"9","level":"info","message":"matching_job_completed","userId":"cmi36tjfg0000w36xj0219ttv"}
+{"amount":2100,"level":"info","message":"pair-payout","payoutId":"cmi39q5fq0009cdip1tohvr7v","userId":"cmi36wyzb00021438sbsq4ive"}
+{"jobId":"21","level":"info","message":"matching_job_completed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"jobId":"8","level":"info","message":"matching_job_completed","userId":"cmi01y6xa0000yk3qh1tp87en"}
+{"err":"\nInvalid `tx.dailyPairCounter.create()` invocation in\nC:\\Users\\sanke\\Documents\\MLM\\backend\\src\\services\\commissionService.js:95:43\n\n  92 if (counter) {\n  93     await tx.dailyPairCounter.update({ where: { id: counter.id }, data: { pairs: counter.pairs + pairsToPay } })\n  94 } else {\n→ 95     await tx.dailyPairCounter.create(\nUnique constraint failed on the fields: (`userId`,`date`)","jobId":"24","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"jobId":"7","level":"info","message":"matching_job_completed","userId":"cmi01y6xa0000yk3qh1tp87en"}
+{"err":"\nInvalid `tx.dailyPairCounter.create()` invocation in\nC:\\Users\\sanke\\Documents\\MLM\\backend\\src\\services\\commissionService.js:95:43\n\n  92 if (counter) {\n  93     await tx.dailyPairCounter.update({ where: { id: counter.id }, data: { pairs: counter.pairs + pairsToPay } })\n  94 } else {\n→ 95     await tx.dailyPairCounter.create(\nUnique constraint failed on the fields: (`userId`,`date`)","jobId":"18","level":"error","message":"matching_job_failed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"err":"The \"data\" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined","jobId":"10","level":"error","message":"matching_job_failed"}
+{"err":"The \"data\" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined","jobId":"12","level":"error","message":"matching_job_failed"}
+{"jobId":"24","level":"info","message":"matching_job_completed","userId":"cmi36wyzb00021438sbsq4ive"}
+{"jobId":"18","level":"info","message":"matching_job_completed","userId":"cmi36wyzb00021438sbsq4ive"}

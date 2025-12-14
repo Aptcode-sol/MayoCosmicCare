@@ -15,6 +15,10 @@ interface User {
     rightBV: number
     leftCarryBV: number
     rightCarryBV: number
+    leftMemberCount: number
+    rightMemberCount: number
+    leftCarryCount: number
+    rightCarryCount: number
 }
 
 interface Transaction {
@@ -91,9 +95,10 @@ export default function Dashboard() {
         )
     }
 
-    const totalBV = (user?.leftBV || 0) + (user?.leftCarryBV || 0) + (user?.rightBV || 0) + (user?.rightCarryBV || 0)
-    const leftTotal = (user?.leftBV || 0) + (user?.leftCarryBV || 0)
-    const rightTotal = (user?.rightBV || 0) + (user?.rightCarryBV || 0)
+    // Member counts for 2:1/1:2 matching
+    const leftMembers = (user?.leftMemberCount || 0) + (user?.leftCarryCount || 0)
+    const rightMembers = (user?.rightMemberCount || 0) + (user?.rightCarryCount || 0)
+    const totalMembers = leftMembers + rightMembers
 
     return (
         <div className="min-h-screen bg-[#fdfcfb]">
@@ -137,13 +142,13 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
                                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
-                            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total BV</span>
+                            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Team</span>
                         </div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{totalBV.toLocaleString()}</div>
-                        <p className="text-sm text-gray-600">Business Volume</p>
+                        <div className="text-3xl font-bold text-gray-900 mb-1">{totalMembers.toLocaleString()}</div>
+                        <p className="text-sm text-gray-600">Active Members</p>
                     </div>
 
                     <div className="elegant-card rounded-xl p-6">
@@ -155,8 +160,8 @@ export default function Dashboard() {
                             </div>
                             <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Left Leg</span>
                         </div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{leftTotal.toLocaleString()}</div>
-                        <p className="text-sm text-gray-600">Carry: {user?.leftCarryBV || 0}</p>
+                        <div className="text-3xl font-bold text-indigo-600 mb-1">{leftMembers}</div>
+                        <p className="text-sm text-gray-600">Carry: {user?.leftCarryCount || 0}</p>
                     </div>
 
                     <div className="elegant-card rounded-xl p-6">
@@ -168,8 +173,8 @@ export default function Dashboard() {
                             </div>
                             <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Right Leg</span>
                         </div>
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{rightTotal.toLocaleString()}</div>
-                        <p className="text-sm text-gray-600">Carry: {user?.rightCarryBV || 0}</p>
+                        <div className="text-3xl font-bold text-pink-600 mb-1">{rightMembers}</div>
+                        <p className="text-sm text-gray-600">Carry: {user?.rightCarryCount || 0}</p>
                     </div>
                 </div>
 
@@ -209,25 +214,50 @@ export default function Dashboard() {
                         </div>
                     </a>
 
+                    {/* Left Leg Referral Link */}
                     <div className="elegant-card rounded-xl p-6">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            <div className="w-12 h-12 bg-indigo-500/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 mb-1">Referral Link</h3>
-                                <p className="text-sm text-gray-600 truncate">...{user?.id.slice(-8)}</p>
+                                <h3 className="font-semibold text-gray-900 mb-1">Left Leg Link</h3>
+                                <p className="text-sm text-gray-600 truncate">Tail placement</p>
                             </div>
                             <button
                                 onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}`)
-                                    toast.success('Link copied!')
+                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}&leg=left`)
+                                    toast.success('Left link copied!')
                                 }}
-                                className="px-3 py-1 bg-[#8b7355] hover:bg-[#755d45] text-white text-sm rounded-lg transition"
+                                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition"
                             >
-                                Copy
+                                Copy Left
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right Leg Referral Link */}
+                    <div className="elegant-card rounded-xl p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-pink-500/10 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">Right Leg Link</h3>
+                                <p className="text-sm text-gray-600 truncate">Tail placement</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}&leg=right`)
+                                    toast.success('Right link copied!')
+                                }}
+                                className="px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white text-sm rounded-lg transition"
+                            >
+                                Copy Right
                             </button>
                         </div>
                     </div>

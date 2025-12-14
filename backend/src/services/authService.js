@@ -15,7 +15,7 @@ function genRefreshToken() {
     return crypto.randomBytes(48).toString('hex');
 }
 
-async function register({ username, email, phone, password, sponsorId }) {
+async function register({ username, email, phone, password, sponsorId, leg }) {
     if (!username || !email || !password) throw new Error('username/email/password required');
 
     // Check if this is the first user (admin)
@@ -74,9 +74,10 @@ async function register({ username, email, phone, password, sponsorId }) {
         throw e
     }
 
-    // Place user in binary tree (skip for first admin user)
+    // Place user in binary tree with optional leg preference (skip for first admin user)
     if (resolvedSponsorId) {
-        await placeNewUser(user.id, resolvedSponsorId);
+        // leg can be 'left' or 'right' for forced tail placement
+        await placeNewUser(user.id, resolvedSponsorId, leg || null);
     }
 
     // Create wallet
@@ -93,15 +94,28 @@ async function register({ username, email, phone, password, sponsorId }) {
 }
 
 async function login({ email, password }) {
+    console.log('[LOGIN] Attempting login for:', email);
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) throw new Error('Invalid credentials');
+    if (!user) {
+        console.log('[LOGIN] User not found:', email);
+        throw new Error('Invalid credentials');
+    }
+    console.log('[LOGIN] User found:', user.id, 'email:', user.email, 'blocked:', user.isBlocked);
     if (user.isBlocked) throw new Error('Account is blocked');
+
+    console.log('[LOGIN] Comparing password...');
+    console.log('[LOGIN] Input password length:', password?.length);
+    console.log('[LOGIN] Stored hash:', user.password?.substring(0, 20) + '...');
+
     const ok = await bcrypt.compare(password, user.password);
+    console.log('[LOGIN] Password match result:', ok);
+
     if (!ok) throw new Error('Invalid credentials');
     const accessToken = signAccessToken(user);
     const refresh = genRefreshToken();
     // store refresh token
     await prisma.refreshToken.create({ data: { userId: user.id, token: refresh } });
+    console.log('[LOGIN] Login successful for:', email);
     return { accessToken, refreshToken: refresh };
 }
 

@@ -4,7 +4,8 @@ const registerSchema = z.object({
     username: z.string().min(3),
     email: z.string().email(),
     password: z.string().min(6),
-    sponsorId: z.string().optional()
+    sponsorId: z.string().optional(),
+    leg: z.enum(['left', 'right']).optional()  // For leg-specific tail placement
 });
 
 const loginSchema = z.object({

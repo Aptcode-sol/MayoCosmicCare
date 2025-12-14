@@ -11,6 +11,7 @@ export default function Register() {
     // we read query params from window.location.search inside useEffect
     // to avoid next.js prerender/suspense issues with useSearchParams at build time
     const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '' })
+    const [leg, setLeg] = useState<'left' | 'right' | null>(null)  // For leg-specific placement
     const [loading, setLoading] = useState(false)
     const [sponsorQuery, setSponsorQuery] = useState('')
     const [sponsorSuggestions, setSponsorSuggestions] = useState<Array<{ id: string, username: string, email: string }>>([])
@@ -28,9 +29,14 @@ export default function Register() {
                 sp.get('ref'),
                 sp.get('referrer')
             ].filter(Boolean)
+            // Read leg parameter for leg-specific placement
+            const legParam = sp.get('leg')
+            if (legParam === 'left' || legParam === 'right') {
+                setLeg(legParam)
+            }
             if (candidates.length === 0) return
             const val = String(candidates[0])
-            console.debug('Register prefill candidates', candidates, 'using', val)
+            console.debug('Register prefill candidates', candidates, 'using', val, 'leg', legParam)
             // Always set the input so pasted/raw ids show up and are submitted (backend resolves id)
             setSponsorQuery(val)
             setForm(f => ({ ...f, sponsorId: val }))
@@ -93,7 +99,11 @@ export default function Register() {
 
         setLoading(true)
         try {
-            const payload = { ...form, sponsorId: selectedSponsor?.id || form.sponsorId }
+            const payload = {
+                ...form,
+                sponsorId: selectedSponsor?.id || form.sponsorId,
+                leg: leg || undefined  // Include leg for leg-specific placement
+            }
             console.debug('Register payload', payload)
             await register(payload)
             toast.success('Registration successful! Please login.')

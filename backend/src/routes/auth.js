@@ -8,16 +8,22 @@ const prisma = new PrismaClient();
 
 router.post('/register', async (req, res) => {
     try {
+        console.log('[REGISTER] Request body:', JSON.stringify(req.body, null, 2));
         const parsed = registerSchema.parse(req.body);
+        console.log('[REGISTER] Parsed data:', JSON.stringify(parsed, null, 2));
         const result = await register(parsed);
+        console.log('[REGISTER] Success:', result.id);
         // result may include emailVerifyToken in dev for simulation
         res.json({ ok: true, ...result });
     } catch (err) {
+        console.error('[REGISTER] ERROR:', err);
+        console.error('[REGISTER] Error stack:', err.stack);
         if (err.name === 'ZodError') {
             const errors = {};
             for (const e of err.errors) {
                 errors[e.path[0]] = e.message;
             }
+            console.error('[REGISTER] Validation errors:', errors);
             res.status(400).json({ ok: false, errors });
             return;
         }

@@ -14,9 +14,12 @@ model User {
   email            String   @unique
   phone            String?  @unique
   password         String
-  sponsorId        String?  // immediate sponsor
+  sponsorId        String?  // Who REFERRED this user (for direct bonus)
   sponsor          User?    @relation("Sponsorship", fields: [sponsorId], references: [id])
   referrals        User[]   @relation("Sponsorship")
+  parentId         String?  // PLACEMENT parent in binary tree (for matching structure)
+  parent           User?    @relation("TreePlacement", fields: [parentId], references: [id])
+  children         User[]   @relation("TreePlacement")
   role             Role     @default(USER)
   isEmailVerified  Boolean  @default(false)
   emailVerifyToken String?
@@ -25,12 +28,17 @@ model User {
   isBlocked        Boolean  @default(false)
   fraudFlag        Boolean  @default(false)
   createdAt        DateTime @default(now())
-  // left/right child ids removed - use sponsorId + position to model tree relations
+  // BV fields (legacy, kept for backward compatibility)
   leftBV           Int      @default(0)
   rightBV          Int      @default(0)
   leftCarryBV      Int      @default(0)
   rightCarryBV     Int      @default(0)
-  position         Position? 
+  // Member count fields for 2:1/1:2 matching
+  leftMemberCount  Int      @default(0)  // members in left leg
+  rightMemberCount Int      @default(0)  // members in right leg
+  leftCarryCount   Int      @default(0)  // carry-forward left members
+  rightCarryCount  Int      @default(0)  // carry-forward right members
+  position         Position?  // LEFT or RIGHT relative to parentId
   wallet           Wallet?
   transactions     Transaction[]
   withdrawals      Withdrawal[]
@@ -76,13 +84,15 @@ model AuditLog {
 }
 
 model PairPayoutRecord {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  date      DateTime
-  pairs     Int      @default(0)
-  amount    Int      @default(0)
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String
+  date            DateTime
+  pairs           Int      @default(0)
+  amount          Int      @default(0)
+  matchType       String?  // "2:1" or "1:2" or "mixed"
+  membersConsumed Int      @default(0)  // Total members consumed (pairs * 3)
+  createdAt       DateTime @default(now())
 
   @@index([userId, date])
 }

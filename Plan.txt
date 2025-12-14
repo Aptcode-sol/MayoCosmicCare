@@ -1,0 +1,53 @@
+✅ AI Prompt: 2 : 1 / 1 : 2 Tail Binary Matching Model
+
+You are designing or analyzing an MLM compensation system based on a Tail Binary Tree with asymmetric matching.
+
+Each user has two legs only: Left and Right.
+New members are always placed at the tail (bottom-most available position) of a leg.
+
+Matching Bonus Rules:
+
+A matching bonus is generated when either of the following conditions is met:
+
+2 members on the Left leg + 1 member on the Right leg (2:1)
+
+1 member on the Left leg + 2 members on the Right leg (1:2)
+
+Consumption Logic:
+
+For each valid match:
+
+Exactly 3 members are consumed (either 2L+1R or 1L+2R).
+
+Consumed members are removed from matching eligibility.
+
+Any remaining unmatched members stay as tail balance (carry forward).
+
+Matching Priority:
+
+The system should automatically determine which condition (2:1 or 1:2) can be applied based on current leg counts.
+
+Matching should maximize total valid pairs without double-counting.
+
+Carry Forward Rules:
+
+Extra members on either leg are not flushed.
+
+Tail balances are preserved and used for future matching.
+
+Example:
+
+Left = 5, Right = 2
+→ Two (2:1) matches possible
+→ Consumed: Left = 4, Right = 2
+→ Remaining tail: Left = 1, Right = 0
+
+Optional Constraints (if applicable):
+
+Daily or lifetime capping on total matches
+
+Matching bonus value per pair
+
+Product PV/BV linkage
+
+The goal is to accurately model the matching logic, tail carry-forward behavior, and payout calculation for this 2 : 1 / 1 : 2 Tail Binary Plan.

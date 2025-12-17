@@ -3,16 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --background: #fdfcfb;
-  --foreground: #2d2d2d;
+  --background: #ffffff;
+  --background-soft: #fafafa;
+  --foreground: #1a1a1a;
   --card: #ffffff;
-  --card-foreground: #2d2d2d;
-  --primary: #8b7355;
+  --card-border: #e5e5e5;
+  --card-foreground: #1a1a1a;
+  --primary: #111111;
   --primary-foreground: #ffffff;
-  --secondary: #f5f3f0;
-  --muted: #9ca3af;
+  --secondary: #f5f5f5;
+  --muted: #737373;
   --border: #e5e5e5;
-  --accent: #d4a574;
+  --accent: #6366f1;
 }
 
 * {
@@ -28,7 +30,7 @@ body {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
@@ -42,53 +44,137 @@ body {
   padding-right: 1.5rem;
 }
 
+/* Clean Card */
 .elegant-card {
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--card-border);
   transition: all 0.3s ease;
 }
 
 .elegant-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
 
-.split-text {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+/* Glass Card - Light Version */
+.glass-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  transition: all 0.3s ease;
 }
 
+.glass-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+/* Gradient Text - Subtle for light theme */
+.gradient-text {
+  color: var(--accent);
+}
+
+/* Primary Button - Clean Black */
 .btn-primary {
   background-color: var(--primary);
   color: var(--primary-foreground);
-  padding: 0.875rem 2rem;
+  padding: 0.75rem 1.75rem;
   border-radius: 0.5rem;
   font-weight: 500;
-  letter-spacing: 0.025em;
-  transition: all 0.3s ease;
-  border: 1px solid var(--primary);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  border: none;
 }
 
 .btn-primary:hover {
-  background-color: #755d45;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
+  background-color: #333333;
+  transform: translateY(-1px);
 }
 
+/* Outline Button */
 .btn-outline {
-  background-color: transparent;
+  background: transparent;
   color: var(--primary);
-  padding: 0.875rem 2rem;
+  padding: 0.75rem 1.75rem;
   border-radius: 0.5rem;
   font-weight: 500;
-  letter-spacing: 0.025em;
-  transition: all 0.3s ease;
-  border: 1px solid var(--primary);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
 }
 
 .btn-outline:hover {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  transform: translateY(-2px);
+  background-color: var(--secondary);
+  border-color: var(--primary);
+}
+
+/* Form Inputs - Clean Style */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+textarea,
+select {
+  background: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  transition: all 0.2s ease !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.05) !important;
+  outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted) !important;
+}
+
+/* Scrollbar - Minimal */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+
+/* Loading Spinner */
+.spinner {
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Hero Gradient - Subtle */
+.hero-gradient {
+  background: linear-gradient(180deg, var(--background) 0%, var(--secondary) 100%);
+}
+
+/* Subtle accent backgrounds */
+.bg-accent-soft {
+  background-color: rgba(99, 102, 241, 0.05);
 }

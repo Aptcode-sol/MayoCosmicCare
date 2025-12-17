@@ -3,21 +3,25 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import ClientToaster from '../components/ClientToaster'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'MLM Network - Partner System',
-  description: 'Join our partner network and build your business',
+  title: 'Mayo Cosmic Care - Partner Network',
+  description: 'Join Mayo Cosmic Care and build your wellness business with our premium products',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased bg-[#fdfcfb] text-gray-800 min-h-screen`}>
+      <body className={`${inter.variable} font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col`}>
         <ClientToaster />
         <Header />
-        {children}
+        <div className="flex-1">
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   )

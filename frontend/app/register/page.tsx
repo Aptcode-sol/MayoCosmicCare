@@ -5,20 +5,25 @@ import Link from 'next/link'
 import { register } from '../../lib/services/auth'
 import toast from 'react-hot-toast'
 import useDebounce from '@/lib/useDebounce'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
+
+// Minimal Label component inline
+function LocalLabel({ children, ...props }: any) {
+    return <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" {...props}>{children}</label>
+}
 
 export default function Register() {
     const router = useRouter()
-    // we read query params from window.location.search inside useEffect
-    // to avoid next.js prerender/suspense issues with useSearchParams at build time
     const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '' })
-    const [leg, setLeg] = useState<'left' | 'right' | null>(null)  // For leg-specific placement
+    const [leg, setLeg] = useState<'left' | 'right' | null>(null)
     const [loading, setLoading] = useState(false)
     const [sponsorQuery, setSponsorQuery] = useState('')
     const [sponsorSuggestions, setSponsorSuggestions] = useState<Array<{ id: string, username: string, email: string }>>([])
     const [selectedSponsor, setSelectedSponsor] = useState<{ id: string, username: string, email: string } | null>(null)
     const debouncedSponsor = useDebounce(sponsorQuery, 300)
 
-    // Try to prefill sponsor from query params: sponsor, sponsorId, ref, referrer
     useEffect(() => {
         const tryPrefill = async () => {
             if (typeof window === 'undefined') return
@@ -29,29 +34,24 @@ export default function Register() {
                 sp.get('ref'),
                 sp.get('referrer')
             ].filter(Boolean)
-            // Read leg parameter for leg-specific placement
             const legParam = sp.get('leg')
             if (legParam === 'left' || legParam === 'right') {
                 setLeg(legParam)
             }
             if (candidates.length === 0) return
             const val = String(candidates[0])
-            console.debug('Register prefill candidates', candidates, 'using', val, 'leg', legParam)
-            // Always set the input so pasted/raw ids show up and are submitted (backend resolves id)
             setSponsorQuery(val)
             setForm(f => ({ ...f, sponsorId: val }))
             try {
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/users/search?q=${encodeURIComponent(val)}`)
                 if (!res.ok) return
                 const data = await res.json()
-                console.debug('Register prefill search result', data)
                 const users: Array<{ id: string; username: string; email: string }> = (data.users || [])
                 if (users.length === 1) {
                     const s = users[0]
                     setSelectedSponsor(s)
                     setForm(f => ({ ...f, sponsorId: s.id }))
                 } else if (users.length > 1) {
-                    // try to find exact match by id/email/username
                     const exact = users.find(u => u.id === val || u.email === val || u.username === val)
                     if (exact) {
                         setSelectedSponsor(exact)
@@ -102,15 +102,13 @@ export default function Register() {
             const payload = {
                 ...form,
                 sponsorId: selectedSponsor?.id || form.sponsorId,
-                leg: leg || undefined  // Include leg for leg-specific placement
+                leg: leg || undefined
             }
-            console.debug('Register payload', payload)
             await register(payload)
             toast.success('Registration successful! Please login.')
             router.push('/login')
         } catch (error: any) {
             const msg = error.response?.data?.error || error.response?.data?.message || 'Registration failed'
-            console.debug('Registration error', error.response?.data || error)
             toast.error(msg)
         } finally {
             setLoading(false)
@@ -125,93 +123,85 @@ export default function Register() {
     }
 
     return (
-        <div className="min-h-screen py-16 px-4">
-            <div className="w-full max-w-2xl mx-auto">
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">Join Our Network</h1>
-                    <p className="text-gray-600">Start your journey to success</p>
-                </div>
-
-                <div className="elegant-card rounded-xl p-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Username *
-                                </label>
-                                <input
+        <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-gray-50/50 pt-32">
+            <Card className="w-full max-w-2xl shadow-xl border-gray-100 bg-white">
+                <CardHeader className="text-center pb-8 pt-8">
+                    <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                    </div>
+                    <CardTitle className="text-3xl font-light text-gray-900 tracking-tight mb-2">Create an account</CardTitle>
+                    <CardDescription className="text-base text-gray-500">
+                        Join the Mayo Cosmic Care network today and start your journey
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <LocalLabel htmlFor="username">Username</LocalLabel>
+                                <Input
+                                    id="username"
                                     type="text"
                                     value={form.username}
                                     onChange={(e) => setForm({ ...form, username: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                                     required
                                 />
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Email *
-                                </label>
-                                <input
+                            <div className="space-y-2">
+                                <LocalLabel htmlFor="email">Email</LocalLabel>
+                                <Input
+                                    id="email"
                                     type="email"
                                     value={form.email}
                                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Phone
-                            </label>
-                            <input
+                        <div className="space-y-2">
+                            <LocalLabel htmlFor="phone">Phone</LocalLabel>
+                            <Input
+                                id="phone"
                                 type="tel"
                                 value={form.phone}
                                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                             />
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Password *
-                                </label>
-                                <input
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <LocalLabel htmlFor="password">Password</LocalLabel>
+                                <Input
+                                    id="password"
                                     type="password"
                                     value={form.password}
                                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                                     required
                                 />
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Confirm Password *
-                                </label>
-                                <input
+                            <div className="space-y-2">
+                                <LocalLabel htmlFor="confirmPassword">Confirm Password</LocalLabel>
+                                <Input
+                                    id="confirmPassword"
                                     type="password"
                                     value={form.confirmPassword}
                                     onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div className="relative">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Sponsor (Optional)
-                            </label>
-
+                        <div className="space-y-2 relative">
+                            <LocalLabel>Sponsor (Optional)</LocalLabel>
                             {selectedSponsor ? (
-                                <div className="flex items-center gap-2 px-4 py-3 bg-[#8b7355]/10 border border-[#8b7355]/30 rounded-lg">
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                    <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                                        {selectedSponsor.username.slice(0, 2).toUpperCase()}
+                                    </div>
                                     <div className="flex-1">
-                                        <div className="font-medium text-gray-900">{selectedSponsor.username}</div>
-                                        <div className="text-sm text-gray-600">{selectedSponsor.email}</div>
+                                        <div className="text-sm font-medium text-gray-900">{selectedSponsor.username}</div>
+                                        <div className="text-xs text-gray-500">{selectedSponsor.email}</div>
                                     </div>
                                     <button
                                         type="button"
@@ -219,16 +209,16 @@ export default function Register() {
                                             setSelectedSponsor(null)
                                             setForm({ ...form, sponsorId: '' })
                                         }}
-                                        className="text-gray-500 hover:text-gray-700"
+                                        className="text-gray-400 hover:text-gray-600 p-1"
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
                                 </div>
                             ) : (
                                 <>
-                                    <input
+                                    <Input
                                         type="text"
                                         value={sponsorQuery}
                                         onChange={(e) => {
@@ -237,51 +227,45 @@ export default function Register() {
                                             setForm(f => ({ ...f, sponsorId: v }))
                                         }}
                                         placeholder="Search by username or email..."
-                                        className="w-full px-4 py-3 bg-[#f5f3f0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b7355] focus:border-transparent transition"
                                     />
-
                                     {sponsorSuggestions.length > 0 && (
-                                        <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                             {sponsorSuggestions.map((sponsor) => (
                                                 <button
                                                     key={sponsor.id}
                                                     type="button"
                                                     onClick={() => selectSponsor(sponsor)}
-                                                    className="w-full px-4 py-3 text-left hover:bg-[#f5f3f0] transition border-b border-gray-100 last:border-b-0"
+                                                    className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm border-b border-gray-50 last:border-b-0 flex items-center gap-2"
                                                 >
-                                                    <div className="font-medium text-gray-900">{sponsor.username}</div>
-                                                    <div className="text-sm text-gray-600">{sponsor.email}</div>
+                                                    <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600">
+                                                        {sponsor.username.slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-gray-900">{sponsor.username}</div>
+                                                        <div className="text-xs text-gray-500">{sponsor.email}</div>
+                                                    </div>
                                                 </button>
                                             ))}
                                         </div>
-                                    )}
-                                    {/* If user typed a sponsor but didn't pick a suggestion, show a note */}
-                                    {sponsorQuery && !selectedSponsor && (
-                                        <div className="mt-2 text-sm text-yellow-700">Using typed sponsor value — ensure this is a valid sponsor id, username, or email. If invalid, registration will fail.</div>
                                     )}
                                 </>
                             )}
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? 'Creating Account...' : 'Create Account'}
-                        </button>
+                        </Button>
                     </form>
-
-                    <div className="mt-6 text-center text-sm">
-                        <p className="text-gray-600">
-                            Already have an account?{' '}
-                            <Link href="/login" className="text-[#8b7355] font-medium hover:underline">
-                                Sign In
-                            </Link>
-                        </p>
-                    </div>
-                </div>
-            </div>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <p className="text-sm text-gray-500">
+                        Already have an account?{' '}
+                        <Link href="/login" className="font-medium text-gray-900 hover:underline underline-offset-4">
+                            Sign in
+                        </Link>
+                    </p>
+                </CardFooter>
+            </Card>
         </div>
     )
 }

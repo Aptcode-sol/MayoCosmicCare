@@ -3,7 +3,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '../../../lib/api'
-import { adminProducts, setSponsor } from '../../../lib/services/admin'
+import { adminProducts } from '../../../lib/services/admin'
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface Product {
     id: string
@@ -105,134 +109,147 @@ export default function AdminPanel() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-50">
-            <nav className="bg-purple-600 text-white shadow-lg">
-                <div className="container px-4 py-4 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Admin Panel</h1>
-                    <Link href="/dashboard" className="px-4 py-2 bg-white text-purple-600 rounded hover:bg-gray-100">Back to Dashboard</Link>
-                </div>
-            </nav>
+        <main className="min-h-screen bg-gray-50/30">
+            {/* Page Header */}
+            <div className="bg-white border-b border-gray-100 sticky top-16 z-30">
+                <div className="container mx-auto px-6 py-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h1 className="text-2xl font-light text-gray-900 tracking-tight">Admin Console</h1>
+                            <p className="text-gray-500 text-sm">Manage system resources and users</p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
+                            ← Back to Dashboard
+                        </Button>
+                    </div>
 
-            <div className="container py-8">
-                {/* Tabs */}
-                <div className="flex gap-4 mb-6 border-b">
-                    <button
-                        onClick={() => setTab('products')}
-                        className={`px-4 py-2 font-medium ${tab === 'products' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-600'}`}
-                    >
-                        Products
-                    </button>
-                    <button
-                        onClick={() => setTab('users')}
-                        className={`px-4 py-2 font-medium ${tab === 'users' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-600'}`}
-                    >
-                        Users
-                    </button>
-                    <button
-                        onClick={() => setTab('withdrawals')}
-                        className={`px-4 py-2 font-medium ${tab === 'withdrawals' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-600'}`}
-                    >
-                        Withdrawals
-                    </button>
+                    {/* Tabs */}
+                    <div className="flex gap-1 border-b border-gray-100">
+                        {['products', 'users', 'withdrawals'].map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTab(t as any)}
+                                className={`px-6 py-3 text-sm font-medium transition-all relative ${tab === t
+                                        ? 'text-gray-900'
+                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {t.charAt(0).toUpperCase() + t.slice(1)}
+                                {tab === t && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+            </div>
 
+            <div className="container mx-auto px-6 py-8">
                 {/* Products Tab */}
                 {tab === 'products' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold">Products</h2>
-                            <button
-                                onClick={() => setShowProductForm(!showProductForm)}
-                                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-                            >
-                                {showProductForm ? 'Cancel' : 'Add Product'}
-                            </button>
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-lg font-medium text-gray-900">Inventory Management</h2>
+                            <Button onClick={() => setShowProductForm(!showProductForm)}>
+                                {showProductForm ? 'Cancel' : 'Add New Product'}
+                            </Button>
                         </div>
 
                         {showProductForm && (
-                            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                                <h3 className="text-lg font-semibold mb-4">Create New Product</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input
-                                        className="px-4 py-2 border rounded"
-                                        placeholder="Product Name"
-                                        value={productForm.name}
-                                        onChange={e => setProductForm({ ...productForm, name: e.target.value })}
-                                    />
-                                    <input
-                                        type="number"
-                                        className="px-4 py-2 border rounded"
-                                        placeholder="Price (₹)"
-                                        value={productForm.price}
-                                        onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })}
-                                    />
-                                    <input
-                                        type="number"
-                                        className="px-4 py-2 border rounded"
-                                        placeholder="Business Volume (BV)"
-                                        value={productForm.bv}
-                                        onChange={e => setProductForm({ ...productForm, bv: parseInt(e.target.value) })}
-                                    />
-                                    <input
-                                        type="number"
-                                        className="px-4 py-2 border rounded"
-                                        placeholder="Stock"
-                                        value={productForm.stock}
-                                        onChange={e => setProductForm({ ...productForm, stock: parseInt(e.target.value) })}
-                                    />
-                                    <input
-                                        className="px-4 py-2 border rounded col-span-2"
-                                        placeholder="Image URL"
-                                        value={productForm.imageUrl}
-                                        onChange={e => setProductForm({ ...productForm, imageUrl: e.target.value })}
-                                    />
-                                    <textarea
-                                        className="px-4 py-2 border rounded col-span-2"
-                                        placeholder="Description"
-                                        rows={3}
-                                        value={productForm.description}
-                                        onChange={e => setProductForm({ ...productForm, description: e.target.value })}
-                                    />
-                                </div>
-                                <button
-                                    onClick={createProduct}
-                                    className="mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                                >
-                                    Create Product
-                                </button>
-                            </div>
+                            <Card className="animate-in slide-in-from-top-4 border-gray-200 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Create New Product</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Product Name</Label>
+                                                <Input
+                                                    placeholder="e.g. Cosmic Serum"
+                                                    value={productForm.name}
+                                                    onChange={e => setProductForm({ ...productForm, name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label>Price (₹)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={productForm.price}
+                                                        onChange={e => setProductForm({ ...productForm, price: parseInt(e.target.value) })}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>BV</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={productForm.bv}
+                                                        onChange={e => setProductForm({ ...productForm, bv: parseInt(e.target.value) })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Initial Stock</Label>
+                                                <Input
+                                                    type="number"
+                                                    value={productForm.stock}
+                                                    onChange={e => setProductForm({ ...productForm, stock: parseInt(e.target.value) })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Image URL</Label>
+                                                <Input
+                                                    placeholder="https://..."
+                                                    value={productForm.imageUrl}
+                                                    onChange={e => setProductForm({ ...productForm, imageUrl: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-2 h-full">
+                                                <Label>Description</Label>
+                                                <textarea
+                                                    className="w-full min-h-[120px] rounded-md border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                                    placeholder="Product description..."
+                                                    value={productForm.description}
+                                                    onChange={e => setProductForm({ ...productForm, description: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex justify-end">
+                                        <Button onClick={createProduct}>
+                                            Save Product
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid md:grid-cols-3 gap-6">
                             {products.map(product => (
-                                <div key={product.id} className="bg-white rounded-lg shadow overflow-hidden flex flex-col">
-                                    <div className="w-full h-52 bg-gray-100 overflow-hidden">
-                                        <img src={product.imageUrl || 'https://via.placeholder.com/400x300'} alt={product.name} className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="p-4 flex-1 flex flex-col justify-between">
-                                        <div>
-                                            <h3 className="text-lg font-semibold">{product.name}</h3>
-                                            <p className="text-sm text-gray-600 mt-1 line-clamp-3">{product.description}</p>
-                                        </div>
-
-                                        <div className="mt-3 flex items-center justify-between">
-                                            <div>
-                                                <div className="font-semibold">₹{product.price}</div>
-                                                <div className="text-xs text-blue-600">BV: {product.bv}</div>
-                                            </div>
-
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-sm text-gray-500">Stock: {product.stock}</span>
-                                                <button
-                                                    onClick={() => deleteProduct(product.id)}
-                                                    className="px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
+                                <Card key={product.id} className="overflow-hidden border-gray-200">
+                                    <div className="h-48 bg-gray-100 relative group">
+                                        <img src={product.imageUrl || 'https://via.placeholder.com/400x300'} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button variant="destructive" size="sm" onClick={() => deleteProduct(product.id)}>
+                                                Delete Product
+                                            </Button>
                                         </div>
                                     </div>
-                                </div>
+                                    <CardContent className="p-5">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                                            <span className="text-xs font-semibold bg-gray-100 px-2 py-1 rounded">Stock: {product.stock}</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500 line-clamp-2 mb-4 h-8">{product.description}</p>
+                                        <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                                            <span className="font-medium text-gray-900">₹{product.price}</span>
+                                            <span className="text-xs text-gray-500 font-medium">{product.bv} BV</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))}
                         </div>
                     </div>
@@ -240,58 +257,74 @@ export default function AdminPanel() {
 
                 {/* Users Tab */}
                 {tab === 'users' && (
-                    <div>
-                        <h2 className="text-2xl font-bold mb-6">Users</h2>
-                        <div className="bg-white rounded-lg shadow overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50">
+                    <Card className="border-gray-200 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-medium">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Username</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Email</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Left BV</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Right BV</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Actions</th>
+                                        <th className="px-6 py-4">User Details</th>
+                                        <th className="px-6 py-4">Business Volume</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-gray-100">
                                     {users.map(user => (
-                                        <tr key={user.id} className="border-t hover:bg-gray-50">
-                                            <td className="px-4 py-3">{user.username}</td>
-                                            <td className="px-4 py-3 text-sm">{user.email}</td>
-                                            <td className="px-4 py-3">{user.leftBV}</td>
-                                            <td className="px-4 py-3">{user.rightBV}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 text-xs rounded ${user.isBlocked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                    {user.isBlocked ? 'Blocked' : 'Active'}
-                                                </span>
-                                                {user.fraudFlag && (
-                                                    <span className="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Fraud Flag</span>
-                                                )}
+                                        <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="font-medium text-gray-900">{user.username}</div>
+                                                <div className="text-xs text-gray-500">{user.email}</div>
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <button
+                                            <td className="px-6 py-4">
+                                                <div className="flex gap-4">
+                                                    <div>
+                                                        <span className="text-xs text-gray-400 block uppercase">Left</span>
+                                                        <span className="font-mono text-gray-700">{user.leftBV}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-xs text-gray-400 block uppercase">Right</span>
+                                                        <span className="font-mono text-gray-700">{user.rightBV}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex gap-2">
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                                                        {user.isBlocked ? 'Blocked' : 'Active'}
+                                                    </span>
+                                                    {user.fraudFlag && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">
+                                                            Flagged
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Button
+                                                    variant={user.isBlocked ? "outline" : "ghost"}
+                                                    size="sm"
                                                     onClick={() => toggleBlockUser(user.id, user.isBlocked)}
-                                                    className="text-sm text-blue-600 hover:text-blue-800"
+                                                    className={user.isBlocked ? "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" : "text-gray-500 hover:text-red-600 hover:bg-red-50"}
                                                 >
-                                                    {user.isBlocked ? 'Unblock' : 'Block'}
-                                                </button>
+                                                    {user.isBlocked ? 'Unblock User' : 'Block Access'}
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </Card>
                 )}
 
                 {/* Withdrawals Tab */}
                 {tab === 'withdrawals' && (
-                    <div>
-                        <h2 className="text-2xl font-bold mb-6">Pending Withdrawals</h2>
-                        <div className="bg-white rounded-lg shadow p-6">
-                            <p className="text-gray-600">Withdrawal management coming soon...</p>
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
+                        <h3 className="text-lg font-medium text-gray-900">Withdrawals System</h3>
+                        <p className="text-gray-500 max-w-sm mt-2">This module is currently under development. Check back later for updates.</p>
                     </div>
                 )}
             </div>

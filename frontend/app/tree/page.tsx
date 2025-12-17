@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { getMyTree } from '../../lib/services/referrals'
 import { useRouter } from 'next/navigation'
 import TreeView from '../../components/TreeView'
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 type TreeNodeData = {
     id: string
@@ -20,50 +22,51 @@ function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: (
     if (!node) return null
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-in zoom-in-95 duration-200">
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                        {(node.username || 'U').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900">{node.username || 'User'}</h3>
-                        <p className="text-sm text-gray-500">{node.position || 'ROOT'}</p>
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-indigo-600">{node.leftMemberCount || 0}</div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider">Left Members</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-pink-600">{node.rightMemberCount || 0}</div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider">Right Members</div>
-                            </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95">
+            <Card className="w-full max-w-sm shadow-xl border-0 overflow-hidden">
+                <div className="p-6">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 rounded-full bg-gray-900 flex items-center justify-center text-white text-lg font-medium shadow-md">
+                            {(node.username || 'U').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-gray-900">{node.username || 'User'}</h3>
+                            <p className="text-sm text-gray-500 font-medium bg-gray-100 rounded-full px-2 py-0.5 inline-block mt-1">
+                                {node.position || 'ROOT'}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="bg-green-50 rounded-xl p-4 text-center">
-                        <div className="text-2xl font-bold text-green-600">₹{(node.walletBalance || 0).toLocaleString()}</div>
-                        <div className="text-xs text-gray-500 uppercase tracking-wider">Wallet Balance</div>
+                    <div className="space-y-4">
+                        <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                            <div className="grid grid-cols-2 gap-4 text-center divide-x divide-gray-200">
+                                <div>
+                                    <div className="text-2xl font-light text-gray-900">{node.leftMemberCount || 0}</div>
+                                    <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium mt-1">Left Team</div>
+                                </div>
+                                <div>
+                                    <div className="text-2xl font-light text-gray-900">{node.rightMemberCount || 0}</div>
+                                    <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium mt-1">Right Team</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100 text-center">
+                            <div className="text-2xl font-light text-emerald-700">₹{(node.walletBalance || 0).toLocaleString()}</div>
+                            <div className="text-[10px] uppercase tracking-wider text-emerald-600 font-medium mt-1">Wallet Balance</div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-xs text-gray-400 pt-2 border-t border-gray-50">
+                            <span className="font-mono">{node.id}</span>
+                            <span>Date: {node.createdAt ? new Date(node.createdAt).toLocaleDateString() : '—'}</span>
+                        </div>
                     </div>
 
-                    <div className="text-center text-sm text-gray-500">
-                        <div className="font-mono text-xs bg-gray-100 rounded px-2 py-1 inline-block mb-2">{node.id}</div>
-                        <div>Joined: {node.createdAt ? new Date(node.createdAt).toLocaleDateString() : '—'}</div>
-                    </div>
+                    <Button onClick={onClose} className="w-full mt-6" variant="outline">
+                        Close Details
+                    </Button>
                 </div>
-
-                <button
-                    onClick={onClose}
-                    className="mt-6 w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
-                >
-                    Close
-                </button>
-            </div>
+            </Card>
         </div>
     )
 }
@@ -97,99 +100,85 @@ export default function Tree() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#fdfcfb] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading your network...</p>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50/30">
+                <div className="text-center animate-pulse">
+                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-sm text-gray-500">Loading network structure...</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <main className="min-h-screen bg-[#fdfcfb]">
-            {/* Header */}
-            <div className="border-b border-gray-200 bg-white">
-                <div className="container mx-auto px-4 lg:px-6 py-8">
-                    <div className="flex items-center justify-between">
+        <main className="min-h-screen bg-gray-50/30">
+            {/* Page Header */}
+            <div className="bg-white border-b border-gray-100">
+                <div className="container mx-auto px-6 py-8">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Binary Tree</h1>
-                            <p className="text-gray-600">View your network structure and team members</p>
+                            <h1 className="text-3xl font-light text-gray-900 tracking-tight">Network Tree</h1>
+                            <p className="text-gray-500 mt-1">Visualize your team structure and growth</p>
                         </div>
-                        <button
-                            onClick={() => router.push('/dashboard')}
-                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors flex items-center gap-2"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            Back to Dashboard
-                        </button>
+                        <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
+                            ← Back to Dashboard
+                        </Button>
                     </div>
                 </div>
             </div>
 
-            {/* Legend */}
-            <div className="container mx-auto px-4 lg:px-6 py-4">
-                <div className="flex flex-wrap items-center gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-amber-500"></div>
-                        <span className="text-gray-600">You (Root)</span>
+            <div className="container mx-auto px-6 py-8">
+                {/* Legend */}
+                <Card className="mb-8 border-gray-100 shadow-sm bg-white/50 backdrop-blur-sm">
+                    <div className="p-4 flex flex-wrap items-center gap-8 text-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gray-900 shadow-sm"></div>
+                            <span className="text-gray-600 font-medium">You</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
+                            <span className="text-gray-600 font-medium">Left Team</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-pink-500 shadow-sm"></div>
+                            <span className="text-gray-600 font-medium">Right Team</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded border border-dashed border-gray-300"></div>
+                            <span className="text-gray-400">Empty Spot</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-indigo-500"></div>
-                        <span className="text-gray-600">Left Leg</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-pink-500"></div>
-                        <span className="text-gray-600">Right Leg</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded border-2 border-dashed border-gray-300 bg-gray-50"></div>
-                        <span className="text-gray-600">Empty Slot</span>
-                    </div>
-                </div>
-            </div>
+                </Card>
 
-            {/* Tree Container */}
-            <div className="container mx-auto px-4 lg:px-6 py-6">
+                {/* Tree Container */}
                 {error && (
                     <div className="text-center py-12">
-                        <div className="text-red-500 bg-red-50 rounded-xl p-6 inline-block">
-                            <svg className="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <p className="font-medium">{error}</p>
+                        <div className="inline-flex items-center gap-2 bg-red-50 text-red-600 rounded-full px-6 py-2 text-sm font-medium border border-red-100">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            {error}
                         </div>
                     </div>
                 )}
 
                 {tree ? (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[600px] relative">
+                        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-25 pointer-events-none" />
                         <TreeView data={tree} onNodeClick={(node) => setSelected(node)} />
                     </div>
                 ) : !error && (
-                    <div className="text-center py-16">
-                        <svg className="w-20 h-20 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Team Members Yet</h3>
-                        <p className="text-gray-600 mb-6">Share your referral links to start building your network!</p>
-                        <a
-                            href="/dashboard"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition-colors"
-                        >
+                    <div className="text-center py-32 bg-white rounded-2xl border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </div>
+                        <p className="text-gray-500 font-medium">No team members found yet.</p>
+                        <Button className="mt-4" onClick={() => router.push('/dashboard')}>
                             Go to Dashboard
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </a>
+                        </Button>
                     </div>
                 )}
-            </div>
 
-            {/* Profile Modal */}
-            <ProfileModal node={selected} onClose={() => setSelected(null)} />
+                {/* Profile Modal */}
+                <ProfileModal node={selected} onClose={() => setSelected(null)} />
+            </div>
         </main>
     )
 }

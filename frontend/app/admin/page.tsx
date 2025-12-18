@@ -2,11 +2,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import api from '../../../lib/api'
-import { adminProducts } from '../../../lib/services/admin'
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import api from '../../lib/api'
+import { adminProducts } from '../../lib/services/admin'
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/Input"
 import { Label } from "@/components/ui/label"
 
 interface Product {
@@ -109,7 +109,7 @@ export default function AdminPanel() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-50/30">
+        <main className="min-h-screen bg-gray-50/30 pt-20">
             {/* Page Header */}
             <div className="bg-white border-b border-gray-100 sticky top-16 z-30">
                 <div className="container mx-auto px-6 py-6">
@@ -130,8 +130,8 @@ export default function AdminPanel() {
                                 key={t}
                                 onClick={() => setTab(t as any)}
                                 className={`px-6 py-3 text-sm font-medium transition-all relative ${tab === t
-                                        ? 'text-gray-900'
-                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                    ? 'text-gray-900'
+                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 {t.charAt(0).toUpperCase() + t.slice(1)}

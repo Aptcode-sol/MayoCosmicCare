@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { register } from '../../lib/services/auth'
 import toast from 'react-hot-toast'
 import useDebounce from '@/lib/useDebounce'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/Input"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
 
 // Minimal Label component inline
 function LocalLabel({ children, ...props }: any) {

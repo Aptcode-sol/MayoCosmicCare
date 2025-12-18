@@ -4,10 +4,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { login } from '../../lib/services/auth'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/Input"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
 
 // Minimal Label component if not created globally yet since I missed creating it in previous step
 function LocalLabel({ children, ...props }: any) {

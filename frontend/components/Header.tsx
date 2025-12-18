@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import UserAvatar from './UserAvatar'
-import { Button } from "./ui/button"
+import { Button } from "./ui/Button"
 
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false)

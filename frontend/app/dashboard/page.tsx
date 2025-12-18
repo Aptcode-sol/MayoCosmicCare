@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { me } from '../../lib/services/auth'
 import { getWallet } from '../../lib/services/users'
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
+import { Button } from "@/components/ui/Button"
 
 interface User {
     id: string
@@ -84,7 +84,7 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
                 <div className="text-center animate-pulse">
                     <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                     <p className="text-sm text-gray-500">Loading dashboard...</p>
@@ -98,7 +98,7 @@ export default function Dashboard() {
     const totalMembers = leftMembers + rightMembers
 
     return (
-        <div className="min-h-screen bg-gray-50/30">
+        <div className="min-h-screen bg-gray-50/30 pt-20">
             {/* Page Header */}
             <div className="bg-white border-b border-gray-100">
                 <div className="container mx-auto px-6 py-8">
@@ -109,7 +109,7 @@ export default function Dashboard() {
                         </div>
                         {user?.role === 'ADMIN' && (
                             <Button asChild>
-                                <a href="/admin/products">Admin Panel</a>
+                                <a href="/admin">Admin Panel</a>
                             </Button>
                         )}
                     </div>

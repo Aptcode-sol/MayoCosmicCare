@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Footer from "@/components/Footer"
+import { Button } from "@/components/ui/Button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import Footer from '@/components/Footer'
 
 export default function Home() {
     return (

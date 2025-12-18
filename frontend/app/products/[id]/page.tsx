@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { listPublic, purchase } from '../../../lib/services/products'
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/Button"
 import toast from 'react-hot-toast'
 
 interface Product {

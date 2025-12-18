@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { listPublic, purchase } from '../../lib/services/products'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
+import { Button } from "@/components/ui/Button"
 
 interface Product {
     id: string
@@ -52,7 +52,7 @@ export default function Products() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="min-h-screen flex items-center justify-center bg-white pt-20">
                 <div className="text-center animate-pulse">
                     <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                     <p className="text-sm text-gray-500">Loading fine products...</p>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { resetPassword } from '../../lib/services/auth'
+import { parseApiError } from '../../lib/api'
 
 export default function ResetPassword() {
     const router = useRouter()
@@ -29,8 +30,9 @@ export default function ResetPassword() {
             const res = await resetPassword(token, password)
             setMsg(res.message || 'Password reset successful')
             setTimeout(() => router.push('/login'), 2000)
-        } catch (err: any) {
-            setMsg(err.response?.data?.error || err.message)
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            setMsg(String(message))
         } finally {
             setLoading(false)
         }

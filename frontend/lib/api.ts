@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -13,26 +13,38 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        if (config.headers) {
+            // @ts-ignore
+            config.headers['Authorization'] = `Bearer ${token}`;
+        } else {
+            // @ts-ignore
+            config.headers = { Authorization: `Bearer ${token}` };
+        }
     }
     return config;
 });
 
 // Centralized error normalization helper
-export function parseApiError(err: any) {
-    const status = err?.response?.status || null
-    const data = err?.response?.data || null
-    const message = data?.error || data?.message || err?.message || 'An unknown error occurred'
-    return { message, status, data, code: err?.code || null }
+export function parseApiError(err: unknown) {
+    if (axios.isAxiosError(err)) {
+        const status = err.response?.status ?? null
+        const data = err.response?.data ?? null
+        const message = (data && (data.error || data.message)) || err.message || 'An unknown error occurred'
+        return { message: String(message), status, data, code: err.code ?? null }
+    }
+
+    const message = err instanceof Error ? err.message : String(err)
+    return { message, status: null, data: null, code: null }
 }
 
 // Handle token refresh on 401 and normalize errors
 api.interceptors.response.use(
     (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
+    async (error: unknown) => {
+        const axiosErr = axios.isAxiosError(error) ? error as AxiosError : null
+        const originalRequest = axiosErr?.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (axiosErr?.response?.status === 401 && originalRequest && !originalRequest._retry) {
             originalRequest._retry = true;
 
             const refreshToken = localStorage.getItem('refreshToken');
@@ -48,20 +60,21 @@ api.interceptors.response.use(
                         localStorage.setItem('accessToken', tokens.accessToken);
                         localStorage.setItem('refreshToken', tokens.refreshToken);
 
-                        originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
-                        return api(originalRequest);
+                        // @ts-ignore
+                        originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`
+                        return api(originalRequest as AxiosRequestConfig);
                     } else {
                         console.warn('Refresh endpoint returned no tokens', d)
                         // fall through to failure branch
                     }
-                } catch (err) {
+                } catch (err: unknown) {
                     console.debug('Token refresh failed', err)
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
                     try {
                         // prefer client-side navigation if router is available
                         window.location.assign('/login')
-                    } catch (navErr) {
+                    } catch {
                         window.location.href = '/login'
                     }
                     return Promise.reject(parseApiError(err));

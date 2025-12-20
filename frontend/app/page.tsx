@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button"
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import Footer from '@/components/Footer'
 
@@ -25,10 +26,10 @@ export default function Home() {
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button size="lg" className="h-14 px-8 text-lg rounded-full" asChild>
-                            <a href="/products">Shop Products</a>
+                            <Link href="/products">Shop Products</Link>
                         </Button>
                         <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full" asChild>
-                            <a href="/register">Become a Partner</a>
+                            <Link href="/register">Become a Partner</Link>
                         </Button>
                     </div>
                 </div>
@@ -143,10 +144,10 @@ export default function Home() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-6 justify-center">
                         <Button size="lg" className="h-16 px-10 text-lg rounded-full bg-white text-gray-900 hover:bg-gray-100" asChild>
-                            <a href="/register">Get Started Now</a>
+                            <Link href="/register">Get Started Now</Link>
                         </Button>
                         <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-full bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white" asChild>
-                            <a href="/products">View Products</a>
+                            <Link href="/products">View Products</Link>
                         </Button>
                     </div>
                 </div>

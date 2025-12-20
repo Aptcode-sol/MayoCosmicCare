@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { register } from '../lib/services/auth'
 import toast from 'react-hot-toast'
+import { parseApiError } from '../lib/api'
 
 export default function AddMemberModal({ open, parentId, onClose, onCreated }: { open: boolean, parentId?: string | null, onClose: () => void, onCreated?: () => void }) {
     const [username, setUsername] = useState('')
@@ -20,8 +21,9 @@ export default function AddMemberModal({ open, parentId, onClose, onCreated }: {
             toast.success('Member created')
             onCreated?.()
             onClose()
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || err.message)
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            toast.error(String(message))
         } finally { setLoading(false) }
     }
 

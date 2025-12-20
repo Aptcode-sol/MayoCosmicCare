@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { register } from '../../lib/services/auth'
+import { parseApiError } from '../../lib/api'
 import toast from 'react-hot-toast'
 import useDebounce from '@/lib/useDebounce'
 import { Button } from "@/components/ui/Button"
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/Input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
 
 // Minimal Label component inline
-function LocalLabel({ children, ...props }: any) {
+function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelHTMLAttributes<HTMLLabelElement>>) {
     return <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" {...props}>{children}</label>
 }
 
@@ -107,9 +108,9 @@ export default function Register() {
             await register(payload)
             toast.success('Registration successful! Please login.')
             router.push('/login')
-        } catch (error: any) {
-            const msg = error.response?.data?.error || error.response?.data?.message || 'Registration failed'
-            toast.error(msg)
+        } catch (error: unknown) {
+            const { message } = parseApiError(error)
+            toast.error(String(message || 'Registration failed'))
         } finally {
             setLoading(false)
         }

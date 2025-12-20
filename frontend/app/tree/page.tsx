@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { getMyTree } from '../../lib/services/referrals'
 import { useRouter } from 'next/navigation'
+import { parseApiError } from '../../lib/api'
 import TreeView from '../../components/TreeView'
 import { Card } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -91,8 +92,9 @@ export default function Tree() {
             }
             const res = await getMyTree(6)
             setTree(res.tree)
-        } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Failed to load tree')
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            setError(String(message || 'Failed to load tree'))
         } finally {
             setLoading(false)
         }

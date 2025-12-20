@@ -12,7 +12,7 @@ export async function login(payload: { email: string, password: string }) {
     }
 }
 
-export async function register(payload: any) {
+export async function register(payload: Record<string, unknown>) {
     const res = await api.post('/api/auth/register', payload)
     return res.data
 }

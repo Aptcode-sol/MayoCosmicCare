@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { parseApiError } from '../../lib/api'
 import { listPublic, purchase } from '../../lib/services/products'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -27,8 +28,9 @@ export default function Products() {
         try {
             const res = await listPublic()
             setProducts(res?.products ?? res ?? [])
-        } catch (error) {
-            toast.error('Failed to load products')
+        } catch (error: unknown) {
+            const { message } = parseApiError(error)
+            toast.error(String(message || 'Failed to load products'))
         } finally {
             setLoading(false)
         }
@@ -45,8 +47,9 @@ export default function Products() {
             await purchase(productId)
             toast.success(`Successfully purchased ${productName}!`)
             loadProducts()
-        } catch (err) {
-            toast.error('Purchase failed')
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            toast.error(String(message || 'Purchase failed'))
         }
     }
 
@@ -152,7 +155,7 @@ export default function Products() {
                             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No Products Found</h3>
-                        <p className="text-gray-500">We're updating our inventory. Please check back soon.</p>
+                        <p className="text-gray-500">We&apos;re updating our inventory. Please check back soon.</p>
                     </div>
                 )}
             </div>

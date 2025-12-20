@@ -4,12 +4,13 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { login } from '../../lib/services/auth'
+import { parseApiError } from '../../lib/api'
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
 
 // Minimal Label component if not created globally yet since I missed creating it in previous step
-function LocalLabel({ children, ...props }: any) {
+function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelHTMLAttributes<HTMLLabelElement>>) {
     return <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" {...props}>{children}</label>
 }
 
@@ -31,8 +32,9 @@ export default function Login() {
             localStorage.setItem('refreshToken', response.refreshToken)
             toast.success('Welcome back!')
             router.push('/dashboard')
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Invalid credentials')
+        } catch (error: unknown) {
+            const { message } = parseApiError(error)
+            toast.error(String(message || 'Invalid credentials'))
         } finally {
             setLoading(false)
         }
@@ -88,7 +90,7 @@ export default function Login() {
                 </CardContent>
                 <CardFooter className="flex justify-center">
                     <p className="text-sm text-gray-500">
-                        Don't have an account?{' '}
+                        Don&apos;t have an account?{' '}
                         <Link href="/register" className="font-medium text-gray-900 hover:underline underline-offset-4">
                             Sign up
                         </Link>

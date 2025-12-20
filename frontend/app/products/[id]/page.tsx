@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { listPublic, purchase } from '../../../lib/services/products'
 import { Button } from "@/components/ui/Button"
 import toast from 'react-hot-toast'
+import { parseApiError } from '../../../lib/api'
 
 interface Product {
     id: string
@@ -29,8 +30,6 @@ export default function ProductDetail() {
 
     async function loadProduct(id: string) {
         try {
-            // Since we don't have a single product endpoint exposed yet, we'll list all and find one
-            // Ideally, backend should expose /api/public/products/:id
             const res = await listPublic()
             const found = (res?.products ?? res ?? []).find((p: Product) => p.id === id)
 
@@ -40,8 +39,9 @@ export default function ProductDetail() {
                 toast.error('Product not found')
                 router.push('/products')
             }
-        } catch (error) {
-            toast.error('Failed to load product')
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            toast.error(String(message || 'Failed to load product'))
         } finally {
             setLoading(false)
         }
@@ -60,9 +60,9 @@ export default function ProductDetail() {
         try {
             await purchase(product.id)
             toast.success(`Successfully purchased ${product.name}!`)
-            // Ideally refresh stock here
-        } catch (err) {
-            toast.error('Purchase failed')
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            toast.error(String(message || 'Purchase failed'))
         }
     }
 

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { requestReset } from '../../lib/services/auth'
+import { parseApiError } from '../../lib/api'
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('')
@@ -17,8 +18,9 @@ export default function ForgotPassword() {
             const res = await requestReset(email)
             setMsg(res.message || 'If the email exists, a reset token was sent.')
             setTimeout(() => router.push('/login'), 3000)
-        } catch (err: any) {
-            setMsg(err.response?.data?.error || err.message)
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            setMsg(String(message))
         } finally {
             setLoading(false)
         }

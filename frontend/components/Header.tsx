@@ -6,12 +6,13 @@ import { Button } from "./ui/Button"
 
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-    useEffect(() => {
-        const token = localStorage.getItem('accessToken')
-        setIsLoggedIn(!!token)
-    }, [])
+    const [isLoggedIn] = useState<boolean>(() => {
+        try {
+            return !!localStorage.getItem('accessToken')
+        } catch (e) {
+            return false
+        }
+    })
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">

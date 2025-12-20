@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+// Link not used here
 import api from '../../lib/api'
 import { adminProducts } from '../../lib/services/admin'
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
@@ -47,10 +47,6 @@ export default function AdminPanel() {
         imageUrl: ''
     });
 
-    useEffect(() => {
-        fetchData();
-    }, [tab]);
-
     async function fetchData() {
         try {
             const token = localStorage.getItem('accessToken');
@@ -73,6 +69,11 @@ export default function AdminPanel() {
             router.push('/login');
         }
     }
+
+    useEffect(() => {
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab]);
 
     async function createProduct() {
         try {
@@ -128,7 +129,7 @@ export default function AdminPanel() {
                         {['products', 'users', 'withdrawals'].map((t) => (
                             <button
                                 key={t}
-                                onClick={() => setTab(t as any)}
+                                onClick={() => setTab(t as 'products' | 'users' | 'withdrawals')}
                                 className={`px-6 py-3 text-sm font-medium transition-all relative ${tab === t
                                     ? 'text-gray-900'
                                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'

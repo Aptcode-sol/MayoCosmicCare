@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { setSponsor } from '../lib/services/admin'
 import toast from 'react-hot-toast'
+import { parseApiError } from '../lib/api'
 
 export default function SponsorModal({ open, userId, onClose, onSponsored }: { open: boolean, userId?: string | null, onClose: () => void, onSponsored?: () => void }) {
     const [sponsorId, setSponsorId] = useState('')
@@ -18,8 +19,9 @@ export default function SponsorModal({ open, userId, onClose, onSponsored }: { o
             toast.success('Sponsor updated')
             onSponsored?.()
             onClose()
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || err.message)
+        } catch (err: unknown) {
+            const { message } = parseApiError(err)
+            toast.error(String(message))
         } finally { setLoading(false) }
     }
 

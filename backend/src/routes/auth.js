@@ -75,7 +75,21 @@ router.get('/me', authenticate, async (req, res) => {
         if (!id) return res.status(401).json({ ok: false, error: 'Not authenticated' })
         const userRec = await prisma.user.findUnique({
             where: { id },
-            select: { id: true, username: true, email: true, role: true, createdAt: true }
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                createdAt: true,
+                leftBV: true,
+                rightBV: true,
+                leftCarryBV: true,
+                rightCarryBV: true,
+                leftMemberCount: true,
+                rightMemberCount: true,
+                leftCarryCount: true,
+                rightCarryCount: true
+            }
         })
         // maintain legacy `name` field for API consumers by deriving from username
         const user = userRec ? { ...userRec, name: userRec.username } : null

@@ -51,3 +51,11 @@ Matching bonus value per pair
 Product PV/BV linkage
 
 The goal is to accurately model the matching logic, tail carry-forward behavior, and payout calculation for this 2 : 1 / 1 : 2 Tail Binary Plan.
+
+
+In dashboard or on profile there should be navigation for user
+1. Total team count, active team count, total bv, payout paid bv, carry forward bv for left tree and right tree -> This should be there for direct referal and total team
+2. Incentive info - My payout, My direct payout, My Team payout
+3. Team listing - Users joined between time frame> It should show namw, introducer, team, sponsor, date of joining, status total bv, and bv within specific selected dates
+4. Group matching report - Brought Forward, Total Pending, Payout For, Carry Forward -> all should have left and right bv
+5. Wallet balance, actions and history.

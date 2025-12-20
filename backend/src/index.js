@@ -46,4 +46,13 @@ app.use('/api/sse', sseRouter);
 
 app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }));
 
+// Start matching worker (BullMQ) - requires Redis
+try {
+    require('./queues/workers/matchingWorker');
+    console.log('Matching worker started');
+} catch (err) {
+    console.warn('Matching worker not started (Redis may not be available):', err.message);
+}
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+

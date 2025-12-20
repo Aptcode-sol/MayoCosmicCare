@@ -22,7 +22,7 @@ function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: (
     if (!node) return null
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95 pt-20">
             <Card className="w-full max-w-sm shadow-xl border-0 overflow-hidden">
                 <div className="p-6">
                     <div className="flex items-center gap-4 mb-6">

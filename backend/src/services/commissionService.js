@@ -141,7 +141,7 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
 
         // Create transaction
         await tx.transaction.create({
-            data: { userId, type: 'PAIR_BONUS', amount: bonus, detail: `Matching bonus: ${matchesToPay} pairs (${finalResult.matchType})` }
+            data: { userId, type: 'MATCHING_BONUS', amount: bonus, detail: `Matching bonus: ${matchesToPay} pairs (${finalResult.matchType})` }
         });
 
         // Update daily counter

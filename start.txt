@@ -8,9 +8,6 @@ docker ps --filter name=redis
 npm install
 npx prisma generate
 
-# For initial filling DB
-npm run seed
-
 # Apply migrations if you want real schema changes on Neon (use with care)
 npx prisma migrate deploy       # for deploying existing migrations to a remote DB
 
@@ -19,3 +16,12 @@ npx prisma db push
 
 # Clear complete DB
 npx prisma migrate reset --force --skip-seed
+
+# Push schema to DB
+npx prisma db push
+
+# For initial filling DB
+npm run seed
+
+# Creating test users
+node test-mlm.js

@@ -38,9 +38,16 @@ function calculate2to1Matching(leftCount, rightCount) {
     else if (twoOneMatches > 0) matchType = '2:1';
     else if (oneTwoMatches > 0) matchType = '1:2';
 
+    // Calculate actual consumed from each side
+    // 2:1 match: 2 left + 1 right
+    // 1:2 match: 1 left + 2 right
+    const leftConsumed = (twoOneMatches * 2) + (oneTwoMatches * 1);
+    const rightConsumed = (twoOneMatches * 1) + (oneTwoMatches * 2);
+
     return {
         twoOneMatches, oneTwoMatches, totalMatches,
         membersConsumed: totalMatches * 3,
+        leftConsumed, rightConsumed,
         carryLeft: left, carryRight: right, matchType
     };
 }
@@ -135,7 +142,9 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         const payout = await tx.pairPayoutRecord.create({
             data: {
                 userId, date: todayStart, pairs: matchesToPay, amount: bonus,
-                matchType: finalResult.matchType, membersConsumed
+                matchType: finalResult.matchType, membersConsumed,
+                leftConsumed: finalResult.leftConsumed,
+                rightConsumed: finalResult.rightConsumed
             }
         });
 

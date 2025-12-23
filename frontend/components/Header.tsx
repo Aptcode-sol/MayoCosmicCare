@@ -6,13 +6,16 @@ import { Button } from "./ui/Button"
 
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
-    const [isLoggedIn] = useState<boolean>(() => {
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+    // Check auth status after hydration to avoid SSR mismatch
+    useEffect(() => {
         try {
-            return !!localStorage.getItem('accessToken')
-        } catch (e) {
-            return false
+            setIsLoggedIn(!!localStorage.getItem('accessToken'))
+        } catch {
+            setIsLoggedIn(false)
         }
-    })
+    }, [])
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -37,7 +40,7 @@ export default function Header() {
                             <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                                 Dashboard
                             </Link>
-                            <Link href="/tree" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+                            <Link href="/dashboard/tree" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                                 Network
                             </Link>
                         </>
@@ -89,7 +92,7 @@ export default function Header() {
                                     <Link href="/dashboard" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                                         Dashboard
                                     </Link>
-                                    <Link href="/tree" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                                    <Link href="/dashboard/tree" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                                         Network
                                     </Link>
                                     <div className="pt-4 border-t border-gray-100">

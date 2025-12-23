@@ -2,37 +2,35 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
-import StatCard from '@/components/StatCard'
 import { me } from '@/lib/services/auth'
-
-// Hardcoded data for UI development
-const mockData = {
-    directReferrals: {
-        left: { total: 25, active: 18, totalBV: 12500, paidBV: 10000, carryBV: 2500 },
-        right: { total: 22, active: 16, totalBV: 11000, paidBV: 9000, carryBV: 2000 }
-    },
-    totalTeam: {
-        left: { total: 125, active: 89, totalBV: 45000, paidBV: 35000, carryBV: 10000 },
-        right: { total: 98, active: 72, totalBV: 38500, paidBV: 28000, carryBV: 10500 }
-    }
-}
+import { getTeamStats, TeamStats } from '@/lib/services/dashboard'
 
 export default function TeamOverview() {
     const router = useRouter()
     const [user, setUser] = useState<{ username?: string; email?: string } | null>(null)
+    const [stats, setStats] = useState<TeamStats | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const loadUser = async () => {
+        const load = async () => {
             try {
                 const token = localStorage.getItem('accessToken')
                 if (!token) { router.push('/login'); return }
-                const res = await me()
-                setUser(res?.user || res)
-            } catch { router.push('/login') }
-            finally { setLoading(false) }
+
+                const [userRes, statsRes] = await Promise.all([
+                    me(),
+                    getTeamStats()
+                ])
+                setUser(userRes?.user || userRes)
+                setStats(statsRes)
+            } catch (e) {
+                console.error(e)
+                // If 401, redirect usually handled by intercepter, but good to have
+            } finally {
+                setLoading(false)
+            }
         }
-        loadUser()
+        load()
     }, [router])
 
     if (loading) {
@@ -51,7 +49,7 @@ export default function TeamOverview() {
                 <p className="text-gray-500 mt-1">Detailed statistics for your direct referrals and total team</p>
             </div>
 
-            {/* Direct Referrals Section */}
+            {/* Direct Referrals Section - Simplified as backend calculates total only currently */}
             <section className="mb-12">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -59,73 +57,54 @@ export default function TeamOverview() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                     </div>
-                    <h2 className="text-xl font-medium text-gray-900">Direct Referrals</h2>
+                    <div className="flex items-basline gap-4">
+                        <h2 className="text-xl font-medium text-gray-900">Direct Referrals</h2>
+                        <span className="text-sm bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium">
+                            Total: {stats?.directTeam.total || 0}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">
-                    {/* Left Leg */}
+                    {/* Left Leg (Directs) */}
                     <div className="bg-gradient-to-br from-indigo-50 to-white rounded-2xl p-6 border border-indigo-100">
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                            <h3 className="text-lg font-medium text-indigo-900">Left Leg</h3>
+                            <h3 className="text-lg font-medium text-indigo-900">Left Leg Directs</h3>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Total Count</p>
-                                <p className="text-2xl font-light text-gray-900">{mockData.directReferrals.left.total}</p>
+                                <p className="text-2xl font-light text-gray-900">{stats?.directTeam.left || 0}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Active</p>
-                                <p className="text-2xl font-light text-emerald-600">{mockData.directReferrals.left.active}</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-4">
-                                <p className="text-sm text-gray-500">Total BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.directReferrals.left.totalBV.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-4">
-                                <p className="text-sm text-gray-500">Paid BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.directReferrals.left.paidBV.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-4 col-span-2">
-                                <p className="text-sm text-gray-500">Carry Forward BV</p>
-                                <p className="text-2xl font-light text-amber-600">₹{mockData.directReferrals.left.carryBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-emerald-600">{stats?.directTeam.activeLeft || 0}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Leg */}
+                    {/* Right Leg (Directs) */}
                     <div className="bg-gradient-to-br from-pink-50 to-white rounded-2xl p-6 border border-pink-100">
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-3 h-3 rounded-full bg-pink-500" />
-                            <h3 className="text-lg font-medium text-pink-900">Right Leg</h3>
+                            <h3 className="text-lg font-medium text-pink-900">Right Leg Directs</h3>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Total Count</p>
-                                <p className="text-2xl font-light text-gray-900">{mockData.directReferrals.right.total}</p>
+                                <p className="text-2xl font-light text-gray-900">{stats?.directTeam.right || 0}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Active</p>
-                                <p className="text-2xl font-light text-emerald-600">{mockData.directReferrals.right.active}</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-4">
-                                <p className="text-sm text-gray-500">Total BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.directReferrals.right.totalBV.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-4">
-                                <p className="text-sm text-gray-500">Paid BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.directReferrals.right.paidBV.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-4 col-span-2">
-                                <p className="text-sm text-gray-500">Carry Forward BV</p>
-                                <p className="text-2xl font-light text-amber-600">₹{mockData.directReferrals.right.carryBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-emerald-600">{stats?.directTeam.activeRight || 0}</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Total Team Section */}
+            {/* Total Team Section - Real Data */}
             <section>
                 <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
@@ -146,23 +125,24 @@ export default function TeamOverview() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Total Count</p>
-                                <p className="text-2xl font-light text-gray-900">{mockData.totalTeam.left.total}</p>
+                                <p className="text-2xl font-light text-gray-900">{stats?.totalTeam.leftMembers || 0}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Active</p>
-                                <p className="text-2xl font-light text-emerald-600">{mockData.totalTeam.left.active}</p>
+                                <p className="text-2xl font-light text-emerald-600">{stats?.totalTeam.activeLeft || 0}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Total BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.totalTeam.left.totalBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.leftBV || 0).toLocaleString()}</p>
                             </div>
+                            {/* Paid BV from matching payouts */}
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Paid BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.totalTeam.left.paidBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.leftPaidBV || 0).toLocaleString()}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4 col-span-2">
                                 <p className="text-sm text-gray-500">Carry Forward BV</p>
-                                <p className="text-2xl font-light text-amber-600">₹{mockData.totalTeam.left.carryBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-amber-600">₹{(stats?.carryForward.left || 0).toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
@@ -176,27 +156,28 @@ export default function TeamOverview() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Total Count</p>
-                                <p className="text-2xl font-light text-gray-900">{mockData.totalTeam.right.total}</p>
+                                <p className="text-2xl font-light text-gray-900">{stats?.totalTeam.rightMembers || 0}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Active</p>
-                                <p className="text-2xl font-light text-emerald-600">{mockData.totalTeam.right.active}</p>
+                                <p className="text-2xl font-light text-emerald-600">{stats?.totalTeam.activeRight || 0}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Total BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.totalTeam.right.totalBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.rightBV || 0).toLocaleString()}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4">
                                 <p className="text-sm text-gray-500">Paid BV</p>
-                                <p className="text-2xl font-light text-gray-900">₹{mockData.totalTeam.right.paidBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.rightPaidBV || 0).toLocaleString()}</p>
                             </div>
                             <div className="bg-white rounded-xl p-4 col-span-2">
                                 <p className="text-sm text-gray-500">Carry Forward BV</p>
-                                <p className="text-2xl font-light text-amber-600">₹{mockData.totalTeam.right.carryBV.toLocaleString()}</p>
+                                <p className="text-2xl font-light text-amber-600">₹{(stats?.carryForward.right || 0).toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </section>
         </DashboardLayout>
     )

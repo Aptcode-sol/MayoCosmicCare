@@ -27,6 +27,7 @@ const publicUsers = require('./routes/publicUsers');
 const treeRouter = require('./routes/tree');
 const referralsRouter = require('./routes/referrals');
 const pairPayoutsRouter = require('./routes/pairPayouts');
+const dashboardRouter = require('./routes/dashboard');
 const queueStatsRouter = require('./routes/queueStats');
 const { router: sseRouter } = require('./routes/sse');
 
@@ -41,6 +42,7 @@ app.use('/api/public/users', publicUsers);
 app.use('/api/tree', treeRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/pair-payouts', pairPayoutsRouter);
+app.use('/api/dashboard', dashboardRouter);
 app.use('/api/queue', queueStatsRouter);
 app.use('/api/sse', sseRouter);
 

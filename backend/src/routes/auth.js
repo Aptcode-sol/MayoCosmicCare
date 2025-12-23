@@ -73,6 +73,7 @@ router.get('/me', authenticate, async (req, res) => {
     try {
         const id = req.user?.id
         if (!id) return res.status(401).json({ ok: false, error: 'Not authenticated' })
+
         const userRec = await prisma.user.findUnique({
             where: { id },
             select: {
@@ -85,15 +86,48 @@ router.get('/me', authenticate, async (req, res) => {
                 rightBV: true,
                 leftCarryBV: true,
                 rightCarryBV: true,
-                leftMemberCount: true,
-                rightMemberCount: true,
                 leftCarryCount: true,
-                rightCarryCount: true
+                rightCarryCount: true,
+                // Get immediate children to find left/right child
+                children: {
+                    select: { id: true, position: true }
+                }
             }
         })
-        // maintain legacy `name` field for API consumers by deriving from username
-        const user = userRec ? { ...userRec, name: userRec.username } : null
-        if (!user) return res.status(404).json({ ok: false, error: 'User not found' })
+
+        if (!userRec) return res.status(404).json({ ok: false, error: 'User not found' })
+
+        // Helper function to count all descendants
+        async function countDescendants(userId) {
+            if (!userId) return 0;
+            const children = await prisma.user.findMany({
+                where: { parentId: userId },
+                select: { id: true }
+            });
+            let count = children.length;
+            for (const child of children) {
+                count += await countDescendants(child.id);
+            }
+            return count;
+        }
+
+        // Find left and right child IDs
+        const leftChild = userRec.children.find(c => c.position === 'LEFT');
+        const rightChild = userRec.children.find(c => c.position === 'RIGHT');
+
+        // Calculate member counts dynamically
+        const leftMemberCount = leftChild ? 1 + await countDescendants(leftChild.id) : 0;
+        const rightMemberCount = rightChild ? 1 + await countDescendants(rightChild.id) : 0;
+
+        // Build response without children field
+        const { children, ...userData } = userRec;
+        const user = {
+            ...userData,
+            name: userData.username,
+            leftMemberCount,
+            rightMemberCount
+        };
+
         res.json({ ok: true, user })
     } catch (err) {
         res.status(400).json({ ok: false, error: err.message })

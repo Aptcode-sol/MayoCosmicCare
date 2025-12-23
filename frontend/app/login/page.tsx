@@ -31,7 +31,8 @@ export default function Login() {
             localStorage.setItem('accessToken', response.accessToken)
             localStorage.setItem('refreshToken', response.refreshToken)
             toast.success('Welcome back!')
-            router.push('/dashboard')
+            // Use full page navigation to ensure Header re-checks auth state
+            window.location.href = '/dashboard'
         } catch (error: unknown) {
             const { message } = parseApiError(error)
             toast.error(String(message || 'Invalid credentials'))

@@ -110,7 +110,7 @@ export default function UserAvatar() {
                         Dashboard
                     </a>
                     <a
-                        href="/tree"
+                        href="/dashboard/tree"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                     >
                         Network Tree

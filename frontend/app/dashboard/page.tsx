@@ -195,7 +195,7 @@ export default function Dashboard() {
                         </CardContent>
                     </Card>
 
-                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/tree')}>
+                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/dashboard/tree')}>
                         <CardContent className="p-6 flex items-center gap-4">
                             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">

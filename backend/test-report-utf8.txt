@@ -1,0 +1,230 @@
+﻿
+================================================================================
+­ƒÜÇ MLM BACKEND COMPREHENSIVE TEST
+================================================================================
+
+­ƒº╣ Clearing previous test data...
+Ô£ô Test data cleared
+
+­ƒî│ Building binary tree with 60 users...
+
+Ô£ô Created user 1: left1 (LEFT under root)
+Ô£ô Created user 2: right1 (RIGHT under root)
+Ô£ô Created user 3: left2 (LEFT under left1)
+Ô£ô Created user 4: left3 (RIGHT under left1)
+Ô£ô Created user 5: left4 (LEFT under left2)
+Ô£ô Created user 6: left5 (RIGHT under left2)
+Ô£ô Created user 7: left6 (LEFT under left3)
+Ô£ô Created user 8: left7 (RIGHT under left3)
+Ô£ô Created user 9: left8 (LEFT under left4)
+Ô£ô Created user 10: left9 (RIGHT under left4)
+Ô£ô Created user 11: left10 (LEFT under left5)
+Ô£ô Created user 12: left11 (RIGHT under left5)
+Ô£ô Created user 13: left12 (LEFT under left6)
+Ô£ô Created user 14: left13 (RIGHT under left6)
+Ô£ô Created user 15: left14 (LEFT under left7)
+Ô£ô Created user 16: left15 (RIGHT under left7)
+Ô£ô Created user 17: left16 (LEFT under left8)
+Ô£ô Created user 18: left17 (RIGHT under left8)
+Ô£ô Created user 19: left18 (LEFT under left9)
+Ô£ô Created user 20: left19 (RIGHT under left9)
+Ô£ô Created user 21: left20 (LEFT under left10)
+Ô£ô Created user 22: left21 (RIGHT under left10)
+Ô£ô Created user 23: left22 (LEFT under left11)
+Ô£ô Created user 24: left23 (RIGHT under left11)
+Ô£ô Created user 25: left24 (LEFT under left12)
+Ô£ô Created user 26: left25 (RIGHT under left12)
+Ô£ô Created user 27: left26 (LEFT under left13)
+Ô£ô Created user 28: left27 (RIGHT under left13)
+Ô£ô Created user 29: left28 (LEFT under left14)
+Ô£ô Created user 30: left29 (RIGHT under left14)
+Ô£ô Created user 31: left30 (LEFT under left15)
+Ô£ô Created user 32: right2 (LEFT under right1)
+Ô£ô Created user 33: right3 (RIGHT under right1)
+Ô£ô Created user 34: right4 (LEFT under right2)
+Ô£ô Created user 35: right5 (RIGHT under right2)
+Ô£ô Created user 36: right6 (LEFT under right3)
+Ô£ô Created user 37: right7 (RIGHT under right3)
+Ô£ô Created user 38: right8 (LEFT under right4)
+Ô£ô Created user 39: right9 (RIGHT under right4)
+Ô£ô Created user 40: right10 (LEFT under right5)
+Ô£ô Created user 41: right11 (RIGHT under right5)
+Ô£ô Created user 42: right12 (LEFT under right6)
+Ô£ô Created user 43: right13 (RIGHT under right6)
+Ô£ô Created user 44: right14 (LEFT under right7)
+Ô£ô Created user 45: right15 (RIGHT under right7)
+Ô£ô Created user 46: right16 (LEFT under right8)
+Ô£ô Created user 47: right17 (RIGHT under right8)
+Ô£ô Created user 48: right18 (LEFT under right9)
+Ô£ô Created user 49: right19 (RIGHT under right9)
+Ô£ô Created user 50: right20 (LEFT under right10)
+Ô£ô Created user 51: right21 (RIGHT under right10)
+Ô£ô Created user 52: right22 (LEFT under right11)
+Ô£ô Created user 53: right23 (RIGHT under right11)
+Ô£ô Created user 54: right24 (LEFT under right12)
+Ô£ô Created user 55: right25 (RIGHT under right12)
+Ô£ô Created user 56: right26 (LEFT under right13)
+Ô£ô Created user 57: right27 (RIGHT under right13)
+Ô£ô Created user 58: right28 (LEFT under right14)
+Ô£ô Created user 59: right29 (RIGHT under right14)
+Ô£ô Created user 60: right30 (LEFT under right15)
+
+Ô£ô Created 60 users total (30 left, 30 right)
+
+­ƒôè Calculating expected bonuses...
+
+­ƒÆ░ Processing matching bonuses for all users...
+
+Processing left2: Left=7, Right=7
+  ÔåÆ Paid 4 pairs = Ôé╣2800
+Processing left13: Left=1, Right=1
+Processing left12: Left=1, Right=1
+Processing left9: Left=1, Right=1
+Processing left8: Left=1, Right=1
+Processing right1: Left=15, Right=14
+  ÔåÆ Paid 9 pairs = Ôé╣6300
+Processing left4: Left=3, Right=3
+  ÔåÆ Paid 2 pairs = Ôé╣1400
+Processing left6: Left=3, Right=3
+  ÔåÆ Paid 2 pairs = Ôé╣1400
+Processing left11: Left=1, Right=1
+Processing left10: Left=1, Right=1
+Processing left5: Left=3, Right=3
+  ÔåÆ Paid 2 pairs = Ôé╣1400
+Processing root: Left=30, Right=32
+  ÔåÆ Paid 20 pairs = Ôé╣14000
+Processing left3: Left=7, Right=6
+  ÔåÆ Paid 4 pairs = Ôé╣2800
+Processing left1: Left=15, Right=14
+  ÔåÆ Paid 9 pairs = Ôé╣6300
+Processing left14: Left=1, Right=1
+Processing left7: Left=3, Right=2
+  ÔåÆ Paid 1 pairs = Ôé╣700
+Processing right10: Left=1, Right=1
+Processing right11: Left=1, Right=1
+Processing right9: Left=1, Right=1
+Processing right4: Left=3, Right=3
+  ÔåÆ Paid 2 pairs = Ôé╣1400
+Processing right5: Left=3, Right=3
+  ÔåÆ Paid 2 pairs = Ôé╣1400
+Processing right8: Left=1, Right=1
+Processing right2: Left=7, Right=7
+  ÔåÆ Paid 4 pairs = Ôé╣2800
+Processing right12: Left=1, Right=1
+Processing right3: Left=7, Right=6
+  ÔåÆ Paid 4 pairs = Ôé╣2800
+Processing right13: Left=1, Right=1
+Processing right6: Left=3, Right=3
+  ÔåÆ Paid 2 pairs = Ôé╣1400
+Processing right14: Left=1, Right=1
+Processing right7: Left=3, Right=2
+  ÔåÆ Paid 1 pairs = Ôé╣700
+
+
+================================================================================
+­ƒôï COMPREHENSIVE TEST REPORT
+================================================================================
+
+USER BONUS COMPARISON:
+------------------------------------------------------------------------------------------------------------------------
+Username       L/R Count      Expected Pairs Direct (Exp/Act)    Matching (Exp/Act)    Wallet      Status
+------------------------------------------------------------------------------------------------------------------------
+root           30/30          15             Ôé╣1000/1000          Ôé╣10500/14000          Ôé╣61700      ÔØî MISMATCH
+left1          15/14          8              Ôé╣1000/1000          Ôé╣5600/6300            Ôé╣7300       ÔØî MISMATCH
+right1         15/14          8              Ôé╣1000/1000          Ôé╣5600/6300            Ôé╣7300       ÔØî MISMATCH
+left2          7/7            4              Ôé╣1000/1000          Ôé╣2800/2800            Ôé╣3800       Ô£à OK
+left3          7/6            4              Ôé╣1000/1000          Ôé╣2800/2800            Ôé╣3800       Ô£à OK
+left4          3/3            2              Ôé╣1000/1000          Ôé╣1400/1400            Ôé╣2400       Ô£à OK
+left5          3/3            2              Ôé╣1000/1000          Ôé╣1400/1400            Ôé╣2400       Ô£à OK
+left6          3/3            2              Ôé╣1000/1000          Ôé╣1400/1400            Ôé╣2400       Ô£à OK
+left7          3/2            1              Ôé╣1000/1000          Ôé╣700/700              Ôé╣1700       Ô£à OK
+left8          1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left9          1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left10         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left11         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left12         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left13         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left14         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+left15         1/0            0              Ôé╣500/500            Ôé╣0/0                  Ôé╣500        Ô£à OK
+left16         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left17         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left18         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left19         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left20         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left21         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left22         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left23         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left24         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left25         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left26         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left27         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left28         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left29         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+left30         0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right2         7/7            4              Ôé╣1000/1000          Ôé╣2800/2800            Ôé╣3800       Ô£à OK
+right3         7/6            4              Ôé╣1000/1000          Ôé╣2800/2800            Ôé╣3800       Ô£à OK
+right4         3/3            2              Ôé╣1000/1000          Ôé╣1400/1400            Ôé╣2400       Ô£à OK
+right5         3/3            2              Ôé╣1000/1000          Ôé╣1400/1400            Ôé╣2400       Ô£à OK
+right6         3/3            2              Ôé╣1000/1000          Ôé╣1400/1400            Ôé╣2400       Ô£à OK
+right7         3/2            1              Ôé╣1000/1000          Ôé╣700/700              Ôé╣1700       Ô£à OK
+right8         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right9         1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right10        1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right11        1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right12        1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right13        1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right14        1/1            0              Ôé╣1000/1000          Ôé╣0/0                  Ôé╣1000       Ô£à OK
+right15        1/0            0              Ôé╣500/500            Ôé╣0/0                  Ôé╣500        Ô£à OK
+right16        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right17        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right18        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right19        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right20        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right21        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right22        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right23        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right24        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right25        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right26        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right27        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right28        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right29        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+right30        0/0            0              Ôé╣0/0                Ôé╣0/0                  Ôé╣0          Ô£à OK
+------------------------------------------------------------------------------------------------------------------------
+
+SUMMARY:
+Total Users Created: 61
+Total Direct Bonus - Expected: Ôé╣30000, Actual: Ôé╣30000
+Total Matching Bonus - Expected: Ôé╣42700, Actual: Ôé╣47600
+Discrepancies: 3
+
+ÔÜá´©Å  DISCREPANCIES FOUND:
+  - root: Direct Ôé╣1000/1000, Matching Ôé╣10500/14000
+  - left1: Direct Ôé╣1000/1000, Matching Ôé╣5600/6300
+  - right1: Direct Ôé╣1000/1000, Matching Ôé╣5600/6300
+
+================================================================================
+­ƒöî TESTING API ENDPOINTS
+================================================================================
+
+Testing /api/dashboard/stats...
+  Root has 2 direct children, 2 referrals
+  Ô£ô Dashboard stats endpoint logic verified
+
+Testing /api/referrals/me (tree)...
+  Root -> Left: left1, Right: right1
+  Ô£ô Tree structure verified
+
+Testing /api/dashboard/incentives...
+  Transaction totals: DIRECT_BONUS: Ôé╣30000, PURCHASE: Ôé╣-900000, MATCHING_BONUS: Ôé╣47600
+  Ô£ô Incentives endpoint logic verified
+
+Testing /api/users/:id/wallet...
+  Total wallet balance across all users: Ôé╣124300
+  Ô£ô Wallet endpoint logic verified
+
+
+================================================================================
+Ô£à TEST COMPLETE
+================================================================================
+

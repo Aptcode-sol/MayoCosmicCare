@@ -92,6 +92,8 @@ model PairPayoutRecord {
   amount          Int      @default(0)
   matchType       String?  // "2:1" or "1:2" or "mixed"
   membersConsumed Int      @default(0)  // Total members consumed (pairs * 3)
+  leftConsumed    Int      @default(0)  // Members consumed from left side
+  rightConsumed   Int      @default(0)  // Members consumed from right side
   createdAt       DateTime @default(now())
 
   @@index([userId, date])

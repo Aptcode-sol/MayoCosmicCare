@@ -93,14 +93,23 @@ async function register({ username, email, phone, password, sponsorId, leg }) {
     return result;
 }
 
-async function login({ email, password }) {
-    console.log('[LOGIN] Attempting login for:', email);
+async function login({ email, password, isAdminLogin = false }) {
+    console.log('[LOGIN] Attempting login for:', email, 'isAdminLogin:', isAdminLogin);
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
         console.log('[LOGIN] User not found:', email);
         throw new Error('Invalid credentials');
     }
-    console.log('[LOGIN] User found:', user.id, 'email:', user.email, 'blocked:', user.isBlocked);
+    console.log('[LOGIN] User found:', user.id, 'email:', user.email, 'role:', user.role, 'blocked:', user.isBlocked);
+
+    // Role-based login restrictions
+    if (isAdminLogin && user.role !== 'ADMIN') {
+        throw new Error('Admin access required');
+    }
+    if (!isAdminLogin && user.role === 'ADMIN') {
+        throw new Error('Please use admin portal to login');
+    }
+
     if (user.isBlocked) throw new Error('Account is blocked');
 
     console.log('[LOGIN] Comparing password...');

@@ -49,6 +49,25 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Admin-only login endpoint
+router.post('/admin-login', async (req, res) => {
+    try {
+        const parsed = loginSchema.parse(req.body);
+        const tokens = await login({ ...parsed, isAdminLogin: true });
+        res.json({ ok: true, tokens });
+    } catch (err) {
+        if (err.name === 'ZodError') {
+            const errors = {};
+            for (const e of err.errors) {
+                errors[e.path[0]] = e.message;
+            }
+            res.status(400).json({ ok: false, errors });
+            return;
+        }
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
+
 router.post('/refresh', async (req, res) => {
     try {
         const { refresh } = req.body;

@@ -40,9 +40,9 @@ export default function Header() {
                             <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                                 Dashboard
                             </Link>
-                            <Link href="/dashboard/tree" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+                            {/* <Link href="/dashboard/tree" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                                 Network
-                            </Link>
+                            </Link> */}
                         </>
                     )}
                 </div>

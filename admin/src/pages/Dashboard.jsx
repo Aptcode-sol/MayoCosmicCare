@@ -1,0 +1,287 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { isAuthenticated, adminLogout } from '../lib/auth';
+import api from '../lib/api';
+import toast from 'react-hot-toast';
+
+export default function Dashboard() {
+    const navigate = useNavigate();
+    const [tab, setTab] = useState('products');
+    const [products, setProducts] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showProductForm, setShowProductForm] = useState(false);
+    const [productForm, setProductForm] = useState({
+        name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: ''
+    });
+
+    useEffect(() => {
+        if (!isAuthenticated()) {
+            navigate('/');
+            return;
+        }
+        fetchData();
+    }, [tab, navigate]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            if (tab === 'products') {
+                const res = await api.get('/api/admin/products');
+                setProducts(res.data.products || []);
+            } else if (tab === 'users') {
+                const res = await api.get('/api/admin/users');
+                setUsers(res.data.users || []);
+            }
+        } catch (err) {
+            toast.error('Failed to fetch data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const createProduct = async () => {
+        try {
+            await api.post('/api/admin/products', productForm);
+            toast.success('Product created');
+            setShowProductForm(false);
+            setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '' });
+            fetchData();
+        } catch (err) {
+            toast.error('Failed to create product');
+        }
+    };
+
+    const deleteProduct = async (id) => {
+        if (!confirm('Delete this product?')) return;
+        try {
+            await api.delete(`/api/admin/products/${id}`);
+            toast.success('Product deleted');
+            fetchData();
+        } catch (err) {
+            toast.error('Failed to delete product');
+        }
+    };
+
+    const toggleBlockUser = async (userId, currentStatus) => {
+        try {
+            await api.patch(`/api/admin/users/${userId}/block`, { isBlocked: !currentStatus });
+            toast.success(currentStatus ? 'User unblocked' : 'User blocked');
+            fetchData();
+        } catch (err) {
+            toast.error('Failed to update user');
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50/30">
+            {/* Header */}
+            <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-semibold text-gray-900">Admin Console</h1>
+                        <p className="text-gray-500 text-sm">Manage products and users</p>
+                    </div>
+                    <button
+                        onClick={adminLogout}
+                        className="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-colors text-sm font-medium"
+                    >
+                        Logout
+                    </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="max-w-7xl mx-auto px-6 border-t border-gray-100">
+                    <div className="flex gap-1">
+                        {['products', 'users', 'withdrawals'].map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTab(t)}
+                                className={`px-6 py-3 text-sm font-medium transition-all relative ${tab === t ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {t.charAt(0).toUpperCase() + t.slice(1)}
+                                {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </header>
+
+            <main className="max-w-7xl mx-auto px-6 py-8">
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : (
+                    <>
+                        {/* Products Tab */}
+                        {tab === 'products' && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-medium text-gray-900">Inventory Management</h2>
+                                    <button
+                                        onClick={() => setShowProductForm(!showProductForm)}
+                                        className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-colors text-sm font-medium"
+                                    >
+                                        {showProductForm ? 'Cancel' : 'Add Product'}
+                                    </button>
+                                </div>
+
+                                {showProductForm && (
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="text-gray-900 font-medium mb-4">Create New Product</h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <input
+                                                placeholder="Product Name"
+                                                value={productForm.name}
+                                                onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                            />
+                                            <input
+                                                type="number"
+                                                placeholder="Price"
+                                                value={productForm.price}
+                                                onChange={(e) => setProductForm({ ...productForm, price: +e.target.value })}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                            />
+                                            <input
+                                                type="number"
+                                                placeholder="BV"
+                                                value={productForm.bv}
+                                                onChange={(e) => setProductForm({ ...productForm, bv: +e.target.value })}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                            />
+                                            <input
+                                                type="number"
+                                                placeholder="Stock"
+                                                value={productForm.stock}
+                                                onChange={(e) => setProductForm({ ...productForm, stock: +e.target.value })}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                            />
+                                            <input
+                                                placeholder="Image URL"
+                                                value={productForm.imageUrl}
+                                                onChange={(e) => setProductForm({ ...productForm, imageUrl: e.target.value })}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 col-span-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                            />
+                                            <textarea
+                                                placeholder="Description"
+                                                value={productForm.description}
+                                                onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 col-span-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={createProduct}
+                                            className="mt-4 px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium"
+                                        >
+                                            Save Product
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="grid md:grid-cols-3 gap-6">
+                                    {products.map((product) => (
+                                        <div key={product.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                            <div className="h-40 bg-gray-100 relative group">
+                                                <img
+                                                    src={product.imageUrl || 'https://via.placeholder.com/400x300'}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <button
+                                                        onClick={() => deleteProduct(product.id)}
+                                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h3 className="font-medium text-gray-900">{product.name}</h3>
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg">
+                                                        Stock: {product.stock}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-500 line-clamp-2 mb-3">{product.description}</p>
+                                                <div className="flex justify-between text-sm border-t border-gray-50 pt-3">
+                                                    <span className="text-gray-900 font-medium">₹{product.price}</span>
+                                                    <span className="text-gray-500">{product.bv} BV</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Users Tab */}
+                        {tab === 'users' && (
+                            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left">User</th>
+                                            <th className="px-6 py-4 text-left">BV</th>
+                                            <th className="px-6 py-4 text-left">Status</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {users.map((user) => (
+                                            <tr key={user.id} className="hover:bg-gray-50/50">
+                                                <td className="px-6 py-4">
+                                                    <div className="text-gray-900 font-medium">{user.username}</div>
+                                                    <div className="text-gray-500 text-xs">{user.email}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-600">
+                                                    L: {user.leftBV} / R: {user.rightBV}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${user.isBlocked
+                                                            ? 'bg-red-50 text-red-700'
+                                                            : 'bg-emerald-50 text-emerald-700'
+                                                        }`}>
+                                                        {user.isBlocked ? 'Blocked' : 'Active'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button
+                                                        onClick={() => toggleBlockUser(user.id, user.isBlocked)}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${user.isBlocked
+                                                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                                : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                                            }`}
+                                                    >
+                                                        {user.isBlocked ? 'Unblock' : 'Block'}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {/* Withdrawals Tab */}
+                        {tab === 'withdrawals' && (
+                            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900">Withdrawals Module</h3>
+                                <p className="text-gray-500 mt-2">This feature is under development</p>
+                            </div>
+                        )}
+                    </>
+                )}
+            </main>
+        </div>
+    );
+}

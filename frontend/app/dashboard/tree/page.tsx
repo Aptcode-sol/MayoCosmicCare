@@ -127,76 +127,76 @@ export default function Tree() {
         }
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50/30">
-                <div className="text-center animate-pulse">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                    <p className="text-sm text-gray-500">Loading network structure...</p>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <DashboardLayout user={user}>
-            {/* Page Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-light text-gray-900 tracking-tight">Network Tree</h1>
-                <p className="text-gray-500 mt-1">Visualize your team structure and growth</p>
-            </div>
-
-            {/* Legend */}
-            <Card className="mb-8 border-gray-100 shadow-sm bg-white/50 backdrop-blur-sm">
-                <div className="p-4 flex flex-wrap items-center gap-8 text-sm">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gray-900 shadow-sm"></div>
-                        <span className="text-gray-600 font-medium">You</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
-                        <span className="text-gray-600 font-medium">Left Team</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-pink-500 shadow-sm"></div>
-                        <span className="text-gray-600 font-medium">Right Team</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded border border-dashed border-gray-300"></div>
-                        <span className="text-gray-400">Empty Spot</span>
+            {loading ? (
+                <div className="flex items-center justify-center py-20">
+                    <div className="text-center animate-pulse">
+                        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-sm text-gray-500">Loading network structure...</p>
                     </div>
                 </div>
-            </Card>
-
-            {/* Tree Container */}
-            {error && (
-                <div className="text-center py-12">
-                    <div className="inline-flex items-center gap-2 bg-red-50 text-red-600 rounded-full px-6 py-2 text-sm font-medium border border-red-100">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        {error}
+            ) : (
+                <>
+                    {/* Page Header */}
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-light text-gray-900 tracking-tight">Network Tree</h1>
+                        <p className="text-gray-500 mt-1">Visualize your team structure and growth</p>
                     </div>
-                </div>
+
+                    {/* Legend */}
+                    <Card className="mb-8 border-gray-100 shadow-sm bg-white/50 backdrop-blur-sm">
+                        <div className="p-4 flex flex-wrap items-center gap-8 text-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-gray-900 shadow-sm"></div>
+                                <span className="text-gray-600 font-medium">You</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
+                                <span className="text-gray-600 font-medium">Left Team</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-pink-500 shadow-sm"></div>
+                                <span className="text-gray-600 font-medium">Right Team</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded border border-dashed border-gray-300"></div>
+                                <span className="text-gray-400">Empty Spot</span>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Tree Container */}
+                    {error && (
+                        <div className="text-center py-12">
+                            <div className="inline-flex items-center gap-2 bg-red-50 text-red-600 rounded-full px-6 py-2 text-sm font-medium border border-red-100">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                {error}
+                            </div>
+                        </div>
+                    )}
+
+                    {tree ? (
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[600px] relative">
+                            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-25 pointer-events-none" />
+                            <TreeView data={tree} onNodeClick={(node) => setSelected(node)} />
+                        </div>
+                    ) : !error && (
+                        <div className="text-center py-32 bg-white rounded-2xl border border-dashed border-gray-200">
+                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </div>
+                            <p className="text-gray-500 font-medium">No team members found yet.</p>
+                            <Button className="mt-4" onClick={() => router.push('/dashboard')}>
+                                Go to Dashboard
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Profile Modal */}
+                    <ProfileModal node={selected} onClose={() => setSelected(null)} />
+                </>
             )}
-
-            {tree ? (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[600px] relative">
-                    <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-25 pointer-events-none" />
-                    <TreeView data={tree} onNodeClick={(node) => setSelected(node)} />
-                </div>
-            ) : !error && (
-                <div className="text-center py-32 bg-white rounded-2xl border border-dashed border-gray-200">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    </div>
-                    <p className="text-gray-500 font-medium">No team members found yet.</p>
-                    <Button className="mt-4" onClick={() => router.push('/dashboard')}>
-                        Go to Dashboard
-                    </Button>
-                </div>
-            )}
-
-            {/* Profile Modal */}
-            <ProfileModal node={selected} onClose={() => setSelected(null)} />
         </DashboardLayout>
     )
 }

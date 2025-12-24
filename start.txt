@@ -25,3 +25,6 @@ npm run seed
 
 # Creating test users
 node test-mlm.js
+
+# Open prisma studio
+npx prisma studio

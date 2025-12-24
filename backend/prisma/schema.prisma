@@ -27,6 +27,7 @@ model User {
   resetTokenExpiry DateTime?
   isBlocked        Boolean  @default(false)
   fraudFlag        Boolean  @default(false)
+  hasPurchased     Boolean  @default(false)  // Must purchase before referring
   createdAt        DateTime @default(now())
   // BV fields (legacy, kept for backward compatibility)
   leftBV           Int      @default(0)

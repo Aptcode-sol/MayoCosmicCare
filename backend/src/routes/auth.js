@@ -100,6 +100,7 @@ router.get('/me', authenticate, async (req, res) => {
                 username: true,
                 email: true,
                 role: true,
+                hasPurchased: true,
                 createdAt: true,
                 leftBV: true,
                 rightBV: true,

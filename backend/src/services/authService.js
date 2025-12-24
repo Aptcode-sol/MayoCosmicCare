@@ -42,6 +42,10 @@ async function register({ username, email, phone, password, sponsorId, leg }) {
         }
         if (!sponsor) throw new Error('Invalid sponsor identifier');
         if (sponsor.isBlocked) throw new Error('Sponsor account is blocked');
+        // Admin is always allowed to refer, but regular users must purchase first
+        if (sponsor.role !== 'ADMIN' && !sponsor.hasPurchased) {
+            throw new Error('Sponsor must purchase a product before referring others');
+        }
         resolvedSponsorId = sponsor.id;
     }
 

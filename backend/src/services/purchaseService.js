@@ -38,6 +38,9 @@ async function purchaseProduct(userId, productId) {
             console.log('[PURCHASE] User:', userId, 'isFirstPurchase:', isFirstPurchase, 'existingCount:', existingPurchases);
 
             if (isFirstPurchase) {
+                // Mark user as having purchased (enables referral ability)
+                await tx.user.update({ where: { id: userId }, data: { hasPurchased: true } });
+
                 try {
                     await creditDirectBonus(tx, buyer.sponsorId, product.bv);
                     console.log('[PURCHASE] Direct bonus credited to sponsor:', buyer.sponsorId);

@@ -67,7 +67,7 @@ export default function Products() {
     return (
         <div className="min-h-screen bg-gray-50/30 pt-32 pb-20">
             <div className="container mx-auto px-6">
-                <div className="text-center max-w-2xl mx-auto mb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="text-center max-w-2xl mx-auto mb-20">
                     <span className="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3 block">Premium Wellness</span>
                     <h1 className="text-4xl lg:text-5xl font-light text-gray-900 mb-6 tracking-tight">Our Collections</h1>
                     <p className="text-gray-500 text-lg leading-relaxed">
@@ -76,7 +76,7 @@ export default function Products() {
                 </div>
 
                 {products.length > 0 ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {products.map((product, idx) => (
                             <Card
                                 key={product.id}

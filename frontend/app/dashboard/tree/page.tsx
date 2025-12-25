@@ -7,6 +7,7 @@ import TreeView from '@/components/TreeView'
 import DashboardLayout from '@/components/DashboardLayout'
 import { Card } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
+import AnimateOnScroll from '@/components/AnimateOnScroll'
 
 type TreeNodeData = {
     id: string
@@ -139,32 +140,36 @@ export default function Tree() {
             ) : (
                 <>
                     {/* Page Header */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-light text-gray-900 tracking-tight">Network Tree</h1>
-                        <p className="text-gray-500 mt-1">Visualize your team structure and growth</p>
-                    </div>
+                    <AnimateOnScroll animation="fade-up">
+                        <div className="mb-8">
+                            <h1 className="text-3xl font-light text-gray-900 tracking-tight">Network Tree</h1>
+                            <p className="text-gray-500 mt-1">Visualize your team structure and growth</p>
+                        </div>
+                    </AnimateOnScroll>
 
                     {/* Legend */}
-                    <Card className="mb-8 border-gray-100 shadow-sm bg-white/50 backdrop-blur-sm">
-                        <div className="p-4 flex flex-wrap items-center gap-8 text-sm">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-gray-900 shadow-sm"></div>
-                                <span className="text-gray-600 font-medium">You</span>
+                    <AnimateOnScroll animation="fade-up" delay={100}>
+                        <Card className="mb-8 border-gray-100 shadow-sm bg-white/50 backdrop-blur-sm">
+                            <div className="p-4 flex flex-wrap items-center gap-8 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-gray-900 shadow-sm"></div>
+                                    <span className="text-gray-600 font-medium">You</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
+                                    <span className="text-gray-600 font-medium">Left Team</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-pink-500 shadow-sm"></div>
+                                    <span className="text-gray-600 font-medium">Right Team</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded border border-dashed border-gray-300"></div>
+                                    <span className="text-gray-400">Empty Spot</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
-                                <span className="text-gray-600 font-medium">Left Team</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-pink-500 shadow-sm"></div>
-                                <span className="text-gray-600 font-medium">Right Team</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded border border-dashed border-gray-300"></div>
-                                <span className="text-gray-400">Empty Spot</span>
-                            </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </AnimateOnScroll>
 
                     {/* Tree Container */}
                     {error && (

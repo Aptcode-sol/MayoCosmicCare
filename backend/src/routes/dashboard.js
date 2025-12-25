@@ -266,41 +266,94 @@ router.get('/matching', authenticate, async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Current Status
+        // Get user's current BV and member counts
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {
                 leftBV: true,
                 rightBV: true,
                 leftCarryBV: true,
-                rightCarryBV: true
+                rightCarryBV: true,
+                leftMemberCount: true,
+                rightMemberCount: true,
+                leftCarryCount: true,
+                rightCarryCount: true
             }
         });
 
-        // Payout History logic is complex to reconstruct exactly without `DailyPairCounter` snapshot history.
-        // We will return Transaction history of Type MATCHING_BONUS as a proxy.
-        // Or if we have a table for daily matching, use that.
-        // Using Transactions for now.
+        // Get today's payout record if any
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
+        const todayPayout = await prisma.pairPayoutRecord.findFirst({
+            where: { userId, date: { gte: todayStart, lt: todayEnd } },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Get total paid out
+        const totalPayoutAgg = await prisma.pairPayoutRecord.aggregate({
+            where: { userId },
+            _sum: { amount: true, leftConsumed: true, rightConsumed: true }
+        });
+
+        // Payout History - last 20 matching bonus transactions
         const history = await prisma.transaction.findMany({
             where: { userId, type: 'MATCHING_BONUS' },
             orderBy: { createdAt: 'desc' },
             take: 20
         });
 
+        // Calculate clear metrics:
+        // - Total BV: All accumulated BV (from all purchases in downline)
+        // - Paid BV: BV that was matched and paid out  
+        // - Unpaid BV: Remaining BV waiting for matching (Total - Paid)
+        // - Carry Forward: Members that couldn't be matched (waiting for opposite side)
+
+        const BV_PER_MEMBER = parseInt(process.env.PRODUCT_BV || '7000', 10);
+
+        // Total paid BV from all payouts
+        const paidLeftBV = (totalPayoutAgg._sum.leftConsumed || 0) * BV_PER_MEMBER;
+        const paidRightBV = (totalPayoutAgg._sum.rightConsumed || 0) * BV_PER_MEMBER;
+
+        // Total accumulated BV
+        const totalLeftBV = user.leftBV || 0;
+        const totalRightBV = user.rightBV || 0;
+
+        // Unpaid BV = Total accumulated minus what was paid
+        const unpaidLeftBV = Math.max(0, totalLeftBV - paidLeftBV);
+        const unpaidRightBV = Math.max(0, totalRightBV - paidRightBV);
+
+        // Carry Forward = members waiting for opposite side to match
+        const carryLeftBV = (user.leftCarryCount || 0) * BV_PER_MEMBER;
+        const carryRightBV = (user.rightCarryCount || 0) * BV_PER_MEMBER;
+
         res.json({
             ok: true,
             current: {
                 left: {
-                    broughtForward: user.leftCarryBV,
-                    pending: user.leftBV, // Assuming current BV is pending matching
-                    carryForward: user.leftCarryBV // Simplified: in reality, carry is AFTER matching
+                    totalBV: totalLeftBV,
+                    paidBV: paidLeftBV,
+                    unpaidBV: unpaidLeftBV,
+                    carryForward: carryLeftBV
                 },
                 right: {
-                    broughtForward: user.rightCarryBV,
-                    pending: user.rightBV,
-                    carryForward: user.rightCarryBV
+                    totalBV: totalRightBV,
+                    paidBV: paidRightBV,
+                    unpaidBV: unpaidRightBV,
+                    carryForward: carryRightBV
                 }
+            },
+            todayPayout: todayPayout ? {
+                pairs: todayPayout.pairs,
+                amount: todayPayout.amount,
+                matchType: todayPayout.matchType,
+                membersConsumed: todayPayout.membersConsumed
+            } : null,
+            totalStats: {
+                totalPayoutAmount: totalPayoutAgg._sum.amount || 0,
+                totalPaidLeftBV: paidLeftBV,
+                totalPaidRightBV: paidRightBV
             },
             history
         });

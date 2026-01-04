@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { creditDirectBonus } = require('./commissionService');
-const { matchingQueue } = require('../queues/queue');
+const { addMatchingJob } = require('../queues/queue');
 
 /**
  * Process purchase: reduce stock, create transaction, update BV up the uplines
@@ -88,7 +88,7 @@ async function purchaseProduct(userId, productId) {
             if (result && result.sponsorsToQueue && result.sponsorsToQueue.length) {
                 for (const sponsorId of result.sponsorsToQueue) {
                     try {
-                        await matchingQueue.add('matching-for-' + sponsorId, { userId: sponsorId });
+                        await addMatchingJob(sponsorId);
                     } catch (e) {
                         try { const { error } = require('../logger'); error('queue-add-failed', { sponsorId, err: e.message }); } catch (e) { }
                     }
@@ -99,7 +99,7 @@ async function purchaseProduct(userId, productId) {
             if (result && result.deferredDirectBonus) {
                 const d = result.deferredDirectBonus;
                 try {
-                    await matchingQueue.add('direct-bonus-fallback-' + d.sponsorId, { sponsorId: d.sponsorId, bv: d.bv, type: 'direct' });
+                    await addMatchingJob(d.sponsorId);
                 } catch (e) {
                     try { const { error } = require('../logger'); error('direct-bonus-enqueue-failed', { sponsorId: d.sponsorId, err: e.message }); } catch (e) { }
                 }

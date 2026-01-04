@@ -1,17 +1,49 @@
 const { Queue } = require('bullmq');
-const IORedis = require('ioredis');
 
-// Configure ioredis options to avoid BullMQ deprecation warnings and make retries explicit
-const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
-const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
+// Only enable Redis if explicitly set to 'true'
+const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true';
 
-// Default job options provide basic retries + exponential backoff for robustness
-const matchingQueue = new Queue('matching', {
-    connection,
-    defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 }
+let matchingQueue = null;
+
+if (REDIS_ENABLED) {
+    const IORedis = require('ioredis');
+    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+
+    try {
+        const connection = new IORedis(redisUrl, {
+            maxRetriesPerRequest: null,
+            lazyConnect: true
+        });
+
+        matchingQueue = new Queue('matching', {
+            connection,
+            defaultJobOptions: {
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 5000 }
+            }
+        });
+    } catch (err) {
+        console.warn('Could not initialize matching queue:', err.message);
     }
-});
+}
 
-module.exports = { matchingQueue };
+// Export a wrapper that checks if queue is available
+module.exports = {
+    matchingQueue,
+    addMatchingJob: async (userId) => {
+        if (matchingQueue) {
+            return await matchingQueue.add('process-matching', { userId });
+        } else {
+            // Fallback: process matching synchronously without queue
+            console.log('Queue not available, processing matching synchronously for', userId);
+            try {
+                const { processMatchingBonus } = require('../services/commissionService');
+                const { PrismaClient } = require('@prisma/client');
+                const prisma = new PrismaClient();
+                await processMatchingBonus(prisma, userId);
+            } catch (err) {
+                console.error('Sync matching processing failed:', err.message);
+            }
+        }
+    }
+};

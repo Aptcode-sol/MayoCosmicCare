@@ -1,6 +1,6 @@
 "use client"
-import { useEffect, useState } from 'react'
-import { getMyTree } from '@/lib/services/referrals'
+import { useEffect, useState, useRef } from 'react'
+import { getMyTree, getTreeForUser } from '@/lib/services/referrals'
 import { useRouter } from 'next/navigation'
 import { me } from '@/lib/services/auth'
 import TreeView from '@/components/TreeView'
@@ -81,6 +81,63 @@ export default function Tree() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('')
     const [selected, setSelected] = useState<TreeNodeData | null>(null)
+    const [zoom, setZoom] = useState(1)
+    const lastPinchDistanceRef = useRef<number | null>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    // Handle wheel zoom (Ctrl + Scroll)
+    const handleWheel = (e: React.WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            const delta = e.deltaY > 0 ? -0.05 : 0.05
+            setZoom(z => Math.max(0.3, Math.min(2, z + delta)))
+        }
+    }
+
+    // Setup native touch event listeners with { passive: false } to prevent browser zoom
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 2) {
+                e.preventDefault()
+                const distance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                )
+                lastPinchDistanceRef.current = distance
+            }
+        }
+
+        const handleTouchMove = (e: TouchEvent) => {
+            if (e.touches.length === 2 && lastPinchDistanceRef.current !== null) {
+                e.preventDefault()
+                const distance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                )
+                const delta = (distance - lastPinchDistanceRef.current) * 0.005
+                setZoom(z => Math.max(0.3, Math.min(2, z + delta)))
+                lastPinchDistanceRef.current = distance
+            }
+        }
+
+        const handleTouchEnd = () => {
+            lastPinchDistanceRef.current = null
+        }
+
+        // Add listeners with passive: false to allow preventDefault
+        container.addEventListener('touchstart', handleTouchStart, { passive: false })
+        container.addEventListener('touchmove', handleTouchMove, { passive: false })
+        container.addEventListener('touchend', handleTouchEnd)
+
+        return () => {
+            container.removeEventListener('touchstart', handleTouchStart)
+            container.removeEventListener('touchmove', handleTouchMove)
+            container.removeEventListener('touchend', handleTouchEnd)
+        }
+    }, [])
 
     useEffect(() => {
         async function loadData() {
@@ -184,7 +241,68 @@ export default function Tree() {
                     {tree ? (
                         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[600px] relative">
                             <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-25 pointer-events-none" />
-                            <TreeView data={tree} onNodeClick={(node) => setSelected(node)} />
+
+                            {/* Zoom Controls */}
+                            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-2">
+                                <button
+                                    onClick={() => setZoom(z => Math.min(z + 0.1, 2))}
+                                    className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors"
+                                    title="Zoom In"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                </button>
+                                <div className="text-xs text-center text-gray-500 font-medium py-1">
+                                    {Math.round(zoom * 100)}%
+                                </div>
+                                <button
+                                    onClick={() => setZoom(z => Math.max(z - 0.1, 0.3))}
+                                    className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors"
+                                    title="Zoom Out"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => setZoom(1)}
+                                    className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors text-xs font-medium"
+                                    title="Reset Zoom"
+                                >
+                                    1:1
+                                </button>
+                            </div>
+
+                            {/* Zoomable Tree Container */}
+                            <div
+                                ref={containerRef}
+                                className="overflow-auto h-[600px] touch-none"
+                                style={{ cursor: 'grab' }}
+                                onWheel={handleWheel}
+                            >
+                                {/* This wrapper ensures the scrollable area doesn't shrink when zooming out */}
+                                <div style={{ minWidth: '100%', minHeight: '600px', display: 'flex', justifyContent: 'center' }}>
+                                    <div
+                                        style={{
+                                            transform: `scale(${zoom})`,
+                                            transformOrigin: 'top center',
+                                            transition: 'transform 0.2s ease-out',
+                                            width: `${100 / zoom}%`,
+                                            minHeight: `${600 / zoom}px`
+                                        }}
+                                    >
+                                        <TreeView
+                                            data={tree}
+                                            onNodeClick={(node) => setSelected(node)}
+                                            onLoadChildren={async (nodeId) => {
+                                                const res = await getTreeForUser(nodeId, 4)
+                                                return res.tree
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : !error && (
                         <div className="text-center py-32 bg-white rounded-2xl border border-dashed border-gray-200">

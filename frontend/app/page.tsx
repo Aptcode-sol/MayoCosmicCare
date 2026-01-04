@@ -35,6 +35,136 @@ export default function Home() {
                 </AnimateOnScroll>
             </section>
 
+            {/* Bio Energy Mattress Product Section */}
+            <section className="py-24 px-6 bg-gradient-to-b from-emerald-50 to-white">
+                <div className="max-w-7xl mx-auto">
+                    <AnimateOnScroll animation="fade-up">
+                        <div className="text-center mb-16">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 mb-6">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <span className="text-sm font-medium text-emerald-700">Featured Product</span>
+                            </div>
+                            <h2 className="text-4xl lg:text-6xl font-light text-gray-900 mb-6 tracking-tight">
+                                Bio Energy <span className="font-semibold text-emerald-600">Mattress</span>
+                            </h2>
+                            <p className="text-xl text-gray-500 max-w-3xl mx-auto leading-relaxed">
+                                World&apos;s most advanced natural rare earth bio energy technology for improved blood circulation and oxygen levels
+                            </p>
+                        </div>
+                    </AnimateOnScroll>
+
+                    {/* Main Features Grid */}
+                    <div className="grid lg:grid-cols-3 gap-8 mb-16">
+                        <AnimateOnScroll animation="fade-up" delay={0}>
+                            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+                                <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-6">
+                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Blood Circulation</h3>
+                                <p className="text-gray-500 leading-relaxed">
+                                    Enhances smooth blood flow from head to toe, naturally improving oxygen delivery to all 78 vital organs
+                                </p>
+                            </div>
+                        </AnimateOnScroll>
+
+                        <AnimateOnScroll animation="fade-up" delay={150}>
+                            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+                                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Energy Boost</h3>
+                                <p className="text-gray-500 leading-relaxed">
+                                    Absorbs glucose & fatty acids, converting them into high energy while reducing fatigue and tiredness
+                                </p>
+                            </div>
+                        </AnimateOnScroll>
+
+                        <AnimateOnScroll animation="fade-up" delay={300}>
+                            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+                                <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Deep Sleep</h3>
+                                <p className="text-gray-500 leading-relaxed">
+                                    Experience restorative deep sleep that helps your body heal, recover, and rejuvenate naturally
+                                </p>
+                            </div>
+                        </AnimateOnScroll>
+                    </div>
+
+                    {/* Health Benefits */}
+                    <AnimateOnScroll animation="fade-up" delay={100}>
+                        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-10 lg:p-16">
+                            <h3 className="text-3xl font-light text-white mb-10 text-center">
+                                Comprehensive Health Benefits
+                            </h3>
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {[
+                                    { icon: "💪", text: "Increases Strength & Resistance" },
+                                    { icon: "🩸", text: "Controls BP & Cholesterol" },
+                                    { icon: "🧠", text: "Improves Brain Health" },
+                                    { icon: "🦴", text: "Helps Joint & Bone Pain" },
+                                    { icon: "⚡", text: "Boosts Body Flexibility" },
+                                    { icon: "🛡️", text: "EMF Radiation Protection" },
+                                    { icon: "🌿", text: "Anti-Aging Benefits" },
+                                    { icon: "✨", text: "Complete Body Detox" },
+                                ].map((benefit, i) => (
+                                    <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
+                                        <span className="text-2xl">{benefit.icon}</span>
+                                        <span className="text-white/90 text-sm font-medium">{benefit.text}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </AnimateOnScroll>
+
+                    {/* Trust Badges */}
+                    <AnimateOnScroll animation="fade-up" delay={200}>
+                        <div className="flex flex-wrap justify-center gap-8 mt-16">
+                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
+                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-medium text-gray-700">100% Natural</span>
+                            </div>
+                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
+                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-medium text-gray-700">Scientifically Proven</span>
+                            </div>
+                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
+                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-medium text-gray-700">Zero Side Effects</span>
+                            </div>
+                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
+                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-medium text-gray-700">Drug-Free Therapy</span>
+                            </div>
+                        </div>
+                    </AnimateOnScroll>
+
+                    {/* CTA */}
+                    <AnimateOnScroll animation="fade-up" delay={300}>
+                        <div className="text-center mt-16">
+                            <Button size="lg" className="h-14 px-10 text-lg rounded-full bg-emerald-600 hover:bg-emerald-700" asChild>
+                                <Link href="/products">Explore Bio Energy Mattress</Link>
+                            </Button>
+                        </div>
+                    </AnimateOnScroll>
+                </div>
+            </section>
+
             {/* Stats Section - Full Screen */}
             <section className="min-h-screen flex items-center justify-center bg-gray-950 px-6 border-y border-gray-900">
                 <div className="max-w-7xl mx-auto w-full">

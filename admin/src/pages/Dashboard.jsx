@@ -9,6 +9,10 @@ export default function Dashboard() {
     const [tab, setTab] = useState('products');
     const [products, setProducts] = useState([]);
     const [users, setUsers] = useState([]);
+    const [rankStats, setRankStats] = useState([]);
+    const [positions, setPositions] = useState([]);
+    const [positionFilter, setPositionFilter] = useState('all');
+    const [rewardedFilter, setRewardedFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [showProductForm, setShowProductForm] = useState(false);
     const [productForm, setProductForm] = useState({
@@ -32,6 +36,16 @@ export default function Dashboard() {
             } else if (tab === 'users') {
                 const res = await api.get('/api/admin/users');
                 setUsers(res.data.users || []);
+                try {
+                    const rankRes = await api.get('/api/admin/users/stats/ranks');
+                    setRankStats(rankRes.data.stats || []);
+                } catch (e) { console.warn('Failed to fetch rank stats', e); }
+            } else if (tab === 'positions') {
+                const params = new URLSearchParams();
+                if (positionFilter !== 'all') params.append('rank', positionFilter);
+                if (rewardedFilter !== 'all') params.append('rewarded', rewardedFilter);
+                const res = await api.get(`/api/admin/positions?${params.toString()}`);
+                setPositions(res.data.rankChanges || []);
             }
         } catch (err) {
             toast.error('Failed to fetch data');
@@ -93,7 +107,7 @@ export default function Dashboard() {
                 {/* Tabs */}
                 <div className="max-w-7xl mx-auto px-6 border-t border-gray-100">
                     <div className="flex gap-1">
-                        {['products', 'users', 'withdrawals'].map((t) => (
+                        {['products', 'users', 'positions', 'withdrawals'].map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setTab(t)}
@@ -221,49 +235,163 @@ export default function Dashboard() {
 
                         {/* Users Tab */}
                         {tab === 'users' && (
-                            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
-                                        <tr>
-                                            <th className="px-6 py-4 text-left">User</th>
-                                            <th className="px-6 py-4 text-left">BV</th>
-                                            <th className="px-6 py-4 text-left">Status</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {users.map((user) => (
-                                            <tr key={user.id} className="hover:bg-gray-50/50">
-                                                <td className="px-6 py-4">
-                                                    <div className="text-gray-900 font-medium">{user.username}</div>
-                                                    <div className="text-gray-500 text-xs">{user.email}</div>
-                                                </td>
-                                                <td className="px-6 py-4 text-gray-600">
-                                                    L: {user.leftBV} / R: {user.rightBV}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${user.isBlocked
+                            <div className="space-y-6">
+                                {/* Rank Distribution Stats */}
+                                {rankStats.length > 0 && (
+                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                        {rankStats.map((stat) => (
+                                            <div key={stat.rank} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                                <div className="text-gray-500 text-xs uppercase font-medium tracking-wider mb-1">{stat.rank}</div>
+                                                <div className="text-2xl font-bold text-gray-900">{stat.count}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left">User</th>
+                                                <th className="px-6 py-4 text-left">BV</th>
+                                                <th className="px-6 py-4 text-left">Status</th>
+                                                <th className="px-6 py-4 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {users.map((user) => (
+                                                <tr key={user.id} className="hover:bg-gray-50/50">
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-gray-900 font-medium">{user.username}</div>
+                                                        <div className="text-gray-500 text-xs">{user.email}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600">
+                                                        L: {user.leftBV} / R: {user.rightBV}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${user.isBlocked
                                                             ? 'bg-red-50 text-red-700'
                                                             : 'bg-emerald-50 text-emerald-700'
-                                                        }`}>
-                                                        {user.isBlocked ? 'Blocked' : 'Active'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button
-                                                        onClick={() => toggleBlockUser(user.id, user.isBlocked)}
-                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${user.isBlocked
+                                                            }`}>
+                                                            {user.isBlocked ? 'Blocked' : 'Active'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button
+                                                            onClick={() => toggleBlockUser(user.id, user.isBlocked)}
+                                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${user.isBlocked
                                                                 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                                                                 : 'bg-red-50 text-red-700 hover:bg-red-100'
-                                                            }`}
-                                                    >
-                                                        {user.isBlocked ? 'Unblock' : 'Block'}
-                                                    </button>
-                                                </td>
+                                                                }`}
+                                                        >
+                                                            {user.isBlocked ? 'Unblock' : 'Block'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        )}
+
+                        {/* Positions Tab */}
+                        {tab === 'positions' && (
+                            <div className="space-y-6">
+                                {/* Filters */}
+                                <div className="flex flex-wrap gap-4">
+                                    <select
+                                        value={positionFilter}
+                                        onChange={(e) => { setPositionFilter(e.target.value); }}
+                                        className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                    >
+                                        <option value="all">All Positions</option>
+                                        <option value="Associate Executive">Associate Executive</option>
+                                        <option value="Senior Associate">Senior Associate</option>
+                                        <option value="Team Leader">Team Leader</option>
+                                        <option value="Senior Team Leader">Senior Team Leader</option>
+                                        <option value="Assistant Manager">Assistant Manager</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Senior Manager">Senior Manager</option>
+                                        <option value="Regional Manager">Regional Manager</option>
+                                        <option value="Director">Director</option>
+                                        <option value="National Director">National Director</option>
+                                    </select>
+                                    <select
+                                        value={rewardedFilter}
+                                        onChange={(e) => { setRewardedFilter(e.target.value); }}
+                                        className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                    >
+                                        <option value="all">All Status</option>
+                                        <option value="pending">Pending Reward</option>
+                                        <option value="rewarded">Rewarded</option>
+                                    </select>
+                                    <button
+                                        onClick={fetchData}
+                                        className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium"
+                                    >
+                                        Apply Filters
+                                    </button>
+                                </div>
+
+                                {/* Positions Table */}
+                                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left">User</th>
+                                                <th className="px-6 py-4 text-left">From</th>
+                                                <th className="px-6 py-4 text-left">To</th>
+                                                <th className="px-6 py-4 text-left">Pairs</th>
+                                                <th className="px-6 py-4 text-left">Date</th>
+                                                <th className="px-6 py-4 text-center">Rewarded</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {positions.length > 0 ? positions.map((pos) => (
+                                                <tr key={pos.id} className="hover:bg-gray-50/50">
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-gray-900 font-medium">{pos.user?.username}</div>
+                                                        <div className="text-gray-500 text-xs">{pos.user?.email}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600">{pos.fromRank}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                                                            {pos.toRank}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600 font-mono">{pos.pairsAtChange}</td>
+                                                    <td className="px-6 py-4 text-gray-500 text-xs">
+                                                        {new Date(pos.createdAt).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={pos.rewarded}
+                                                            onChange={async (e) => {
+                                                                try {
+                                                                    await api.patch(`/api/admin/positions/${pos.id}/reward`, { rewarded: e.target.checked });
+                                                                    toast.success(e.target.checked ? 'Marked as rewarded' : 'Unmarked');
+                                                                    fetchData();
+                                                                } catch (err) {
+                                                                    toast.error('Failed to update');
+                                                                }
+                                                            }}
+                                                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                                        No position changes found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
 
@@ -282,6 +410,6 @@ export default function Dashboard() {
                     </>
                 )}
             </main>
-        </div>
+        </div >
     );
 }

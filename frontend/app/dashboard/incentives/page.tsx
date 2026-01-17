@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import { me } from '@/lib/services/auth'
 import { getIncentives } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import RankTable from '@/components/RankTable'
 
 interface Transaction {
     id: string
@@ -25,7 +26,7 @@ interface IncentiveData {
 
 export default function Incentives() {
     const router = useRouter()
-    const [user, setUser] = useState<{ username?: string; email?: string } | null>(null)
+    const [user, setUser] = useState<{ username?: string; email?: string; totalPairs?: number } | null>(null)
     const [data, setData] = useState<IncentiveData | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -68,6 +69,14 @@ export default function Incentives() {
                 <div className="mb-8">
                     <h1 className="text-3xl font-light text-gray-900 tracking-tight">Incentives</h1>
                     <p className="text-gray-500 mt-1">Your payout breakdown and earnings history</p>
+                </div>
+            </AnimateOnScroll>
+
+            {/* Rank Requirements */}
+            <AnimateOnScroll animation="fade-up" delay={50}>
+                <div className="mb-12">
+                    <h2 className="text-xl font-medium text-gray-900 mb-6">Rank & Rewards</h2>
+                    <RankTable currentPairs={user?.totalPairs || 0} />
                 </div>
             </AnimateOnScroll>
 

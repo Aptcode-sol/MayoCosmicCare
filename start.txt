@@ -26,5 +26,8 @@ npm run seed
 # Creating test users
 node test-mlm.js
 
+# Stress test users
+node stress-test.js
+
 # Open prisma studio
 npx prisma studio

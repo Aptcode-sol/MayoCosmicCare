@@ -28,6 +28,8 @@ model User {
   isBlocked        Boolean  @default(false)
   fraudFlag        Boolean  @default(false)
   hasPurchased     Boolean  @default(false)  // Must purchase before referring
+  rank             String   @default("Rookie")
+  totalPairs       Int      @default(0)
   createdAt        DateTime @default(now())
   // BV fields (legacy, kept for backward compatibility)
   leftBV           Int      @default(0)
@@ -45,6 +47,24 @@ model User {
   withdrawals      Withdrawal[]
   pairPayouts      PairPayoutRecord[]
   dailyPairCounters DailyPairCounter[]
+  rankChanges      RankChange[]
+}
+
+model RankChange {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  fromRank      String    // Previous rank (or "None" for first)
+  toRank        String    // New rank achieved
+  pairsAtChange Int       // Total pairs when promotion happened
+  rewarded      Boolean   @default(false)
+  rewardedAt    DateTime?
+  rewardedBy    String?   // Admin who marked rewarded
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([toRank])
+  @@index([rewarded])
 }
 
 model Product {

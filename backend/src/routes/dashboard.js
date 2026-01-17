@@ -31,6 +31,10 @@ router.get('/stats', authenticate, async (req, res) => {
                 rightBV: true,
                 leftCarryBV: true,
                 rightCarryBV: true,
+                leftCarryCount: true,
+                rightCarryCount: true,
+                rank: true,
+                totalPairs: true,
                 // Placement tree children (for total team)
                 children: {
                     select: { id: true, position: true }
@@ -80,6 +84,10 @@ router.get('/stats', authenticate, async (req, res) => {
                     leftPaidBV,
                     rightPaidBV
                 },
+                user: {
+                    rank: user.rank,
+                    totalPairs: user.totalPairs
+                },
                 directTeam: {
                     total: directTotal,
                     left: directLeft,
@@ -89,8 +97,8 @@ router.get('/stats', authenticate, async (req, res) => {
                     activeRight: directActiveRight
                 },
                 carryForward: {
-                    left: user.leftCarryBV,
-                    right: user.rightCarryBV
+                    left: (user.leftCarryCount || 0) * avgBVPerMember,
+                    right: (user.rightCarryCount || 0) * avgBVPerMember
                 }
             }
         });

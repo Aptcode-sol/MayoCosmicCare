@@ -107,7 +107,11 @@ router.get('/me', authenticate, async (req, res) => {
                 leftCarryBV: true,
                 rightCarryBV: true,
                 leftCarryCount: true,
+                rightCarryBV: true,
+                leftCarryCount: true,
                 rightCarryCount: true,
+                rank: true,
+                totalPairs: true,
                 // Get immediate children to find left/right child
                 children: {
                     select: { id: true, position: true }

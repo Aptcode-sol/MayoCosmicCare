@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import DashboardLayout from '@/components/DashboardLayout'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import RankProgress from '@/components/RankProgress'
 
 interface User {
     id: string
@@ -24,6 +25,8 @@ interface User {
     rightMemberCount: number
     leftCarryCount: number
     rightCarryCount: number
+    rank?: string
+    totalPairs?: number
 }
 
 interface Transaction {
@@ -115,70 +118,78 @@ export default function Dashboard() {
                     </div>
 
                     <div className="container mx-auto px-6 py-10">
-                        {/* Stats Grid */}
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                            <AnimateOnScroll animation="fade-up" delay={0}>
-                                <Card>
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center justify-between mb-4">
+                        {/* Full-width Rank Progress */}
+                        <AnimateOnScroll animation="fade-up" className="mb-10">
+                            <RankProgress
+                                currentRank={user?.rank || 'Associate'}
+                                totalPairs={user?.totalPairs || 0}
+                            />
+                        </AnimateOnScroll>
+
+                        {/* Stats Grid - 4 equal columns */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                            <AnimateOnScroll animation="fade-up" delay={100} className="h-full">
+                                <Card className="h-full">
+                                    <CardContent className="p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet Balance</span>
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-3xl font-semibold text-gray-900">₹{wallet?.balance?.toLocaleString() || 0}</div>
+                                        <div className="text-2xl font-bold text-gray-900">₹{wallet?.balance?.toLocaleString() || 0}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>
 
-                            <AnimateOnScroll animation="fade-up" delay={100}>
-                                <Card>
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center justify-between mb-4">
+                            <AnimateOnScroll animation="fade-up" delay={150} className="h-full">
+                                <Card className="h-full">
+                                    <CardContent className="p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Team</span>
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-3xl font-semibold text-gray-900">{totalMembers}</div>
+                                        <div className="text-2xl font-bold text-gray-900">{totalMembers}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>
 
-                            <AnimateOnScroll animation="fade-up" delay={200}>
-                                <Card>
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center justify-between mb-4">
+                            <AnimateOnScroll animation="fade-up" delay={200} className="h-full">
+                                <Card className="h-full">
+                                    <CardContent className="p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Left Leg</span>
-                                            <div className="w-8 h-8 bg-blue-50/50 rounded-full flex items-center justify-center">
+                                            <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center">
                                                 <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11l5-5m0 0l5 5m-5-5v12" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-3xl font-semibold text-gray-900">{leftMembers}</div>
-                                        <p className="text-xs text-gray-500 mt-2">Carry Forward: {user?.leftCarryCount || 0}</p>
+                                        <div className="text-2xl font-bold text-gray-900">{leftMembers}</div>
+                                        <div className="text-xs text-gray-400 mt-1">Carry: {user?.leftCarryCount || 0}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>
 
-                            <AnimateOnScroll animation="fade-up" delay={300}>
-                                <Card>
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center justify-between mb-4">
+                            <AnimateOnScroll animation="fade-up" delay={250} className="h-full">
+                                <Card className="h-full">
+                                    <CardContent className="p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Right Leg</span>
-                                            <div className="w-8 h-8 bg-purple-50/50 rounded-full flex items-center justify-center">
+                                            <div className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center">
                                                 <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-3xl font-semibold text-gray-900">{rightMembers}</div>
-                                        <p className="text-xs text-gray-500 mt-2">Carry Forward: {user?.rightCarryCount || 0}</p>
+                                        <div className="text-2xl font-bold text-gray-900">{rightMembers}</div>
+                                        <div className="text-xs text-gray-400 mt-1">Carry: {user?.rightCarryCount || 0}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>

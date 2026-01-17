@@ -162,6 +162,61 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
             } else { throw e; }
         }
 
+        // --- Rank Update Logic ---
+        // Increment total pairs (User.totalPairs doesn't exist on 'user' object from findUnique unless we re-fetch or optimistically update)
+        // We do an atomic increment to be safe and also check for rank upgrade
+
+        // 1. Calculate new total pairs
+        const currentTotalPairs = (user.totalPairs || 0);
+        const newTotalPairs = currentTotalPairs + matchesToPay;
+
+        // 2. Determine new rank
+        let newRank = "Rookie";
+        if (newTotalPairs >= 50000) newRank = "National Director";
+        else if (newTotalPairs >= 20000) newRank = "Director";
+        else if (newTotalPairs >= 10000) newRank = "Regional Manager";
+        else if (newTotalPairs >= 5000) newRank = "Senior Manager";
+        else if (newTotalPairs >= 1000) newRank = "Manager";
+        else if (newTotalPairs >= 300) newRank = "Assistant Manager";
+        else if (newTotalPairs >= 150) newRank = "Senior Team Leader";
+        else if (newTotalPairs >= 100) newRank = "Team Leader";
+        else if (newTotalPairs >= 50) newRank = "Senior Associate";
+        else if (newTotalPairs >= 15) newRank = "Associate Executive";
+        else newRank = "Rookie";
+
+
+        // 3. Update User with new totalPairs and Rank (if changed)
+        // Note: We already updated user counts above, so we can chain another update or merge them if performance is critical
+        // Merging into the previous update call would be better but requires logic shift. Ideally we do one update.
+        // For now, let's do a separate update to keep logic clean, or append to the previous one.
+        // Let's do a meaningful update only if needed.
+
+        // Actually, we can just perform the update. Since we are in a transaction, it's fine.
+        // But wait, we already did `tx.user.update` for member counts. Let's optimize by adding this logic BEFORE that update and doing it in ONE go?
+        // No, `matchesToPay` is calculated after. 
+        // Let's just do a second update for now to be safe and simple.
+
+        const updateData = { totalPairs: { increment: matchesToPay } };
+        // Only update rank if it's "higher"? The logic implies simple threshold check is sufficient assuming pairs only go up.
+        if (newRank !== user.rank) {
+            updateData.rank = newRank;
+            // Create RankChange record for admin reward tracking
+            await tx.rankChange.create({
+                data: {
+                    userId,
+                    fromRank: user.rank || 'None',
+                    toRank: newRank,
+                    pairsAtChange: newTotalPairs
+                }
+            });
+            console.log(`[RANK UPDATE] User ${userId} promoted from ${user.rank} to ${newRank} (${newTotalPairs} pairs)`);
+        }
+
+        await tx.user.update({
+            where: { id: userId },
+            data: updateData
+        });
+
         try { const { broadcastPayout } = require('../routes/sse'); broadcastPayout(payout).catch?.(() => { }); } catch (e) { }
 
         return payout;

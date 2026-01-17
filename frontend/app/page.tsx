@@ -35,7 +35,7 @@ export default function Home() {
                 </AnimateOnScroll>
             </section>
 
-            {/* Bio Energy Mattress Product Section */}
+            {/* Bio Magnetic Mattress Product Section */}
             <section className="py-24 px-6 bg-gradient-to-b from-emerald-50 to-white">
                 <div className="max-w-7xl mx-auto">
                     <AnimateOnScroll animation="fade-up">
@@ -45,10 +45,10 @@ export default function Home() {
                                 <span className="text-sm font-medium text-emerald-700">Featured Product</span>
                             </div>
                             <h2 className="text-4xl lg:text-6xl font-light text-gray-900 mb-6 tracking-tight">
-                                Bio Energy <span className="font-semibold text-emerald-600">Mattress</span>
+                                Bio Magnetic <span className="font-semibold text-emerald-600">Mattress</span>
                             </h2>
                             <p className="text-xl text-gray-500 max-w-3xl mx-auto leading-relaxed">
-                                World&apos;s most advanced natural rare earth bio energy technology for improved blood circulation and oxygen levels
+                                World&apos;s most advanced natural rare earth bio magnetic technology for improved blood circulation and oxygen levels
                             </p>
                         </div>
                     </AnimateOnScroll>

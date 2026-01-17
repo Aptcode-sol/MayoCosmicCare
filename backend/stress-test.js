@@ -170,10 +170,22 @@ async function runStressTest() {
         const adminToken = await loginAdmin();
         const admin = await getAdminUser(adminToken);
 
+        // Step 1.5: Fetch available product
+        console.log('📦 Fetching product details...');
+        const products = await httpRequest('/public/products', 'GET', null, adminToken);
+        const product = products.products ? products.products[0] : products[0];
+
+        if (!product) {
+            throw new Error('No products found in database. Run seed script first.');
+        }
+
+        const dynamicProductId = product.id;
+        console.log(`✅ Using Product: ${product.name} (ID: ${dynamicProductId}, Stock: ${product.stock})`);
+
         // Step 2: Admin makes first purchase (to enable referrals)
         console.log('\n📦 Admin making initial purchase to enable referrals...');
         try {
-            await purchaseProduct(adminToken, PRODUCT_ID, 'admin');
+            await purchaseProduct(adminToken, dynamicProductId, 'admin');
         } catch (e) {
             console.log('ℹ️ Admin may have already purchased (continuing...)');
         }
@@ -183,74 +195,87 @@ async function runStressTest() {
         console.log('   Creating 30 users on LEFT side');
         console.log('═══════════════════════════════════════════════════\n');
 
-        let leftSponsor = admin.id;
-        for (let i = 1; i <= 30; i++) {
-            const username = `left_user_${i}`;
-            const email = `left${i}@test.com`;
-            const password = 'Test@123';
+        // Step 3: Create 'sanket' user (Root of the tree)
+        console.log('\n═══════════════════════════════════════════════════');
+        console.log('   Creating Root User: sanket');
+        console.log('═══════════════════════════════════════════════════\n');
 
+        let sanketUser;
+        try {
+            sanketUser = await registerUser('sanket', 'sanket@gmail.com', '9999999999', 'Sanket@123', admin.id, 'left');
+            await delay(100);
+            const token = await loginUser('sanket@gmail.com', 'Sanket@123');
+            await purchaseProduct(token, dynamicProductId, 'sanket');
+            sanketUser.token = token;
+            createdUsers.push(sanketUser);
+        } catch (e) {
+            console.log('⚠️ Sanket user might already exist, trying to login...');
             try {
-                // Register user
-                const user = await registerUser(username, email, `900000000${i}`, password, leftSponsor, 'left');
-
-                // Small delay to avoid overwhelming
-                await delay(100);
-
-                // Login the new user
-                const token = await loginUser(email, password);
-
-                // Make purchase
-                await purchaseProduct(token, PRODUCT_ID, username);
-
-                // Store for later reference
-                createdUsers.push({ ...user, token, position: 'LEFT' });
-
-                // Next user's sponsor is current user (chain structure)
-                leftSponsor = user.id;
-
-                // Small delay between users
-                await delay(200);
-
-            } catch (error) {
-                console.error(`⚠️ Continuing despite error for ${username}`);
+                const token = await loginUser('sanket@gmail.com', 'Sanket@123');
+                // We need the ID, so fetch me
+                const me = await httpRequest('/auth/me', 'GET', null, token);
+                sanketUser = me.user || me;
+                sanketUser.token = token;
+                console.log(`✅ Loaded existing sanket user (ID: ${sanketUser.id})`);
+                await purchaseProduct(token, dynamicProductId, 'sanket').catch(() => { });
+            } catch (err) {
+                throw new Error('Could not create or login sanket user: ' + err.message);
             }
         }
 
-        // Step 4: Create 30 users on RIGHT side
+        // Step 4: Generate 60 users in a binary tree structure (30 left sub-tree, 30 right sub-tree)
+        // BFS Queue approach to ensure balanced filling
         console.log('\n═══════════════════════════════════════════════════');
-        console.log('   Creating 30 users on RIGHT side');
+        console.log('   Generating Binary Tree (60 Users)');
         console.log('═══════════════════════════════════════════════════\n');
 
-        let rightSponsor = admin.id;
-        for (let i = 1; i <= 30; i++) {
-            const username = `right_user_${i}`;
-            const email = `right${i}@test.com`;
-            const password = 'Test@123';
+        const queue = [sanketUser]; // Queue of users who need children
+        let usersCreatedCount = 0;
+        const TOTAl_USERS_TO_CREATE = 200; // 100 left side + 100 right side
 
-            try {
-                // Register user
-                const user = await registerUser(username, email, `800000000${i}`, password, rightSponsor, 'right');
+        while (usersCreatedCount < TOTAl_USERS_TO_CREATE && queue.length > 0) {
+            const parent = queue.shift();
 
-                // Small delay to avoid overwhelming
-                await delay(100);
+            // Try to add Left Child
+            if (usersCreatedCount < TOTAl_USERS_TO_CREATE) {
+                usersCreatedCount++;
+                const username = `user_${usersCreatedCount}`;
+                const email = `user${usersCreatedCount}@test.com`;
+                const password = 'Test@123';
+                const phone = `80000000${usersCreatedCount.toString().padStart(2, '0')}`;
 
-                // Login the new user
-                const token = await loginUser(email, password);
+                try {
+                    const user = await registerUser(username, email, phone, password, parent.id, 'left');
+                    await delay(50); // Short delay
+                    const token = await loginUser(email, password);
+                    await purchaseProduct(token, dynamicProductId, username);
 
-                // Make purchase
-                await purchaseProduct(token, PRODUCT_ID, username);
+                    user.token = token;
+                    queue.push(user); // Add to queue to become a parent later
+                } catch (err) {
+                    console.error(`⚠️ Failed to add left child for ${parent.username}`);
+                }
+            }
 
-                // Store for later reference
-                createdUsers.push({ ...user, token, position: 'RIGHT' });
+            // Try to add Right Child
+            if (usersCreatedCount < TOTAl_USERS_TO_CREATE) {
+                usersCreatedCount++;
+                const username = `user_${usersCreatedCount}`;
+                const email = `user${usersCreatedCount}@test.com`;
+                const password = 'Test@123';
+                const phone = `90000000${usersCreatedCount.toString().padStart(2, '0')}`;
 
-                // Next user's sponsor is current user (chain structure)
-                rightSponsor = user.id;
+                try {
+                    const user = await registerUser(username, email, phone, password, parent.id, 'right');
+                    await delay(50);
+                    const token = await loginUser(email, password);
+                    await purchaseProduct(token, dynamicProductId, username);
 
-                // Small delay between users
-                await delay(200);
-
-            } catch (error) {
-                console.error(`⚠️ Continuing despite error for ${username}`);
+                    user.token = token;
+                    queue.push(user);
+                } catch (err) {
+                    console.error(`⚠️ Failed to add right child for ${parent.username}`);
+                }
             }
         }
 

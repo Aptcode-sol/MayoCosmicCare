@@ -63,6 +63,7 @@ async function register({ username, email, phone, password, sponsorId, leg }) {
                 password: hashed,
                 sponsorId: resolvedSponsorId || null,
                 emailVerifyToken,
+                rank: 'Rookie', // Explicitly set to override stale default
                 role: isFirstUser ? 'ADMIN' : 'USER'
             }
         });

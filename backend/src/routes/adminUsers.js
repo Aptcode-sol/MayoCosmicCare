@@ -166,4 +166,21 @@ router.get('/withdrawals', authenticate, requireAdmin, async (req, res) => {
     }
 });
 
+// Get rank distribution statistics
+router.get('/stats/ranks', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const stats = await prisma.user.groupBy({
+            by: ['rank'],
+            _count: { rank: true }
+        });
+
+        // Convert to array of { rank: 'Manager', count: 10 }
+        const formatted = stats.map(s => ({ rank: s.rank, count: s._count.rank }));
+        res.json({ ok: true, stats: formatted });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch rank stats' });
+    }
+});
+
 module.exports = router;

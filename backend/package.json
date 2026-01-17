@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "main": "src/index.js",
     "monitor": "node src/monitor.js",
     "prisma": "prisma",
     "placement-test": "node placement_test.js",

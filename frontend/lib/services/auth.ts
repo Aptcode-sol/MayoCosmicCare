@@ -36,3 +36,13 @@ export async function resetPassword(token: string, newPassword: string) {
     const res = await api.post('/api/auth/reset-password', { token, newPassword })
     return res.data
 }
+
+export async function sendOtp(email: string) {
+    const res = await api.post('/api/auth/send-otp', { email })
+    return res.data
+}
+
+export async function verifyOtp(email: string, otp: string) {
+    const res = await api.post('/api/auth/verify-otp', { email, otp })
+    return res.data
+}

@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { placeNewUser } = require('./placementService');
+const { generateOtp, storeOtp, verifyOtp, peekOtp } = require('./otpService');
+const { sendOtpEmail } = require('./emailService');
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const crypto = require('crypto');
@@ -15,8 +18,18 @@ function genRefreshToken() {
     return crypto.randomBytes(48).toString('hex');
 }
 
-async function register({ username, email, phone, password, sponsorId, leg }) {
+async function register({ username, email, phone, password, sponsorId, leg, otp }) {
     if (!username || !email || !password) throw new Error('username/email/password required');
+
+    // OTP Verification
+    if (process.env.NODE_ENV !== 'test') { // Skip OTP in test environment if needed, or strictly enforce
+        if (!otp) {
+            throw new Error('OTP is required');
+        }
+        if (!verifyOtp(email, otp)) {
+            throw new Error('Invalid or expired OTP');
+        }
+    }
 
     // Check if this is the first user (admin)
     const userCount = await prisma.user.count();
@@ -63,8 +76,10 @@ async function register({ username, email, phone, password, sponsorId, leg }) {
                 password: hashed,
                 sponsorId: resolvedSponsorId || null,
                 emailVerifyToken,
-                rank: 'Rookie', // Explicitly set to override stale default
-                role: isFirstUser ? 'ADMIN' : 'USER'
+                rank: 'Rookie',
+                role: isFirstUser ? 'ADMIN' : 'USER',
+                isEmailVerified: true, // Auto-verify since OTP was checked
+                emailVerifyToken: null
             }
         });
     } catch (e) {
@@ -204,4 +219,21 @@ async function resetPassword(token, newPassword) {
     return { message: 'Password reset successfully' };
 }
 
-module.exports = { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword };
+async function sendOtp(email) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) throw new Error('Email already registered');
+
+    const otp = generateOtp();
+    storeOtp(email, otp);
+    await sendOtpEmail(email, otp);
+    return { message: 'OTP sent successfully' };
+}
+
+async function verifyOtpCode(email, otp) {
+    const valid = peekOtp(email, otp);
+    if (!valid) throw new Error('Invalid or expired OTP');
+    return { message: 'OTP verified' };
+}
+
+module.exports = { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword, sendOtp, verifyOtpCode };
+

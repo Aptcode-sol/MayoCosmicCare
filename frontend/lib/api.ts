@@ -33,7 +33,9 @@ export function parseApiError(err: unknown) {
         return { message: String(message), status, data, code: err.code ?? null }
     }
 
-    const message = err instanceof Error ? err.message : String(err)
+    const message = err instanceof Error ? err.message :
+        (typeof err === 'object' && err !== null && 'message' in err) ? String((err as any).message) :
+            String(err)
     return { message, status: null, data: null, code: null }
 }
 

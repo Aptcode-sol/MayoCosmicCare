@@ -1,10 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword } = require('../services/authService');
+const { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword, sendOtp, verifyOtpCode } = require('../services/authService');
 const { authenticate } = require('../middleware/authMiddleware');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
+
+router.post('/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        console.log('[SEND-OTP] Request for:', email);
+        if (!email) return res.status(400).json({ ok: false, error: 'Email is required' });
+
+        const result = await sendOtp(email);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        console.error('[SEND-OTP] Error:', err);
+        res.status(400).json({ ok: false, error: err.message || 'Failed to send OTP' });
+    }
+});
+
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ ok: false, error: 'Email and OTP required' });
+
+        // This function inside authService should use peekOtp
+        const result = await verifyOtpCode(email, otp);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
 
 router.post('/register', async (req, res) => {
     try {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { register } from '../../lib/services/auth'
+import { register, sendOtp, verifyOtp } from '../../lib/services/auth'
 import { parseApiError } from '../../lib/api'
 import toast from 'react-hot-toast'
 import useDebounce from '@/lib/useDebounce'
@@ -17,13 +17,25 @@ function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelH
 
 export default function Register() {
     const router = useRouter()
-    const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '' })
+    const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '', otp: '' })
+    const [otpSent, setOtpSent] = useState(false)
+    const [otpTimer, setOtpTimer] = useState(0)
+    const [isOtpVerified, setIsOtpVerified] = useState(false)
+
     const [leg, setLeg] = useState<'left' | 'right' | null>(null)
     const [loading, setLoading] = useState(false)
     const [sponsorQuery, setSponsorQuery] = useState('')
     const [sponsorSuggestions, setSponsorSuggestions] = useState<Array<{ id: string, username: string, email: string }>>([])
     const [selectedSponsor, setSelectedSponsor] = useState<{ id: string, username: string, email: string } | null>(null)
     const debouncedSponsor = useDebounce(sponsorQuery, 300)
+
+    useEffect(() => {
+        if (otpTimer > 0) {
+            const timer = setTimeout(() => setOtpTimer(t => t - 1), 1000)
+            return () => clearTimeout(timer)
+        }
+    }, [otpTimer])
+
 
     useEffect(() => {
         const tryPrefill = async () => {
@@ -105,7 +117,13 @@ export default function Register() {
                 sponsorId: selectedSponsor?.id || form.sponsorId,
                 leg: leg || undefined
             }
+
+            if (!isOtpVerified) {
+                toast.error('Please verify OTP before registering')
+                return
+            }
             await register(payload)
+
             toast.success('Registration successful! Please login.')
             router.push('/login')
         } catch (error: unknown) {
@@ -113,6 +131,43 @@ export default function Register() {
             toast.error(String(message || 'Registration failed'))
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleSendOtp = async () => {
+        if (!form.email) {
+            toast.error('Please enter an email address')
+            return
+        }
+        if (!/\S+@\S+\.\S+/.test(form.email)) {
+            toast.error('Please enter a valid email address')
+            return
+        }
+
+        try {
+            await sendOtp(form.email)
+            setOtpSent(true)
+            setOtpTimer(60) // 1 minute cooldown
+            setIsOtpVerified(false)
+            toast.success('OTP sent to your email')
+        } catch (error: unknown) {
+            const { message } = parseApiError(error)
+            toast.error(message || 'Failed to send OTP')
+        }
+    }
+
+    const handleVerifyOtp = async () => {
+        if (!form.otp || form.otp.length < 6) {
+            toast.error('Please enter a valid 6-digit OTP')
+            return
+        }
+        try {
+            await verifyOtp(form.email, form.otp)
+            setIsOtpVerified(true)
+            toast.success('OTP verified successfully')
+        } catch (error: unknown) {
+            const { message } = parseApiError(error)
+            toast.error(message || 'Invalid OTP')
         }
     }
 
@@ -150,15 +205,65 @@ export default function Register() {
                             </div>
                             <div className="space-y-2">
                                 <LocalLabel htmlFor="email">Email</LocalLabel>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={form.email}
-                                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                    required
-                                />
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={form.email}
+                                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                        required
+                                        disabled={otpSent}
+                                    />
+                                    {otpSent ? (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setOtpSent(false)}
+                                            className="whitespace-nowrap"
+                                        >
+                                            Change
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            onClick={handleSendOtp}
+                                            disabled={otpTimer > 0 || !form.email}
+                                            className="whitespace-nowrap"
+                                        >
+                                            {otpTimer > 0 ? `${otpTimer}s` : 'Send OTP'}
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
+
+                        {otpSent && (
+                            <div className="space-y-2">
+                                <LocalLabel htmlFor="otp">Enter OTP</LocalLabel>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="otp"
+                                        type="text"
+                                        placeholder="Enter 6-digit code"
+                                        value={form.otp}
+                                        onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                                        required
+                                        maxLength={6}
+                                        disabled={isOtpVerified}
+                                        className={isOtpVerified ? "border-green-500 bg-green-50" : ""}
+                                    />
+                                    {isOtpVerified ? (
+                                        <Button type="button" variant="outline" className="border-green-500 text-green-600 bg-green-50" disabled>
+                                            Verified
+                                        </Button>
+                                    ) : (
+                                        <Button type="button" onClick={handleVerifyOtp}>
+                                            Verify
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <LocalLabel htmlFor="phone">Phone</LocalLabel>
@@ -256,8 +361,8 @@ export default function Register() {
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? 'Creating Account...' : 'Create Account'}
                         </Button>
-                    </form>
-                </CardContent>
+                    </form >
+                </CardContent >
                 <CardFooter className="flex justify-center">
                     <p className="text-sm text-gray-500">
                         Already have an account?{' '}
@@ -266,7 +371,7 @@ export default function Register() {
                         </Link>
                     </p>
                 </CardFooter>
-            </Card>
-        </div>
+            </Card >
+        </div >
     )
 }

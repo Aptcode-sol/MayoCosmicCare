@@ -41,3 +41,13 @@ export async function updateProfile(payload: Record<string, unknown>) {
     const res = await api.post('/api/auth/update-profile', payload)
     return res.data
 }
+
+export async function sendOtp(email: string) {
+    const res = await api.post('/api/auth/send-otp', { email })
+    return res.data
+}
+
+export async function verifyOtp(email: string, otp: string) {
+    const res = await api.post('/api/auth/verify-otp', { email, otp })
+    return res.data
+}

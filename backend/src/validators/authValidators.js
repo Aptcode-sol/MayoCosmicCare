@@ -13,4 +13,12 @@ const loginSchema = z.object({
     password: z.string().min(6)
 });
 
-module.exports = { registerSchema, loginSchema };
+const updateProfileSchema = z.object({
+    username: z.string().min(3).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().optional(), // Adding phone as it is in the register function
+    password: z.string().min(6).optional(), // New password
+    currentPassword: z.string().optional() // Required if changing sensitive info
+});
+
+module.exports = { registerSchema, loginSchema, updateProfileSchema };

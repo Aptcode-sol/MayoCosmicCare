@@ -204,4 +204,42 @@ async function resetPassword(token, newPassword) {
     return { message: 'Password reset successfully' };
 }
 
-module.exports = { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword };
+async function updateProfile(userId, { username, email, phone, password, currentPassword }) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+
+    const updateData = {};
+    if (username && username !== user.username) updateData.username = username;
+    if (email && email !== user.email) updateData.email = email;
+    if (phone && phone !== user.phone) updateData.phone = phone;
+
+    // Verify current password if provided or if changing sensitive data (like password)
+    if (password) {
+        if (!currentPassword) throw new Error('Current password required to set new password');
+        const valid = await bcrypt.compare(currentPassword, user.password);
+        if (!valid) throw new Error('Incorrect current password');
+        updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    if (Object.keys(updateData).length === 0) return { message: 'No changes made' };
+
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: updateData,
+            select: { id: true, username: true, email: true, phone: true }
+        });
+        return { message: 'Profile updated successfully', user: updatedUser };
+    } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+            const target = (e.meta && e.meta.target) || [];
+            const fields = Array.isArray(target) ? target : [target];
+            if (fields.includes('email')) throw new Error('Email already registered');
+            if (fields.includes('username')) throw new Error('Username already taken');
+            throw new Error('Unique constraint failed');
+        }
+        throw e;
+    }
+}
+
+module.exports = { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword, updateProfile };

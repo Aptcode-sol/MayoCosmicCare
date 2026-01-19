@@ -36,3 +36,8 @@ export async function resetPassword(token: string, newPassword: string) {
     const res = await api.post('/api/auth/reset-password', { token, newPassword })
     return res.data
 }
+
+export async function updateProfile(payload: Record<string, unknown>) {
+    const res = await api.post('/api/auth/update-profile', payload)
+    return res.data
+}

@@ -187,4 +187,27 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+router.post('/update-profile', authenticate, async (req, res) => {
+    try {
+        const { updateProfileSchema } = require('../validators/authValidators');
+        const { updateProfile } = require('../services/authService');
+
+        console.log('[PROFILE_UPDATE] Request:', req.body);
+        const parsed = updateProfileSchema.parse(req.body);
+        const result = await updateProfile(req.user.id, parsed);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        console.error('[PROFILE_UPDATE] Error:', err);
+        if (err.name === 'ZodError') {
+            const errors = {};
+            for (const e of err.errors) {
+                errors[e.path[0]] = e.message;
+            }
+            res.status(400).json({ ok: false, errors });
+            return;
+        }
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
+
 module.exports = router;

@@ -11,6 +11,7 @@ export default function Dashboard() {
     const [users, setUsers] = useState([]);
     const [rankStats, setRankStats] = useState([]);
     const [positions, setPositions] = useState([]);
+    const [withdrawals, setWithdrawals] = useState([]);
     const [positionFilter, setPositionFilter] = useState('all');
     const [rewardedFilter, setRewardedFilter] = useState('all');
     const [loading, setLoading] = useState(true);
@@ -46,6 +47,9 @@ export default function Dashboard() {
                 if (rewardedFilter !== 'all') params.append('rewarded', rewardedFilter);
                 const res = await api.get(`/api/admin/positions?${params.toString()}`);
                 setPositions(res.data.rankChanges || []);
+            } else if (tab === 'withdrawals') {
+                const res = await api.get('/api/payouts/admin/list');
+                setWithdrawals(res.data.withdrawals || []);
             }
         } catch (err) {
             toast.error('Failed to fetch data');
@@ -84,6 +88,20 @@ export default function Dashboard() {
             fetchData();
         } catch (err) {
             toast.error('Failed to update user');
+        }
+    };
+
+    const approveWithdrawal = async (id) => {
+        if (!confirm('Approve payout? Funds will be transferred immediately via Cashfree.')) return;
+        try {
+            toast.loading('Processing payout...');
+            await api.post(`/api/payouts/approve/${id}`);
+            toast.dismiss();
+            toast.success('Payout approved & initiated');
+            fetchData();
+        } catch (err) {
+            toast.dismiss();
+            toast.error(err.response?.data?.error || 'Approval failed');
         }
     };
 
@@ -397,14 +415,77 @@ export default function Dashboard() {
 
                         {/* Withdrawals Tab */}
                         {tab === 'withdrawals' && (
-                            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                            <div className="space-y-6">
+                                <h2 className="text-lg font-medium text-gray-900">Withdrawal Requests</h2>
+                                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left">User</th>
+                                                <th className="px-6 py-4 text-left">Amount</th>
+                                                <th className="px-6 py-4 text-left">Bank Details</th>
+                                                <th className="px-6 py-4 text-left">Date</th>
+                                                <th className="px-6 py-4 text-left">Status</th>
+                                                <th className="px-6 py-4 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {withdrawals.length > 0 ? withdrawals.map((w) => {
+                                                const details = w.bankDetails ? JSON.parse(w.bankDetails) : {};
+                                                return (
+                                                    <tr key={w.id} className="hover:bg-gray-50/50">
+                                                        <td className="px-6 py-4">
+                                                            <div className="text-gray-900 font-medium">{w.user?.username}</div>
+                                                            <div className="text-gray-500 text-xs">{w.user?.phone}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 font-bold text-gray-900">₹{w.amount}</td>
+                                                        <td className="px-6 py-4 text-xs text-gray-600">
+                                                            <div>{details.name}</div>
+                                                            {details.vpa ? (
+                                                                <div className="font-mono text-indigo-600">{details.vpa} (UPI)</div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="font-mono">{details.accountInfo?.bankAccount}</div>
+                                                                    <div className="font-mono">{details.accountInfo?.ifsc}</div>
+                                                                </>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-gray-500 text-xs">
+                                                            {new Date(w.createdAt).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${w.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                                w.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {w.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            {w.status === 'PENDING' && (
+                                                                <button
+                                                                    onClick={() => approveWithdrawal(w.id)}
+                                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium"
+                                                                >
+                                                                    Approve
+                                                                </button>
+                                                            )}
+                                                            {w.status === 'APPROVED' && (
+                                                                <span className="text-xs text-green-600 font-medium">Processed</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }) : (
+                                                <tr>
+                                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                                        No withdrawal requests found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900">Withdrawals Module</h3>
-                                <p className="text-gray-500 mt-2">This feature is under development</p>
                             </div>
                         )}
                     </>

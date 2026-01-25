@@ -153,6 +153,9 @@ router.get('/me', authenticate, async (req, res) => {
                 // Get immediate children to find left/right child
                 children: {
                     select: { id: true, position: true }
+                },
+                wallet: {
+                    select: { balance: true }
                 }
             }
         })

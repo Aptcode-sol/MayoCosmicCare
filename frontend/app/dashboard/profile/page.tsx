@@ -22,19 +22,28 @@ export default function ProfilePage() {
     const [kycStatus, setKycStatus] = useState<string>('NOT_STARTED')
     const [kycDocs, setKycDocs] = useState({ pan: '', aadhaar: '' })
     const [checkingKyc, setCheckingKyc] = useState(false)
-
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
 
+    const [walletBalance, setWalletBalance] = useState(0)
+    const [isWithdrawing, setIsWithdrawing] = useState(false)
+    const [withdrawAmount, setWithdrawAmount] = useState('')
+    const [paymentMode, setPaymentMode] = useState<'BANK' | 'UPI'>('BANK')
+    const [vpa, setVpa] = useState('')
+    const [bankDetails, setBankDetails] = useState({
+        accountNumber: '',
+        ifsc: '',
+        holderName: ''
+    })
+
+    // ... existing loadUser ...
     useEffect(() => {
         loadUser()
     }, [])
 
-    // Check KYC status on load if in progress, or periodically? 
-    // For now, let's check on load if status says IN_PROGRESS just in case they came back from DigiLocker
     useEffect(() => {
         if (!loading && kycStatus === 'IN_PROGRESS') {
-            handleCheckKycStatus(true) // silent check
+            handleCheckKycStatus(true)
         }
     }, [loading, kycStatus])
 
@@ -53,6 +62,15 @@ export default function ProfilePage() {
                     pan: data.user.pan || '',
                     aadhaar: data.user.aadhaar || ''
                 })
+                // Check wallet
+                if (data.user.wallet) {
+                    setWalletBalance(data.user.wallet.balance)
+                } else {
+                    try {
+                        const dash = await api.get('/api/dashboard/stats')
+                        if (dash.data?.walletBalance) setWalletBalance(dash.data.walletBalance)
+                    } catch (e) { }
+                }
             }
         } catch (err: any) {
             console.error('Failed to load user', err)
@@ -60,6 +78,67 @@ export default function ProfilePage() {
             setLoading(false)
         }
     }
+
+    const handleWithdraw = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const amount = Number(withdrawAmount)
+        if (amount < 1000) {
+            toast.error('Minimum withdrawal is ₹1000')
+            return
+        }
+        if (amount > walletBalance) {
+            toast.error('Insufficient balance')
+            return
+        }
+
+        if (paymentMode === 'UPI') {
+            if (!vpa || !vpa.includes('@')) {
+                toast.error('Enter valid UPI ID')
+                return
+            }
+            if (!bankDetails.holderName) {
+                // require name for UPI too usually
+                toast.error('Enter Name')
+                return
+            }
+        } else {
+            if (!bankDetails.accountNumber || !bankDetails.ifsc || !bankDetails.holderName) {
+                toast.error('Please fill all bank details')
+                return
+            }
+        }
+
+        setIsWithdrawing(true)
+        try {
+            const payload = {
+                amount,
+                bankDetails: {
+                    name: bankDetails.holderName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    ...(paymentMode === 'UPI' ? { vpa } : {
+                        accountInfo: {
+                            bankAccount: bankDetails.accountNumber,
+                            ifsc: bankDetails.ifsc
+                        }
+                    })
+                }
+            }
+            await api.post('/api/payouts/request', payload)
+            toast.success('Withdrawal requested successfully')
+            setWithdrawAmount('')
+            setWalletBalance(prev => prev - amount) // Optimistic update
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Withdrawal failed')
+        } finally {
+            setIsWithdrawing(false)
+        }
+    }
+
+    // ... JSX ...
+
+
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -377,6 +456,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </div>
-        </DashboardLayout>
+        </DashboardLayout >
     )
 }

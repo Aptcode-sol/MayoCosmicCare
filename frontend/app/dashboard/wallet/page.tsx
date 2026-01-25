@@ -4,8 +4,12 @@ import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import { me } from '@/lib/services/auth'
 import { getWallet } from '@/lib/services/users'
-import toast from 'react-hot-toast'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { Input } from "@/components/ui/Input"
+import { Button } from "@/components/ui/Button"
+import toast from 'react-hot-toast'
+import api from '@/lib/api'
 
 interface Transaction {
     id: string
@@ -15,6 +19,15 @@ interface Transaction {
     detail?: string
 }
 
+interface Withdrawal {
+    id: string
+    amount: number
+    status: string
+    createdAt: string
+    cfStatus?: string
+    cfTransferId?: string
+}
+
 interface WalletData {
     wallet: { balance: number } | null
     transactions: Transaction[]
@@ -22,51 +35,120 @@ interface WalletData {
 
 export default function Wallet() {
     const router = useRouter()
-    const [user, setUser] = useState<{ id?: string; username?: string; email?: string } | null>(null)
+    const [user, setUser] = useState<{ id?: string; username?: string; email?: string; phone?: string } | null>(null)
     const [walletData, setWalletData] = useState<WalletData | null>(null)
+    const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
     const [loading, setLoading] = useState(true)
-    const [showWithdraw, setShowWithdraw] = useState(false)
+
+    // Withdrawal Form State
+    const [isWithdrawing, setIsWithdrawing] = useState(false)
     const [withdrawAmount, setWithdrawAmount] = useState('')
+    const [paymentMode, setPaymentMode] = useState<'BANK' | 'UPI'>('BANK')
+    const [vpa, setVpa] = useState('')
+    const [bankDetails, setBankDetails] = useState({
+        accountNumber: '',
+        ifsc: '',
+        holderName: ''
+    })
+
+    const loadData = async () => {
+        try {
+            const token = localStorage.getItem('accessToken')
+            if (!token) { router.push('/login'); return }
+
+            const userRes = await me()
+            const userData = userRes?.user || userRes
+            setUser(userData)
+
+            if (userData?.id) {
+                const [walletRes, withdrawalsRes] = await Promise.all([
+                    getWallet(userData.id),
+                    api.get('/api/payouts/my-list')
+                ]);
+                setWalletData(walletRes)
+                setWithdrawals(withdrawalsRes.data.withdrawals || [])
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        const load = async () => {
-            try {
-                const token = localStorage.getItem('accessToken')
-                if (!token) { router.push('/login'); return }
-
-                const userRes = await me()
-                const userData = userRes?.user || userRes
-                setUser(userData)
-
-                if (userData?.id) {
-                    const walletRes = await getWallet(userData.id)
-                    setWalletData(walletRes)
-                }
-            } catch (e) {
-                console.error(e)
-            } finally {
-                setLoading(false)
-            }
-        }
-        load()
+        loadData()
     }, [router])
 
-    const balance = walletData?.wallet?.balance || 0
-    const transactions = walletData?.transactions || []
+    const handleWithdraw = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const amount = Number(withdrawAmount)
+        const balance = walletData?.wallet?.balance || 0
 
-    const handleWithdraw = async () => {
-        if (!withdrawAmount || Number(withdrawAmount) <= 0) {
-            toast.error('Please enter a valid amount')
+        if (amount < 1000) {
+            toast.error('Minimum withdrawal is ₹1000')
             return
         }
-        if (Number(withdrawAmount) > balance) {
+        if (amount > balance) {
             toast.error('Insufficient balance')
             return
         }
-        toast.success('Withdrawal request submitted')
-        setShowWithdraw(false)
-        setWithdrawAmount('')
+
+        if (paymentMode === 'UPI') {
+            if (!vpa || !vpa.includes('@')) {
+                toast.error('Enter valid UPI ID')
+                return
+            }
+            if (!bankDetails.holderName) {
+                toast.error('Enter Name')
+                return
+            }
+        } else {
+            if (!bankDetails.accountNumber || !bankDetails.ifsc || !bankDetails.holderName) {
+                toast.error('Please fill all bank details')
+                return
+            }
+        }
+
+        setIsWithdrawing(true)
+        try {
+            const payload = {
+                amount,
+                bankDetails: {
+                    name: bankDetails.holderName,
+                    email: user?.email,
+                    phone: user?.phone,
+                    ...(paymentMode === 'UPI' ? { vpa } : {
+                        accountInfo: {
+                            bankAccount: bankDetails.accountNumber,
+                            ifsc: bankDetails.ifsc
+                        }
+                    })
+                }
+            }
+            await api.post('/api/payouts/request', payload)
+            toast.success('Withdrawal requested successfully')
+            setWithdrawAmount('')
+            loadData() // Reload all data
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Withdrawal failed')
+        } finally {
+            setIsWithdrawing(false)
+        }
     }
+
+    const checkStatus = async (id: string) => {
+        const toastId = toast.loading('Checking status...')
+        try {
+            const res = await api.post(`/api/payouts/status/${id}`)
+            toast.success(`Status updated: ${res.data.status}`, { id: toastId })
+            loadData()
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to check status', { id: toastId })
+        }
+    }
+
+    const balance = walletData?.wallet?.balance || 0
+    const transactions = walletData?.transactions || []
 
     return (
         <DashboardLayout user={user}>
@@ -76,147 +158,203 @@ export default function Wallet() {
                 </div>
             ) : (
                 <>
-                    {/* Page Header */}
+                    {/* Header */}
                     <AnimateOnScroll animation="fade-up">
                         <div className="mb-8">
                             <h1 className="text-3xl font-light text-gray-900 tracking-tight">Wallet</h1>
-                            <p className="text-gray-500 mt-1">Manage your balance and transactions</p>
+                            <p className="text-gray-500 mt-1">Manage balance and withdrawals</p>
                         </div>
                     </AnimateOnScroll>
 
-                    {/* Balance Cards */}
-                    <AnimateOnScroll animation="fade-up" delay={100}>
-                        <div className="grid md:grid-cols-2 gap-6 mb-8">
-                            {/* Available Balance */}
-                            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                            </svg>
-                                        </div>
-                                        <p className="text-sm font-medium text-gray-300 uppercase tracking-wider">Available Balance</p>
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {/* LEFT COLUMN: Balance & Withdraw Form */}
+                        <div className="lg:col-span-1 space-y-6">
+                            <AnimateOnScroll animation="fade-up" delay={100}>
+                                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-xl">
+                                    <p className="text-sm font-medium text-gray-300 uppercase tracking-wider mb-1">Available Balance</p>
+                                    <p className="text-4xl font-light mb-4 text-white">₹{balance.toLocaleString()}</p>
+                                    <div className="text-xs text-gray-400 flex items-center gap-1">
+                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                        Ready for withdrawal
                                     </div>
                                 </div>
-                                <p className="text-5xl font-light mb-2">₹{balance.toLocaleString()}</p>
-                                <p className="text-sm text-gray-400">Ready for withdrawal</p>
-                            </div>
+                            </AnimateOnScroll>
 
-                            {/* Stats Card */}
-                            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Transactions</p>
-                                </div>
-                                <p className="text-5xl font-light text-gray-900 mb-2">{transactions.length}</p>
-                                <p className="text-sm text-gray-500">All time activity</p>
-                            </div>
-                        </div>
-                    </AnimateOnScroll>
-
-                    {/* Actions */}
-                    <AnimateOnScroll animation="fade-up" delay={200}>
-                        <div className="bg-white rounded-2xl p-6 border border-gray-100 mb-8">
-                            <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-                            <div className="flex flex-wrap gap-4">
-                                <button
-                                    onClick={() => setShowWithdraw(true)}
-                                    className="px-6 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                    </svg>
-                                    Request Withdrawal
-                                </button>
-                            </div>
-                        </div>
-                    </AnimateOnScroll>
-
-                    {/* Withdraw Modal */}
-                    {showWithdraw && (
-                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-                                <h3 className="text-xl font-medium text-gray-900 mb-4">Request Withdrawal</h3>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                                    <input
-                                        type="number"
-                                        value={withdrawAmount}
-                                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                                        placeholder="Enter amount"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                    />
-                                    <p className="text-sm text-gray-500 mt-2">Available: ₹{balance.toLocaleString()}</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowWithdraw(false)}
-                                        className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleWithdraw}
-                                        className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition"
-                                    >
-                                        Submit Request
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Transaction History */}
-                    <AnimateOnScroll animation="fade-up" delay={300}>
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                            <div className="p-6 border-b border-gray-100">
-                                <h2 className="text-lg font-medium text-gray-900">Transaction History</h2>
-                            </div>
-
-                            {transactions.length > 0 ? (
-                                <div className="divide-y divide-gray-100">
-                                    {transactions.map((tx) => {
-                                        const isCredit = tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT'
-                                        return (
-                                            <div key={tx.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCredit ? 'bg-emerald-50' : 'bg-red-50'
-                                                        }`}>
-                                                        <svg className={`w-5 h-5 ${isCredit ? 'text-emerald-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCredit ? 'M7 11l5-5m0 0l5 5m-5-5v12' : 'M17 13l-5 5m0 0l-5-5m5 5V6'} />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium text-gray-900">
-                                                            {tx.type.replace(/_/g, ' ')}
-                                                        </p>
-                                                        <p className="text-sm text-gray-500">
-                                                            {new Date(tx.createdAt).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className={`font-medium ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                        {isCredit ? '+' : '-'}₹{Math.abs(tx.amount).toLocaleString()}
-                                                    </p>
-                                                    {tx.detail && <p className="text-xs text-gray-400 max-w-[150px] truncate">{tx.detail}</p>}
-                                                </div>
+                            <AnimateOnScroll animation="fade-up" delay={200}>
+                                <Card className="border-gray-100 shadow-lg">
+                                    <CardHeader className="pb-3 border-b border-gray-50">
+                                        <CardTitle className="text-lg">Request Withdrawal</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-4">
+                                        <form onSubmit={handleWithdraw} className="space-y-4">
+                                            {/* Payment Mode */}
+                                            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1 rounded-lg">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPaymentMode('BANK')}
+                                                    className={`py-2 text-xs font-medium rounded-md transition-all ${paymentMode === 'BANK' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-900'}`}
+                                                >
+                                                    Bank Transfer
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPaymentMode('UPI')}
+                                                    className={`py-2 text-xs font-medium rounded-md transition-all ${paymentMode === 'UPI' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-900'}`}
+                                                >
+                                                    UPI Transfer
+                                                </button>
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <p className="text-gray-500">No transactions yet</p>
-                                </div>
-                            )}
+
+                                            <div className="space-y-3">
+                                                <Input
+                                                    placeholder="Account Holder Name"
+                                                    value={bankDetails.holderName}
+                                                    onChange={e => setBankDetails(p => ({ ...p, holderName: e.target.value }))}
+                                                    required
+                                                    className="bg-transparent"
+                                                />
+                                                {paymentMode === 'BANK' ? (
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <Input
+                                                            placeholder="IFSC Code"
+                                                            value={bankDetails.ifsc}
+                                                            onChange={e => setBankDetails(p => ({ ...p, ifsc: e.target.value.toUpperCase() }))}
+                                                            required
+                                                            className="uppercase bg-transparent"
+                                                        />
+                                                        <Input
+                                                            placeholder="Account No"
+                                                            value={bankDetails.accountNumber}
+                                                            onChange={e => setBankDetails(p => ({ ...p, accountNumber: e.target.value }))}
+                                                            required
+                                                            className="bg-transparent"
+                                                            type="password"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <Input
+                                                        placeholder="UPI ID (e.g. user@okhdfc)"
+                                                        value={vpa}
+                                                        onChange={e => setVpa(e.target.value)}
+                                                        required
+                                                        className="bg-transparent"
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Amount"
+                                                        value={withdrawAmount}
+                                                        onChange={e => setWithdrawAmount(e.target.value)}
+                                                        className="pl-7 bg-transparent"
+                                                        min={1000}
+                                                        required
+                                                    />
+                                                </div>
+                                                <Button type="submit" disabled={isWithdrawing || balance < 1000} className="bg-gray-900 hover:bg-gray-800 text-white">
+                                                    {isWithdrawing ? '...' : 'Withdraw'}
+                                                </Button>
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 text-center">Min ₹1,000. 24-48 hrs processing.</p>
+                                        </form>
+                                    </CardContent>
+                                </Card>
+                            </AnimateOnScroll>
                         </div>
-                    </AnimateOnScroll>
+
+                        {/* RIGHT COLUMN: Withdrawals & Transactions */}
+                        <div className="lg:col-span-2 space-y-6">
+
+                            {/* Withdrawals List */}
+                            <AnimateOnScroll animation="fade-up" delay={300}>
+                                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                        <h2 className="text-lg font-medium text-gray-900">Withdrawals</h2>
+                                        <Button variant="ghost" size="sm" onClick={loadData} className="h-8 text-xs">Refresh</Button>
+                                    </div>
+                                    <div className="divide-y divide-gray-100 max-h-[300px] overflow-y-auto">
+                                        {withdrawals.length > 0 ? withdrawals.map((w) => (
+                                            <div key={w.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50 transition">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-gray-900">₹{w.amount.toLocaleString()}</span>
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${w.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                                                w.status === 'APPROVED' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                                                    w.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                                        'bg-yellow-100 text-yellow-700'
+                                                            }`}>
+                                                            {w.status === 'APPROVED' ? 'PROCESSING' : w.status}
+                                                        </span>
+                                                        {w.cfStatus && (
+                                                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                                                                {w.cfStatus}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-1">{new Date(w.createdAt).toLocaleString()}</p>
+                                                    {w.cfTransferId && <p className="text-[10px] text-gray-400 font-mono mt-0.5">Ref: {w.cfTransferId}</p>}
+                                                </div>
+
+                                                {w.status === 'APPROVED' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="text-xs h-7"
+                                                        onClick={() => checkStatus(w.id)}
+                                                    >
+                                                        Check Status
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )) : (
+                                            <div className="p-8 text-center text-gray-400 text-sm">No withdrawals found.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </AnimateOnScroll>
+
+                            {/* Transaction Ledger */}
+                            <AnimateOnScroll animation="fade-up" delay={400}>
+                                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                                    <div className="p-6 border-b border-gray-100">
+                                        <h2 className="text-lg font-medium text-gray-900">Transaction History</h2>
+                                    </div>
+                                    <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-100">
+                                        {transactions.length > 0 ? transactions.map((tx) => {
+                                            const isCredit = tx.type.includes('BONUS') || tx.type.includes('REFUND') || tx.type === 'ADMIN_CREDIT'
+                                            return (
+                                                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCredit ? 'M7 11l5-5m0 0l5 5m-5-5v12' : 'M17 13l-5 5m0 0l-5-5m5 5V6'} />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">{tx.type.replace(/_/g, ' ')}</p>
+                                                            <p className="text-xs text-gray-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className={`text-sm font-medium ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                            {isCredit ? '+' : '-'}₹{Math.abs(tx.amount).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )
+                                        }) : (
+                                            <div className="p-8 text-center text-gray-400 text-sm">No transactions yet.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </AnimateOnScroll>
+
+                        </div>
+                    </div>
                 </>
             )}
         </DashboardLayout>

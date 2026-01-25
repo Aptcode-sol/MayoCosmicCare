@@ -56,19 +56,25 @@ export default function Register() {
             setSponsorQuery(val)
             setForm(f => ({ ...f, sponsorId: val }))
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/users/search?q=${encodeURIComponent(val)}`)
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/users/search?q=${encodeURIComponent(val)}`)
                 if (!res.ok) return
                 const data = await res.json()
                 const users: Array<{ id: string; username: string; email: string }> = (data.users || [])
                 if (users.length === 1) {
                     const s = users[0]
                     setSelectedSponsor(s)
-                    setForm(f => ({ ...f, sponsorId: s.id }))
+                    setForm(f => ({ ...f, sponsorId: val }))
                 } else if (users.length > 1) {
-                    const exact = users.find(u => u.id === val || u.email === val || u.username === val)
+                    const exact = users.find(u =>
+                        u.id === val ||
+                        u.email === val ||
+                        u.username === val ||
+                        (val.match(/\d$/) && u.username === val.slice(0, -1)) ||
+                        (val.match(/\d$/) && u.id === val.slice(0, -1))
+                    )
                     if (exact) {
                         setSelectedSponsor(exact)
-                        setForm(f => ({ ...f, sponsorId: exact.id }))
+                        setForm(f => ({ ...f, sponsorId: val }))
                     }
                 }
             } catch (err) {
@@ -83,7 +89,7 @@ export default function Register() {
         const run = async () => {
             if (!debouncedSponsor || debouncedSponsor.trim().length === 0) { setSponsorSuggestions([]); return }
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/users/search?q=${encodeURIComponent(debouncedSponsor)}`)
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/users/search?q=${encodeURIComponent(debouncedSponsor)}`)
                 if (!res.ok) return
                 const data = await res.json()
                 if (!mounted) return
@@ -114,7 +120,7 @@ export default function Register() {
         try {
             const payload = {
                 ...form,
-                sponsorId: selectedSponsor?.id || form.sponsorId,
+                sponsorId: form.sponsorId || selectedSponsor?.id,
                 leg: leg || undefined
             }
 
@@ -173,7 +179,21 @@ export default function Register() {
 
     const selectSponsor = (sponsor: { id: string, username: string, email: string }) => {
         setSelectedSponsor(sponsor)
-        setForm({ ...form, sponsorId: sponsor.id })
+
+        // If the user searched for a code (e.g. "john0") and selected "john",
+        // we should keep "john0" as the sponsorId to preserve placement preference.
+        const q = sponsorQuery.trim();
+        const isCode = /^\d$/.test(q.slice(-1));
+        let finalId = sponsor.id;
+
+        if (isCode) {
+            const stripped = q.slice(0, -1);
+            if (stripped === sponsor.username || stripped === sponsor.id || stripped === sponsor.email) {
+                finalId = q;
+            }
+        }
+
+        setForm({ ...form, sponsorId: finalId })
         setSponsorQuery('')
         setSponsorSuggestions([])
     }

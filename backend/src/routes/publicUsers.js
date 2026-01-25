@@ -13,7 +13,12 @@ router.get('/search', async (req, res) => {
                 OR: [
                     { id: q },
                     { username: { contains: q, mode: 'insensitive' } },
-                    { email: { contains: q, mode: 'insensitive' } }
+                    { email: { contains: q, mode: 'insensitive' } },
+                    // Support for sponsor codes (username + digit)
+                    ...(/^\d$/.test(q.slice(-1)) ? [
+                        { username: { equals: q.slice(0, -1), mode: 'insensitive' } },
+                        { id: { equals: q.slice(0, -1) } }
+                    ] : [])
                 ]
             },
             select: { id: true, username: true, email: true },

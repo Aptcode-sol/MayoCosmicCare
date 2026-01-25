@@ -6,6 +6,8 @@ import { listPublic, purchase } from '../../lib/services/products'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { me } from '../../lib/services/auth'
+import SponsorSelectModal from '@/components/SponsorSelectModal'
 
 interface Product {
     id: string
@@ -20,6 +22,9 @@ interface Product {
 export default function Products() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
+    const [user, setUser] = useState<any>(null)
+    const [sponsorModalOpen, setSponsorModalOpen] = useState(false)
+    const [pendingProduct, setPendingProduct] = useState<{ id: string, name: string } | null>(null)
 
     useEffect(() => {
         loadProducts()
@@ -37,20 +42,70 @@ export default function Products() {
         }
     }
 
-    async function handlePurchase(productId: string, productName: string) {
+    async function handlePurchase(productId: string, productName: string, sponsorId?: string) {
         const token = localStorage.getItem('accessToken')
         if (!token) {
             toast.error('Please login to purchase')
             return
         }
 
+        // 1. Ensure we have the user profile to check sponsor status
+        let currentUser = user
+        // Always refresh user if we suspect data is stale (missing sponsor) or valid scenario
         try {
-            await purchase(productId)
+            const res = await me()
+            currentUser = res.user || res
+            setUser(currentUser)
+            console.log('Current User State:', currentUser)
+        } catch (e) {
+            toast.error('Please login to continue')
+            return
+        }
+
+        // 2. If user has no sponsor and one wasn't just selected, prompt for one
+        // (Unless it's the first admin, but backend handles that check too)
+        // Check explicitly for sponsorId being null/undefined/empty
+        // If user already has a sponsor in DB, OR if we passed a sponsorId in this call (recursive call from modal)
+        // then we DO NOT need to prompt.
+        const hasSponsorRaw = currentUser.sponsorId && currentUser.sponsorId !== ''
+        // Also check if they are placed in tree (have parentId). 
+        // If they have sponsor but NO parentId, they strictly need placement triggers.
+        // However, usually having sponsorId implies we can use it.
+        // But for safety, checking sponsorId is usually enough as purchase service auto-places if sponsor exists.
+
+        const isSponsorProvided = !!sponsorId
+        const needsSponsor = !hasSponsorRaw && !isSponsorProvided && currentUser.role !== 'ADMIN'
+
+        if (needsSponsor) {
+            console.log('Missing sponsor, prompting modal.')
+            setPendingProduct({ id: productId, name: productName })
+            setSponsorModalOpen(true)
+            toast('Please select a sponsor to complete your first purchase', { icon: 'ℹ️' })
+            return
+        }
+
+        try {
+            await purchase(productId, sponsorId)
             toast.success(`Successfully purchased ${productName}!`)
+
+            // If we just assigned a sponsor, update local user state
+            if (sponsorId) {
+                const updated = await me()
+                setUser(updated)
+            }
+
             loadProducts()
         } catch (err: unknown) {
             const { message } = parseApiError(err)
             toast.error(String(message || 'Purchase failed'))
+        }
+    }
+
+    const handleSponsorSelect = (sponsor: { id: string }) => {
+        setSponsorModalOpen(false)
+        if (pendingProduct) {
+            handlePurchase(pendingProduct.id, pendingProduct.name, sponsor.id)
+            setPendingProduct(null)
         }
     }
 
@@ -162,6 +217,12 @@ export default function Products() {
                     </div>
                 )}
             </div>
+
+            <SponsorSelectModal
+                isOpen={sponsorModalOpen}
+                onClose={() => setSponsorModalOpen(false)}
+                onSelect={handleSponsorSelect}
+            />
         </div>
     )
 }

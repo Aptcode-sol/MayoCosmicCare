@@ -5,7 +5,7 @@ export async function listPublic() {
     return res.data
 }
 
-export async function purchase(productId: string) {
-    const res = await api.post(`/api/products/${productId}/purchase`)
+export async function purchase(productId: string, sponsorId?: string, leg?: 'left' | 'right') {
+    const res = await api.post(`/api/products/${productId}/purchase`, { sponsorId, leg })
     return res.data
 }

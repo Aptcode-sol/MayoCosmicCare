@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 const crypto = require('crypto');
 
 /**
@@ -24,10 +23,14 @@ async function placeNewUser(userId, sponsorId, preferredLeg = null) {
     let lockKey = null;
     try {
         const h = crypto.createHash('sha256').update(sponsorId).digest('hex');
-        const prefix = h.slice(0, 16);
+        // Use 15 chars to ensure it fits within Postgres signed 64-bit integer (max ~9e18)
+        // 16 hex chars can represent u64 (up to 1.8e19), which overflows signed i64
+        const prefix = h.slice(0, 15);
         lockKey = BigInt('0x' + prefix);
-        await prisma.$executeRaw`SELECT pg_advisory_lock(${lockKey})`;
+        // Pass as string and cast to bigint in SQL to avoid Prisma serialization issues
+        await prisma.$executeRawUnsafe('SELECT pg_advisory_lock($1::bigint)', lockKey.toString());
     } catch (e) {
+        console.warn('Failed to acquire advisory lock', e);
         lockKey = null;
     }
 
@@ -89,10 +92,10 @@ async function placeNewUser(userId, sponsorId, preferredLeg = null) {
             // Fallback
             await tx.user.update({ where: { id: userId }, data: { position: 'RIGHT', parentId: sponsor.id } });
             return { placedUnder: sponsor.id, position: 'RIGHT' };
-        });
+        }, { maxWait: 5000, timeout: 10000 });
     } finally {
         if (lockKey) {
-            try { await prisma.$executeRaw`SELECT pg_advisory_unlock(${lockKey})`; } catch (e) { }
+            try { await prisma.$executeRawUnsafe('SELECT pg_advisory_unlock($1::bigint)', lockKey.toString()); } catch (e) { }
         }
     }
 }
@@ -114,7 +117,10 @@ async function placeAtTail(userId, sponsorId, leg) {
         }
 
         // Keep following the specified leg until we find an empty slot
+        let loopCount = 0;
         while (current) {
+            if (loopCount++ > 1000) throw new Error('Placement depth exceeded safety limit');
+
             // Find child in the specified position using parentId
             const child = await tx.user.findFirst({
                 where: { parentId: current.id, position }
@@ -141,7 +147,7 @@ async function placeAtTail(userId, sponsorId, leg) {
             data: { position, parentId: sponsorId }
         });
         return { placedUnder: sponsorId, position };
-    });
+    }, { maxWait: 5000, timeout: 20000 });
 }
 
 /**
@@ -151,8 +157,15 @@ async function placeAtTail(userId, sponsorId, leg) {
 async function propagateMemberCount(tx, startFromId, initialPosition) {
     let currentId = startFromId;
     let currentPosition = initialPosition;
+    const visited = new Set();
 
     while (currentId) {
+        if (visited.has(currentId)) {
+            console.error('[PLACEMENT] Cycle detected in tree propagation!', currentId);
+            break;
+        }
+        visited.add(currentId);
+
         const current = await tx.user.findUnique({ where: { id: currentId } });
         if (!current) break;
 

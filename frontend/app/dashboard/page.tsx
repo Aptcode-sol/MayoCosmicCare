@@ -241,7 +241,8 @@ export default function Dashboard() {
                                                         </div>
                                                     </div>
                                                     <Button variant="ghost" size="sm" onClick={() => {
-                                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}&leg=left`)
+                                                        const randomEven = [0, 2, 4, 6, 8][Math.floor(Math.random() * 5)];
+                                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomEven}`)
                                                         toast.success('Copied!')
                                                     }}>Copy</Button>
                                                 </div>
@@ -260,7 +261,8 @@ export default function Dashboard() {
                                                         </div>
                                                     </div>
                                                     <Button variant="ghost" size="sm" onClick={() => {
-                                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}&leg=right`)
+                                                        const randomOdd = [1, 3, 5, 7, 9][Math.floor(Math.random() * 5)];
+                                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomOdd}`)
                                                         toast.success('Copied!')
                                                     }}>Copy</Button>
                                                 </div>

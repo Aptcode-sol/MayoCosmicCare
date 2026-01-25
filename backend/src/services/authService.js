@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient, Prisma } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 const { placeNewUser } = require('./placementService');
 const { generateOtp, storeOtp, verifyOtp, peekOtp } = require('./otpService');
 const { sendOtpEmail } = require('./emailService');
@@ -35,26 +35,70 @@ async function register({ username, email, phone, password, sponsorId, leg, otp 
     const userCount = await prisma.user.count();
     const isFirstUser = userCount === 0;
 
-    // Sponsor required unless first user
-    if (!isFirstUser && !sponsorId) {
-        throw new Error('Sponsor ID required for registration');
-    }
+    // Sponsor optional as per new requirements
+    // if (!isFirstUser && !sponsorId) {
+    //    throw new Error('Sponsor ID required for registration');
+    // }
 
-    // Validate sponsor exists. Accept sponsor identifier as id, email, or username.
+    // Validate sponsor exists.
+    // Logic: Sponsor ID ends with a digit?
+    // If digit is EVEN (0, 2, 4...) -> Place LEFT
+    // If digit is ODD (1, 3, 5...) -> Place RIGHT
+    // We strip the last digit to find the actual sponsor.
+
     let resolvedSponsorId = null;
+    let placementLeg = null;
+
     if (sponsorId) {
+        // Check if the last character is a digit
+        const lastChar = sponsorId.slice(-1);
+        const isDigit = /^\d$/.test(lastChar);
+
+        let searchIdentifier = sponsorId;
+
+        if (isDigit) {
+            const digit = parseInt(lastChar, 10);
+            placementLeg = (digit % 2 === 0) ? 'left' : 'right';
+            searchIdentifier = sponsorId.slice(0, -1);
+        }
+
+        console.log(`[AUTH] Sponsor Resolution. Input: ${sponsorId}. IsDigit: ${isDigit}. Stripped: ${searchIdentifier}. CalcLeg: ${placementLeg}`);
+
+        // Find sponsor using the stripped identifier
         // try id first
-        let sponsor = await prisma.user.findUnique({ where: { id: sponsorId } });
+        let sponsor = await prisma.user.findUnique({ where: { id: searchIdentifier } });
         if (!sponsor) {
             // try email
-            sponsor = await prisma.user.findUnique({ where: { email: sponsorId } }).catch(() => null);
+            sponsor = await prisma.user.findUnique({ where: { email: searchIdentifier } }).catch(() => null);
         }
         if (!sponsor) {
             // try username
-            sponsor = await prisma.user.findFirst({ where: { username: sponsorId } }).catch(() => null);
+            sponsor = await prisma.user.findFirst({ where: { username: searchIdentifier } }).catch(() => null);
         }
+
+        console.log(`[AUTH] Found via stripped? ${!!sponsor ? sponsor.id : 'No'}`);
+
+        // If not found with stripped ID, try the original ID (maybe the digit was part of the username/ID)
+        if (!sponsor && isDigit) {
+            console.log('[AUTH] Falling back to original ID search...');
+            let originalSponsor = await prisma.user.findUnique({ where: { id: sponsorId } });
+            if (!originalSponsor) {
+                originalSponsor = await prisma.user.findUnique({ where: { email: sponsorId } }).catch(() => null);
+            }
+            if (!originalSponsor) {
+                originalSponsor = await prisma.user.findFirst({ where: { username: sponsorId } }).catch(() => null);
+            }
+
+            if (originalSponsor) {
+                sponsor = originalSponsor;
+                placementLeg = null; // The digit was part of the ID, so we ignore it for placement
+                console.log(`[AUTH] Found via original ID: ${sponsor.id}. Placement Leg reset to null.`);
+            }
+        }
+
         if (!sponsor) throw new Error('Invalid sponsor identifier');
         if (sponsor.isBlocked) throw new Error('Sponsor account is blocked');
+
         // Admin is always allowed to refer, but regular users must purchase first
         if (sponsor.role !== 'ADMIN' && !sponsor.hasPurchased) {
             throw new Error('Sponsor must purchase a product before referring others');
@@ -65,11 +109,15 @@ async function register({ username, email, phone, password, sponsorId, leg, otp 
     const hashed = await bcrypt.hash(password, 10);
     const emailVerifyToken = crypto.randomBytes(32).toString('hex');
 
+    // Generate custom ID starting with 'mcc'
+    const customId = 'mcc' + crypto.randomUUID().replace(/-/g, '');
+
     // Create user (handle unique constraint errors for friendlier messages)
     let user;
     try {
         user = await prisma.user.create({
             data: {
+                id: customId,
                 username,
                 email,
                 phone,
@@ -97,7 +145,7 @@ async function register({ username, email, phone, password, sponsorId, leg, otp 
     // Place user in binary tree with optional leg preference (skip for first admin user)
     if (resolvedSponsorId) {
         // leg can be 'left' or 'right' for forced tail placement
-        await placeNewUser(user.id, resolvedSponsorId, leg || null);
+        await placeNewUser(user.id, resolvedSponsorId, placementLeg || null);
     }
 
     // Create wallet
@@ -226,7 +274,7 @@ async function sendOtp(email) {
 
     const otp = generateOtp();
     storeOtp(email, otp);
-    await sendOtpEmail(email, otp);
+    // await sendOtpEmail(email, otp);  
 
     return { message: 'OTP sent successfully' };
 }

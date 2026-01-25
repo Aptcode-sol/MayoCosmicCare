@@ -47,7 +47,7 @@ async function sendOtpEmail(email, otp) {
             text: `Your OTP code is: ${otp}`,
             html: htmlContent
         });
-        console.log(`[EMAIL] OTP sent to ${email}: ${info.messageId}`);
+        console.log(`[EMAIL] OTP sent to ${email}: ${info.messageId} ${otp}`);
         return { sent: true, messageId: info.messageId };
     } catch (error) {
         console.error(`[EMAIL] Error sending OTP to ${email}:`, error);

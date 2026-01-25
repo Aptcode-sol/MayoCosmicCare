@@ -3,10 +3,12 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import UserAvatar from './UserAvatar'
 import { Button } from "./ui/Button"
+import { useCart } from '../context/CartContext'
 
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const { items, setIsOpen } = useCart()
 
     // Check auth status after hydration to avoid SSR mismatch
     useEffect(() => {
@@ -40,42 +42,54 @@ export default function Header() {
                             <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                                 Dashboard
                             </Link>
-                            {/* <Link href="/dashboard/tree" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-                                Network
-                            </Link> */}
                         </>
                     )}
                 </div>
 
-                {/* Auth Section */}
-                <div className="hidden md:flex items-center gap-4">
-                    {isLoggedIn ? (
-                        <UserAvatar />
-                    ) : (
-                        <>
-                            <Button variant="ghost" asChild>
-                                <Link href="/login">Login</Link>
-                            </Button>
-                            <Button asChild>
-                                <Link href="/register">Get Started</Link>
-                            </Button>
-                        </>
-                    )}
-                </div>
-
-                {/* Mobile Menu Button */}
-                <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="md:hidden p-2 text-gray-500 hover:text-gray-900 transition"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        {menuOpen ? (
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                        ) : (
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+                <div className="flex items-center gap-4">
+                    {/* Cart Button */}
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="relative p-2 text-gray-500 hover:text-gray-900 transition-colors"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                        {items.length > 0 && (
+                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">
+                                {items.length}
+                            </span>
                         )}
-                    </svg>
-                </button>
+                    </button>
+
+                    {/* Auth Section */}
+                    <div className="hidden md:flex items-center gap-4">
+                        {isLoggedIn ? (
+                            <UserAvatar />
+                        ) : (
+                            <>
+                                <Button variant="ghost" asChild>
+                                    <Link href="/login">Login</Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href="/register">Get Started</Link>
+                                </Button>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Mobile Menu Button */}
+                    <button
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        className="md:hidden p-2 text-gray-500 hover:text-gray-900 transition"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {menuOpen ? (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                            ) : (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+                            )}
+                        </svg>
+                    </button>
+                </div>
 
                 {/* Mobile Menu */}
                 {menuOpen && (

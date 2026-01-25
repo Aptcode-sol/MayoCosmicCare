@@ -12,16 +12,20 @@ export const metadata: Metadata = {
   description: 'Join Mayo Cosmic Care and build your wellness business with our premium products',
 }
 
+import ContextProviders from '../components/ContextProviders'
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col`}>
-        <ClientToaster />
-        <Header />
-        <div className="flex-1">
-          {children}
-        </div>
-        <Footer />
+        <ContextProviders>
+          <ClientToaster />
+          <Header />
+          <div className="flex-1">
+            {children}
+          </div>
+          <Footer />
+        </ContextProviders>
       </body>
     </html>
   )

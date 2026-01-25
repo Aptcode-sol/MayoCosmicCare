@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { me, updateProfile } from '@/lib/services/auth'
 import DashboardLayout from '@/components/DashboardLayout'
+import api from '@/lib/api'
+import toast from 'react-hot-toast'
 
 export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
@@ -17,12 +19,24 @@ export default function ProfilePage() {
         confirmNewPassword: '',
         currentPassword: ''
     })
+    const [kycStatus, setKycStatus] = useState<string>('NOT_STARTED')
+    const [kycDocs, setKycDocs] = useState({ pan: '', aadhaar: '' })
+    const [checkingKyc, setCheckingKyc] = useState(false)
+
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
 
     useEffect(() => {
         loadUser()
     }, [])
+
+    // Check KYC status on load if in progress, or periodically? 
+    // For now, let's check on load if status says IN_PROGRESS just in case they came back from DigiLocker
+    useEffect(() => {
+        if (!loading && kycStatus === 'IN_PROGRESS') {
+            handleCheckKycStatus(true) // silent check
+        }
+    }, [loading, kycStatus])
 
     const loadUser = async () => {
         try {
@@ -34,6 +48,11 @@ export default function ProfilePage() {
                     email: data.user.email || '',
                     phone: data.user.phone || ''
                 }))
+                setKycStatus(data.user.kycStatus || 'NOT_STARTED')
+                setKycDocs({
+                    pan: data.user.pan || '',
+                    aadhaar: data.user.aadhaar || ''
+                })
             }
         } catch (err: any) {
             console.error('Failed to load user', err)
@@ -45,6 +64,49 @@ export default function ProfilePage() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
+    }
+
+    const handleDoKyc = async () => {
+        try {
+            toast.loading('Initializing KYC...')
+            const res = await api.post('/api/kyc/init')
+            toast.dismiss()
+            if (res.data.ok && res.data.url) {
+                // Redirect to DigiLocker
+                window.location.href = res.data.url
+            } else {
+                toast.error('Failed to start KYC. Please try again.')
+            }
+        } catch (err: any) {
+            toast.dismiss()
+            toast.error(err.response?.data?.error || 'KYC Init failed')
+        }
+    }
+
+    const handleCheckKycStatus = async (silent = false) => {
+        if (!silent) setCheckingKyc(true)
+        try {
+            const res = await api.get('/api/kyc/status')
+            if (res.data.ok) {
+                setKycStatus(res.data.status)
+                if (res.data.pan || res.data.aadhaar) {
+                    setKycDocs({
+                        pan: res.data.pan || kycDocs.pan,
+                        aadhaar: res.data.aadhaar || kycDocs.aadhaar
+                    })
+                }
+                if (!silent) {
+                    if (res.data.status === 'VERIFIED') toast.success('KYC Verified successfully!')
+                    else if (res.data.status === 'FAILED') toast.error('KYC Verification failed/denied.')
+                    else toast('Status updated: ' + res.data.status)
+                }
+            }
+        } catch (err) {
+            console.error(err)
+            if (!silent) toast.error('Failed to check status')
+        } finally {
+            if (!silent) setCheckingKyc(false)
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -108,9 +170,9 @@ export default function ProfilePage() {
                 <h1 className="text-2xl font-bold mb-6 text-gray-800">My Profile</h1>
 
                 <div className="grid md:grid-cols-3 gap-6">
-                    {/* Profile Card */}
-                    <div className="md:col-span-1">
-                        <Card className="shadow-sm border-gray-100 h-full">
+                    {/* Left Column: Profile Card + KYC Card */}
+                    <div className="md:col-span-1 space-y-6">
+                        <Card className="shadow-sm border-gray-100 h-fit">
                             <CardContent className="p-6 flex flex-col items-center text-center">
                                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg">
                                     {(formData.username || 'U').slice(0, 2).toUpperCase()}
@@ -128,6 +190,74 @@ export default function ProfilePage() {
                                         <span className="font-medium text-gray-900">Jan 2024</span>
                                     </div>
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* KYC Section */}
+                        <Card className="shadow-sm border-gray-100">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">KYC Verification</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-500">Status</span>
+                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase
+                                        ${kycStatus === 'VERIFIED' ? 'bg-green-100 text-green-700' :
+                                            kycStatus === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-700' :
+                                                kycStatus === 'FAILED' ? 'bg-red-100 text-red-700' :
+                                                    'bg-gray-100 text-gray-700'}`}>
+                                        {kycStatus.replace('_', ' ')}
+                                    </span>
+                                </div>
+
+                                {kycStatus === 'VERIFIED' ? (
+                                    <div className="space-y-2 pt-2 border-t border-gray-50">
+                                        <div>
+                                            <p className="text-xs text-gray-400 uppercase">Aadhaar</p>
+                                            <p className="text-sm font-mono text-gray-800">
+                                                xxxx-xxxx-{kycDocs.aadhaar ? kycDocs.aadhaar.slice(-4) : 'xxxx'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-400 uppercase">PAN</p>
+                                            <p className="text-sm font-mono text-gray-800">
+                                                {kycDocs.pan ? kycDocs.pan.slice(0, 2) + 'xxxxx' + kycDocs.pan.slice(-2) : 'xxxxxxxxx'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="pt-2">
+                                        {kycStatus === 'IN_PROGRESS' ? (
+                                            <div className="space-y-2">
+                                                <p className="text-xs text-gray-500">Verification in progress. Please complete the DigiLocker process.</p>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full"
+                                                    onClick={() => handleCheckKycStatus()}
+                                                    disabled={checkingKyc}
+                                                >
+                                                    {checkingKyc ? 'Checking...' : 'Check Status'}
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="w-full text-indigo-600 h-auto py-1 text-xs"
+                                                    onClick={handleDoKyc}
+                                                >
+                                                    Retry Link
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                                                onClick={handleDoKyc}
+                                            >
+                                                Complete KYC
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>

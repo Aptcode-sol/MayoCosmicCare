@@ -4,7 +4,7 @@ const { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswo
 const { authenticate } = require('../middleware/authMiddleware');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 
 
 router.post('/send-otp', async (req, res) => {
@@ -20,6 +20,9 @@ router.post('/send-otp', async (req, res) => {
         res.status(400).json({ ok: false, error: err.message || 'Failed to send OTP' });
     }
 });
+// ... 
+// (I will target lines around select to insert fields)
+
 
 router.post('/verify-otp', async (req, res) => {
     try {
@@ -127,6 +130,11 @@ router.get('/me', authenticate, async (req, res) => {
                 id: true,
                 username: true,
                 email: true,
+                phone: true,
+                kycStatus: true,
+                kycRefId: true,
+                pan: true,
+                aadhaar: true,
                 role: true,
                 hasPurchased: true,
                 createdAt: true,

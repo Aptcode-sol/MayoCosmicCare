@@ -32,6 +32,7 @@ const pairPayoutsRouter = require('./routes/pairPayouts');
 const dashboardRouter = require('./routes/dashboard');
 const queueStatsRouter = require('./routes/queueStats');
 const { router: sseRouter } = require('./routes/sse');
+const kycRouter = require('./routes/kyc');
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
@@ -48,6 +49,7 @@ app.use('/api/pair-payouts', pairPayoutsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/queue', queueStatsRouter);
 app.use('/api/sse', sseRouter);
+app.use('/api/kyc', kycRouter);
 
 app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }));
 

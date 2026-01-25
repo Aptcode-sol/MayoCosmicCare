@@ -62,7 +62,18 @@ export default function Products() {
             return
         }
 
-        // 2. If user has no sponsor and one wasn't just selected, prompt for one
+        // 2. KYC Check - Redirect if not verified
+        // We skip check for Admin to avoid lockout during testing if admin skips KYC, 
+        // but generally users must verify. Backend enforces it for non-first-admin.
+        if (currentUser.role !== 'ADMIN' && currentUser.kycStatus !== 'VERIFIED') {
+            toast.error('KYC Verification Required. Redirecting to profile...', { duration: 3000 })
+            setTimeout(() => {
+                window.location.href = '/dashboard/profile'
+            }, 1500)
+            return
+        }
+
+        // 3. If user has no sponsor and one wasn't just selected, prompt for one
         // (Unless it's the first admin, but backend handles that check too)
         // Check explicitly for sponsorId being null/undefined/empty
         // If user already has a sponsor in DB, OR if we passed a sponsorId in this call (recursive call from modal)

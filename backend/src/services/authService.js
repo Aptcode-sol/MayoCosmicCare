@@ -268,6 +268,8 @@ async function resetPassword(token, newPassword) {
 }
 
 // ===== OTP FUNCTIONS =====
+
+// For Registration - OTP to new email (email must NOT exist)
 async function sendOtp(email) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) throw new Error('Email already registered');
@@ -277,6 +279,67 @@ async function sendOtp(email) {
     // await sendOtpEmail(email, otp);  
 
     return { message: 'OTP sent successfully' };
+}
+
+// For Forgot Password - OTP to existing email (email MUST exist)
+async function sendForgotPasswordOtp(email) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error('No account found with this email');
+
+    const otp = generateOtp();
+    storeOtp(`forgot:${email}`, otp); // Prefix to differentiate from registration OTP
+    // await sendOtpEmail(email, otp);
+
+    console.log(`[FORGOT-PWD] OTP for ${email}: ${otp}`);
+    return { message: 'OTP sent to your email' };
+}
+
+// Verify Forgot Password OTP and reset password
+async function resetPasswordWithOtp(email, otp, newPassword) {
+    const valid = verifyOtp(`forgot:${email}`, otp);
+    if (!valid) throw new Error('Invalid or expired OTP');
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error('User not found');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashed }
+    });
+
+    return { message: 'Password reset successfully' };
+}
+
+// For Email Change - OTP to NEW email (verify ownership)
+async function sendEmailChangeOtp(userId, newEmail) {
+    // Check if new email is already taken
+    const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+    if (existing) throw new Error('This email is already registered');
+
+    const otp = generateOtp();
+    storeOtp(`emailchange:${userId}:${newEmail}`, otp);
+    // await sendOtpEmail(newEmail, otp);
+
+    console.log(`[EMAIL-CHANGE] OTP for ${newEmail}: ${otp}`);
+    return { message: 'OTP sent to new email' };
+}
+
+// Verify Email Change OTP and update email
+async function verifyEmailChange(userId, newEmail, otp) {
+    const valid = verifyOtp(`emailchange:${userId}:${newEmail}`, otp);
+    if (!valid) throw new Error('Invalid or expired OTP');
+
+    // Double-check email not taken
+    const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+    if (existing) throw new Error('This email is already registered');
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: { email: newEmail }
+    });
+
+    return { message: 'Email updated successfully' };
 }
 
 async function verifyOtpCode(email, otp) {
@@ -363,6 +426,11 @@ module.exports = {
     resetPassword,
     sendOtp,
     verifyOtpCode,
-    updateProfile
+    updateProfile,
+    // New OTP-based functions
+    sendForgotPasswordOtp,
+    resetPasswordWithOtp,
+    sendEmailChangeOtp,
+    verifyEmailChange
 };
 

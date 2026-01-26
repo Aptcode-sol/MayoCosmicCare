@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, refreshToken, logoutRefresh, verifyEmail, requestPasswordReset, resetPassword, sendOtp, verifyOtpCode } = require('../services/authService');
+const {
+    register, login, refreshToken, logoutRefresh, verifyEmail,
+    requestPasswordReset, resetPassword, sendOtp, verifyOtpCode,
+    sendForgotPasswordOtp, resetPasswordWithOtp,
+    sendEmailChangeOtp, verifyEmailChange
+} = require('../services/authService');
 const { authenticate } = require('../middleware/authMiddleware');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
 const { PrismaClient } = require('@prisma/client');
@@ -20,17 +25,68 @@ router.post('/send-otp', async (req, res) => {
         res.status(400).json({ ok: false, error: err.message || 'Failed to send OTP' });
     }
 });
-// ... 
-// (I will target lines around select to insert fields)
-
 
 router.post('/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
         if (!email || !otp) return res.status(400).json({ ok: false, error: 'Email and OTP required' });
 
-        // This function inside authService should use peekOtp
         const result = await verifyOtpCode(email, otp);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
+
+// ===== FORGOT PASSWORD (OTP-based) =====
+router.post('/forgot-password/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ ok: false, error: 'Email is required' });
+
+        const result = await sendForgotPasswordOtp(email);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
+
+router.post('/forgot-password/reset', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ ok: false, error: 'Email, OTP, and new password are required' });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ ok: false, error: 'Password must be at least 6 characters' });
+        }
+
+        const result = await resetPasswordWithOtp(email, otp, newPassword);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
+
+// ===== EMAIL CHANGE (OTP-based, requires auth) =====
+router.post('/email-change/send-otp', authenticate, async (req, res) => {
+    try {
+        const { newEmail } = req.body;
+        if (!newEmail) return res.status(400).json({ ok: false, error: 'New email is required' });
+
+        const result = await sendEmailChangeOtp(req.user.id, newEmail);
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        res.status(400).json({ ok: false, error: err.message });
+    }
+});
+
+router.post('/email-change/verify', authenticate, async (req, res) => {
+    try {
+        const { newEmail, otp } = req.body;
+        if (!newEmail || !otp) return res.status(400).json({ ok: false, error: 'New email and OTP are required' });
+
+        const result = await verifyEmailChange(req.user.id, newEmail, otp);
         res.json({ ok: true, ...result });
     } catch (err) {
         res.status(400).json({ ok: false, error: err.message });

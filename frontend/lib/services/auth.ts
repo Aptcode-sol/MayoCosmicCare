@@ -51,3 +51,30 @@ export async function verifyOtp(email: string, otp: string) {
     const res = await api.post('/api/auth/verify-otp', { email, otp })
     return res.data
 }
+
+// ===== NEW OTP-BASED FUNCTIONS =====
+
+// Forgot Password - Send OTP to existing email
+export async function sendForgotPasswordOtp(email: string) {
+    const res = await api.post('/api/auth/forgot-password/send-otp', { email })
+    return res.data
+}
+
+// Forgot Password - Reset with OTP
+export async function resetPasswordWithOtp(email: string, otp: string, newPassword: string) {
+    const res = await api.post('/api/auth/forgot-password/reset', { email, otp, newPassword })
+    return res.data
+}
+
+// Email Change - Send OTP to new email
+export async function sendEmailChangeOtp(newEmail: string) {
+    const res = await api.post('/api/auth/email-change/send-otp', { newEmail })
+    return res.data
+}
+
+// Email Change - Verify OTP and update email
+export async function verifyEmailChange(newEmail: string, otp: string) {
+    const res = await api.post('/api/auth/email-change/verify', { newEmail, otp })
+    return res.data
+}
+

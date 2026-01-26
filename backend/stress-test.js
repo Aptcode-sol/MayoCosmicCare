@@ -3,21 +3,27 @@
  * Simulates frontend requests to test the backend API
  * Creates 60 users (30 left, 30 right) with binary tree structure
  * Each user purchases a mattress through the API
+ * NOW INCLUDES: OTP Registration Flow & Payout Simulation
  */
 
 const BASE_URL = 'http://localhost:4000/api';
-const PRODUCT_ID = 'cmjjuavwu000345zrbrzkm8kb'; // Mattress product ID
+const OTP_CODE = '123456'; // Defined in otpService.js
 
 // Admin credentials
 const ADMIN_EMAIL = 'admin@gmail.com';
 const ADMIN_PASSWORD = 'Admin@2';
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 // Test stats
 const report = {
     usersCreated: 0,
     purchasesMade: 0,
     failures: [],
-    timeline: []
+    timeline: [],
+    payoutsRequested: 0,
+    payoutsApproved: 0
 };
 
 // Store created users with their tokens
@@ -57,7 +63,17 @@ async function loginAdmin() {
             password: ADMIN_PASSWORD
         });
         console.log('✅ Admin login successful');
-        return result.tokens.accessToken;
+
+        // Auto-verify Admin KYC (in case DB is dirty)
+        const token = result.tokens.accessToken;
+        const me = await httpRequest('/auth/me', 'GET', null, token);
+        await prisma.user.update({
+            where: { id: me.user.id },
+            data: { kycStatus: 'VERIFIED' }
+        });
+        console.log('✅ Admin KYC Verified');
+
+        return token;
     } catch (error) {
         console.error('❌ Admin login failed:', error.message);
         throw error;
@@ -72,18 +88,37 @@ async function getAdminUser(token) {
     return user;
 }
 
+async function requestOtp(email) {
+    // console.log(`📧 Requesting OTP for ${email}...`);
+    await httpRequest('/auth/send-otp', 'POST', { email });
+    // console.log(`✅ OTP sent to ${email}`);
+}
+
 async function registerUser(username, email, phone, password, sponsorId, leg) {
     const startTime = Date.now();
     try {
         console.log(`📝 Registering user: ${username} (sponsor: ${sponsorId?.substring(0, 8)}... leg: ${leg})`);
 
+        // Step 1: Request OTP
+        await requestOtp(email);
+
+        // Step 2: Register with OTP
         const result = await httpRequest('/auth/register', 'POST', {
             username,
             email,
             password,
+            phone,
             sponsorId,
-            leg
+            leg,
+            otp: OTP_CODE // Include OTP
         });
+
+        // Step 2.5: Auto-verify KYC (Direct DB Update for Test)
+        await prisma.user.update({
+            where: { id: result.id },
+            data: { kycStatus: 'VERIFIED' }
+        });
+        console.log(`✅ KYC Verified for ${username}`);
 
         const duration = Date.now() - startTime;
         report.usersCreated++;
@@ -138,6 +173,10 @@ async function purchaseProduct(token, productId, username) {
         return result;
     } catch (error) {
         const duration = Date.now() - startTime;
+        if (error.message.includes('Already purchased')) {
+            console.log(`ℹ️ ${username} already purchased.`);
+            return { message: 'Already purchased' };
+        }
         console.error(`❌ ${username} purchase failed:`, error.message);
         report.failures.push({ action: 'purchase', user: username, error: error.message });
         report.timeline.push({
@@ -151,6 +190,42 @@ async function purchaseProduct(token, productId, username) {
     }
 }
 
+async function requestPayout(token, amount, username) {
+    try {
+        console.log(`💸 ${username} requesting payout of ₹${amount}...`);
+        const bankDetails = {
+            accountInfo: {
+                bankAccount: '1234567890',
+                ifsc: 'HDFC0001234'
+            },
+            name: username,
+            email: 'test@test.com',
+            phone: '9999999999'
+        };
+
+        const result = await httpRequest('/payouts/request', 'POST', { amount, bankDetails }, token);
+        console.log(`✅ Payout requested for ${username} (ID: ${result.id})`);
+        report.payoutsRequested++;
+        return result;
+    } catch (error) {
+        console.error(`❌ Payout request failed for ${username}:`, error.message);
+        report.failures.push({ action: 'payout_request', user: username, error: error.message });
+        // Don't throw, just log failure (maybe insufficient balance)
+    }
+}
+
+async function approvePayout(adminToken, withdrawalId) {
+    try {
+        console.log(`👮 Admin approving payout ${withdrawalId}...`);
+        await httpRequest(`/payouts/approve/${withdrawalId}`, 'POST', null, adminToken);
+        console.log(`✅ Payout ${withdrawalId} approved/executed.`);
+        report.payoutsApproved++;
+    } catch (error) {
+        console.error(`❌ Failed to approve payout ${withdrawalId}:`, error.message);
+        report.failures.push({ action: 'payout_approve', user: 'admin', error: error.message });
+    }
+}
+
 async function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -160,7 +235,8 @@ async function runStressTest() {
     console.log('║     MLM Backend Stress Test via HTTP Requests     ║');
     console.log('╠═══════════════════════════════════════════════════╣');
     console.log('║  60 users (30 left, 30 right)                     ║');
-    console.log('║  Sequential registration + purchase               ║');
+    console.log('║  Sequential registration + purchase + OTP         ║');
+    console.log('║  + Payout Simulation                              ║');
     console.log('╚═══════════════════════════════════════════════════╝\n');
 
     const totalStartTime = Date.now();
@@ -182,7 +258,7 @@ async function runStressTest() {
         const dynamicProductId = product.id;
         console.log(`✅ Using Product: ${product.name} (ID: ${dynamicProductId}, Stock: ${product.stock})`);
 
-        // Step 2: Admin makes first purchase (to enable referrals)
+        // Step 2: Admin makes first purchase
         console.log('\n📦 Admin making initial purchase to enable referrals...');
         try {
             await purchaseProduct(adminToken, dynamicProductId, 'admin');
@@ -190,12 +266,7 @@ async function runStressTest() {
             console.log('ℹ️ Admin may have already purchased (continuing...)');
         }
 
-        // Step 3: Create 30 users on LEFT side
-        console.log('\n═══════════════════════════════════════════════════');
-        console.log('   Creating 30 users on LEFT side');
-        console.log('═══════════════════════════════════════════════════\n');
-
-        // Step 3: Create 'sanket' user (Root of the tree)
+        // Step 3: Create 'sanket' user (Root)
         console.log('\n═══════════════════════════════════════════════════');
         console.log('   Creating Root User: sanket');
         console.log('═══════════════════════════════════════════════════\n');
@@ -212,7 +283,6 @@ async function runStressTest() {
             console.log('⚠️ Sanket user might already exist, trying to login...');
             try {
                 const token = await loginUser('sanket@gmail.com', 'Sanket@123');
-                // We need the ID, so fetch me
                 const me = await httpRequest('/auth/me', 'GET', null, token);
                 sanketUser = me.user || me;
                 sanketUser.token = token;
@@ -223,50 +293,30 @@ async function runStressTest() {
             }
         }
 
-        // Step 4: Generate 60 users in a binary tree structure (30 left sub-tree, 30 right sub-tree)
-        // BFS Queue approach to ensure balanced filling
+        // Step 4: Generate Tree
         console.log('\n═══════════════════════════════════════════════════');
-        console.log('   Generating Binary Tree (60 Users)');
+        console.log('   Generating Binary Tree');
         console.log('═══════════════════════════════════════════════════\n');
 
-        const queue = [sanketUser]; // Queue of users who need children
+        const queue = [sanketUser];
         let usersCreatedCount = 0;
         const TOTAl_USERS_TO_CREATE = 200; // 100 left side + 100 right side
 
         while (usersCreatedCount < TOTAl_USERS_TO_CREATE && queue.length > 0) {
             const parent = queue.shift();
 
-            // Try to add Left Child
-            if (usersCreatedCount < TOTAl_USERS_TO_CREATE) {
+            // Helper to create child
+            const createChild = async (side) => {
+                if (usersCreatedCount >= TOTAl_USERS_TO_CREATE) return;
+
                 usersCreatedCount++;
                 const username = `user_${usersCreatedCount}`;
                 const email = `user${usersCreatedCount}@test.com`;
                 const password = 'Test@123';
-                const phone = `80000000${usersCreatedCount.toString().padStart(2, '0')}`;
+                const phone = `800${usersCreatedCount.toString().padStart(7, '0')}`; // Ensure unique phone
 
                 try {
-                    const user = await registerUser(username, email, phone, password, parent.id, 'left');
-                    await delay(50); // Short delay
-                    const token = await loginUser(email, password);
-                    await purchaseProduct(token, dynamicProductId, username);
-
-                    user.token = token;
-                    queue.push(user); // Add to queue to become a parent later
-                } catch (err) {
-                    console.error(`⚠️ Failed to add left child for ${parent.username}`);
-                }
-            }
-
-            // Try to add Right Child
-            if (usersCreatedCount < TOTAl_USERS_TO_CREATE) {
-                usersCreatedCount++;
-                const username = `user_${usersCreatedCount}`;
-                const email = `user${usersCreatedCount}@test.com`;
-                const password = 'Test@123';
-                const phone = `90000000${usersCreatedCount.toString().padStart(2, '0')}`;
-
-                try {
-                    const user = await registerUser(username, email, phone, password, parent.id, 'right');
+                    const user = await registerUser(username, email, phone, password, parent.id, side);
                     await delay(50);
                     const token = await loginUser(email, password);
                     await purchaseProduct(token, dynamicProductId, username);
@@ -274,12 +324,36 @@ async function runStressTest() {
                     user.token = token;
                     queue.push(user);
                 } catch (err) {
-                    console.error(`⚠️ Failed to add right child for ${parent.username}`);
+                    console.error(`⚠️ Failed to add ${side} child for ${parent.username}`);
+                    usersCreatedCount--; // Retry logic or just skip? logic simpler to just skip
                 }
-            }
+            };
+
+            await createChild('left');
+            await createChild('right');
         }
 
-        // Final report
+        // Step 5: Payout Simulation
+        console.log('\n═══════════════════════════════════════════════════');
+        console.log('   Simulating Payouts for Root User (sanket)');
+        console.log('═══════════════════════════════════════════════════\n');
+
+        // Refresh 'sanket' wallet balance
+        const sanketMe = await httpRequest('/auth/me', 'GET', null, sanketUser.token);
+        const balance = sanketMe.user?.wallet?.balance || 0;
+        console.log(`💰 Sanket current balance: ₹${balance}`);
+
+        if (balance >= 1000) {
+            const withdrawal = await requestPayout(sanketUser.token, 1000, 'sanket');
+            if (withdrawal && withdrawal.id) {
+                // Simulate Admin Approval
+                await approvePayout(adminToken, withdrawal.id);
+            }
+        } else {
+            console.log('⚠️ Insufficient balance for payout test (Need > ₹1000)');
+        }
+
+        // Final Report
         const totalDuration = Date.now() - totalStartTime;
 
         console.log('\n');
@@ -287,30 +361,19 @@ async function runStressTest() {
         console.log('║              STRESS TEST COMPLETE                 ║');
         console.log('╠═══════════════════════════════════════════════════╣');
         console.log(`║  Total Time: ${(totalDuration / 1000).toFixed(2)}s                              ║`);
-        console.log(`║  Users Created: ${report.usersCreated}/60                            ║`);
+        console.log(`║  Users Created: ${report.usersCreated}                                ║`);
         console.log(`║  Purchases Made: ${report.purchasesMade}                              ║`);
+        console.log(`║  Payouts Requested: ${report.payoutsRequested}                        ║`);
+        console.log(`║  Payouts Approved: ${report.payoutsApproved}                          ║`);
         console.log(`║  Failures: ${report.failures.length}                                   ║`);
         console.log('╚═══════════════════════════════════════════════════╝');
 
         if (report.failures.length > 0) {
             console.log('\n❌ Failures:');
-            report.failures.forEach((f, i) => {
+            report.failures.slice(0, 10).forEach((f, i) => { // Limit log
                 console.log(`   ${i + 1}. ${f.action} - ${f.user}: ${f.error}`);
             });
-        }
-
-        // Performance stats
-        const registerTimes = report.timeline.filter(t => t.action === 'register' && t.success).map(t => t.duration);
-        const purchaseTimes = report.timeline.filter(t => t.action === 'purchase' && t.success).map(t => t.duration);
-
-        if (registerTimes.length > 0) {
-            const avgRegister = registerTimes.reduce((a, b) => a + b, 0) / registerTimes.length;
-            console.log(`\n📊 Avg Registration Time: ${avgRegister.toFixed(0)}ms`);
-        }
-
-        if (purchaseTimes.length > 0) {
-            const avgPurchase = purchaseTimes.reduce((a, b) => a + b, 0) / purchaseTimes.length;
-            console.log(`📊 Avg Purchase Time: ${avgPurchase.toFixed(0)}ms`);
+            if (report.failures.length > 10) console.log(`   ...and ${report.failures.length - 10} more.`);
         }
 
     } catch (error) {

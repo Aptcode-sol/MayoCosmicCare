@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { isAuthenticated, adminLogout } from '../lib/auth';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -159,107 +159,248 @@ export default function Dashboard() {
                         {/* Analytics Tab */}
                         {tab === 'analytics' && analytics && (
                             <div className="space-y-6">
-                                <h2 className="text-lg font-medium text-gray-900">Analytics Overview</h2>
-
-                                {/* Summary Cards */}
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                        <h3 className="text-sm text-gray-500 mb-1">Total Users</h3>
-                                        <p className="text-2xl font-bold text-gray-900">{analytics.totalUsers}</p>
-                                        <p className="text-xs text-green-600 mt-1">+{analytics.todayUsers} today</p>
-                                    </div>
-                                    {analytics.bonusTotals.map(b => (
-                                        <div key={b.type} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                            <h3 className="text-sm text-gray-500 mb-1">{b.type.replace(/_/g, ' ')}</h3>
-                                            <p className="text-2xl font-bold text-gray-900">₹{(b.total || 0).toLocaleString()}</p>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Withdrawal Stats */}
-                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <h3 className="font-medium text-gray-900 mb-4">Withdrawal Summary</h3>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        {analytics.withdrawalStats.map(w => (
-                                            <div key={w.status} className="text-center">
-                                                <p className={`text-2xl font-bold ${w.status === 'APPROVED' ? 'text-green-600' : w.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                    ₹{(w.total || 0).toLocaleString()}
-                                                </p>
-                                                <p className="text-sm text-gray-500">{w.status} ({w.count})</p>
+                                {/* User Overview Cards */}
+                                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
                                             </div>
-                                        ))}
+                                            <div>
+                                                <p className="text-2xl font-bold text-gray-900">{analytics.users?.total || 0}</p>
+                                                <p className="text-xs text-gray-500">Total Users</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-bold text-green-600">+{analytics.users?.today || 0}</p>
+                                                <p className="text-xs text-gray-500">Today</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                        <p className="text-2xl font-bold text-gray-900">{analytics.users?.thisWeek || 0}</p>
+                                        <p className="text-xs text-gray-500">This Week</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                        <p className="text-2xl font-bold text-gray-900">{analytics.users?.thisMonth || 0}</p>
+                                        <p className="text-xs text-gray-500">This Month</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                        <p className="text-2xl font-bold text-emerald-600">{analytics.users?.active || 0}</p>
+                                        <p className="text-xs text-gray-500">Active (Purchased)</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                        <p className="text-2xl font-bold text-amber-600">{analytics.users?.pending || 0}</p>
+                                        <p className="text-xs text-gray-500">Pending Purchase</p>
                                     </div>
                                 </div>
 
-                                {/* Position Distribution */}
+                                {/* Position Distribution & KYC Stats */}
+                                <div className="grid lg:grid-cols-2 gap-6">
+                                    {/* Position Distribution */}
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                                            </svg>
+                                            Position Distribution
+                                        </h3>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="text-center p-4 bg-blue-50 rounded-xl">
+                                                <p className="text-3xl font-bold text-blue-600">{analytics.positions?.LEFT || 0}</p>
+                                                <p className="text-sm text-gray-600 mt-1">Left</p>
+                                            </div>
+                                            <div className="text-center p-4 bg-gray-50 rounded-xl">
+                                                <p className="text-3xl font-bold text-gray-600">{analytics.positions?.ROOT || 0}</p>
+                                                <p className="text-sm text-gray-600 mt-1">Root</p>
+                                            </div>
+                                            <div className="text-center p-4 bg-purple-50 rounded-xl">
+                                                <p className="text-3xl font-bold text-purple-600">{analytics.positions?.RIGHT || 0}</p>
+                                                <p className="text-sm text-gray-600 mt-1">Right</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* KYC Status */}
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                            </svg>
+                                            KYC Status
+                                        </h3>
+                                        <div className="grid grid-cols-4 gap-3">
+                                            <div className="text-center p-3 bg-gray-50 rounded-xl">
+                                                <p className="text-xl font-bold text-gray-600">{analytics.kyc?.NOT_STARTED || 0}</p>
+                                                <p className="text-xs text-gray-500 mt-1">Not Started</p>
+                                            </div>
+                                            <div className="text-center p-3 bg-yellow-50 rounded-xl">
+                                                <p className="text-xl font-bold text-yellow-600">{analytics.kyc?.IN_PROGRESS || 0}</p>
+                                                <p className="text-xs text-gray-500 mt-1">In Progress</p>
+                                            </div>
+                                            <div className="text-center p-3 bg-green-50 rounded-xl">
+                                                <p className="text-xl font-bold text-green-600">{analytics.kyc?.VERIFIED || 0}</p>
+                                                <p className="text-xs text-gray-500 mt-1">Verified</p>
+                                            </div>
+                                            <div className="text-center p-3 bg-red-50 rounded-xl">
+                                                <p className="text-xl font-bold text-red-600">{analytics.kyc?.FAILED || 0}</p>
+                                                <p className="text-xs text-gray-500 mt-1">Failed</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Financial Overview */}
                                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <h3 className="font-medium text-gray-900 mb-4">Users by Rank</h3>
+                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Financial Overview
+                                    </h3>
+                                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                                        <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white">
+                                            <p className="text-xs opacity-80">Total Wallet Balance</p>
+                                            <p className="text-2xl font-bold mt-1">₹{(analytics.financial?.totalWalletBalance || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div className="p-4 bg-orange-50 rounded-xl">
+                                            <p className="text-xs text-gray-500">Direct Bonus</p>
+                                            <p className="text-xl font-bold text-orange-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()}</p>
+                                            <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.count || 0} transactions</p>
+                                        </div>
+                                        <div className="p-4 bg-green-50 rounded-xl">
+                                            <p className="text-xs text-gray-500">Matching Bonus</p>
+                                            <p className="text-xl font-bold text-green-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()}</p>
+                                            <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.count || 0} transactions</p>
+                                        </div>
+                                        <div className="p-4 bg-blue-50 rounded-xl">
+                                            <p className="text-xs text-gray-500">Today's Bonuses</p>
+                                            <p className="text-xl font-bold text-blue-600 mt-1">₹{(analytics.financial?.todayBonuses || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div className="p-4 bg-purple-50 rounded-xl">
+                                            <p className="text-xs text-gray-500">This Month</p>
+                                            <p className="text-xl font-bold text-purple-600 mt-1">₹{(analytics.financial?.monthBonuses || 0).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Withdrawals & Orders */}
+                                <div className="grid lg:grid-cols-2 gap-6">
+                                    {/* Withdrawals */}
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="font-semibold text-gray-900 mb-4">Withdrawal Summary</h3>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {analytics.financial?.withdrawals?.map(w => (
+                                                <div key={w.status} className={`text-center p-4 rounded-xl ${w.status === 'APPROVED' ? 'bg-green-50' : w.status === 'PENDING' ? 'bg-yellow-50' : 'bg-red-50'}`}>
+                                                    <p className={`text-xl font-bold ${w.status === 'APPROVED' ? 'text-green-600' : w.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                        ₹{(w.total || 0).toLocaleString()}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1">{w.status}</p>
+                                                    <p className="text-xs text-gray-400">{w.count} requests</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Orders/Revenue */}
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="font-semibold text-gray-900 mb-4">Orders & Revenue</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl text-white">
+                                                <p className="text-xs opacity-80">Total Revenue</p>
+                                                <p className="text-2xl font-bold mt-1">₹{(analytics.orders?.totalRevenue || 0).toLocaleString()}</p>
+                                                <p className="text-xs opacity-80 mt-1">{analytics.orders?.total || 0} orders</p>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="p-3 bg-gray-50 rounded-xl">
+                                                    <p className="text-lg font-bold text-gray-900">₹{(analytics.orders?.monthRevenue || 0).toLocaleString()}</p>
+                                                    <p className="text-xs text-gray-500">This Month ({analytics.orders?.thisMonth || 0} orders)</p>
+                                                </div>
+                                                <div className="p-3 bg-gray-50 rounded-xl">
+                                                    <p className="text-lg font-bold text-gray-900">{analytics.orders?.today || 0}</p>
+                                                    <p className="text-xs text-gray-500">Orders Today</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Products Alert */}
+                                {analytics.products?.lowStock > 0 && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-amber-800">Low Stock Alert</p>
+                                            <p className="text-sm text-amber-600">{analytics.products.lowStock} products have less than 10 items in stock</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* User Trends Chart */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h3 className="font-semibold text-gray-900 mb-4">Monthly User Signups</h3>
+                                    <div className="h-64">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={analytics.trends?.monthlyUsers || []}>
+                                                <defs>
+                                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                                                <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
+                                                <YAxis tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
+                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                                <Area type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} fill="url(#colorUsers)" name="Users" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Ranks Distribution */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h3 className="font-semibold text-gray-900 mb-4">Users by Rank</h3>
                                     <div className="space-y-3">
-                                        {analytics.usersByRank.map(r => {
-                                            const percentage = (r.count / analytics.totalUsers) * 100;
+                                        {(analytics.ranks || []).map(r => {
+                                            const percentage = analytics.users?.total ? (r.count / analytics.users.total) * 100 : 0;
                                             const colors = {
-                                                'ROOKIE': 'bg-gray-400', 'ASSOCIATE_EXECUTIVE': 'bg-blue-400',
-                                                'TEAM_EXECUTIVE': 'bg-green-400', 'SR_TEAM_EXECUTIVE': 'bg-yellow-400',
-                                                'AREA_EXECUTIVE': 'bg-orange-400', 'REGIONAL_EXECUTIVE': 'bg-red-400',
-                                                'STATE_EXECUTIVE': 'bg-purple-400', 'VP': 'bg-pink-400'
+                                                'ROOKIE': 'bg-gray-400', 'Rookie': 'bg-gray-400',
+                                                'ASSOCIATE_EXECUTIVE': 'bg-blue-400', 'Associate Executive': 'bg-blue-400',
+                                                'TEAM_EXECUTIVE': 'bg-green-400', 'Team Executive': 'bg-green-400',
+                                                'SR_TEAM_EXECUTIVE': 'bg-yellow-400', 'Sr Team Executive': 'bg-yellow-400',
+                                                'AREA_EXECUTIVE': 'bg-orange-400', 'Area Executive': 'bg-orange-400',
+                                                'REGIONAL_EXECUTIVE': 'bg-red-400', 'Regional Executive': 'bg-red-400',
+                                                'STATE_EXECUTIVE': 'bg-purple-400', 'State Executive': 'bg-purple-400',
+                                                'VP': 'bg-pink-400'
                                             };
                                             return (
                                                 <div key={r.rank} className="flex items-center gap-4">
                                                     <span className="text-sm text-gray-600 w-40 truncate">{r.rank?.replace(/_/g, ' ') || 'Unknown'}</span>
-                                                    <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
-                                                        <div className={`h-full ${colors[r.rank] || 'bg-indigo-400'}`} style={{ width: `${percentage}%` }}></div>
+                                                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className={`h-full ${colors[r.rank] || 'bg-indigo-400'} rounded-full transition-all`} style={{ width: `${Math.max(percentage, 3)}%` }}></div>
                                                     </div>
-                                                    <span className="text-sm font-medium text-gray-900 w-16 text-right">{r.count}</span>
-                                                    <span className="text-xs text-gray-500 w-12">{percentage.toFixed(1)}%</span>
+                                                    <span className="text-sm font-medium text-gray-900 w-12 text-right">{r.count}</span>
+                                                    <span className="text-xs text-gray-500 w-12">{percentage.toFixed(0)}%</span>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 </div>
-
-                                {/* Monthly Trends Chart */}
-                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <h3 className="font-medium text-gray-900 mb-4">Monthly User Signups</h3>
-                                    <div className="h-64">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={analytics.monthlyUsers}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#999" />
-                                                <YAxis tick={{ fontSize: 12 }} stroke="#999" />
-                                                <Tooltip />
-                                                <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: '#8b5cf6' }} />
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-
-                                {/* Monthly Bonus Trends */}
-                                {analytics.monthlyBonuses.length > 0 && (
-                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                        <h3 className="font-medium text-gray-900 mb-4">Monthly Bonus Distribution</h3>
-                                        <div className="h-64">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={(() => {
-                                                    const grouped = {};
-                                                    analytics.monthlyBonuses.forEach(b => {
-                                                        if (!grouped[b.month]) grouped[b.month] = { month: b.month };
-                                                        grouped[b.month][b.type] = b.total;
-                                                    });
-                                                    return Object.values(grouped);
-                                                })()}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                    <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#999" />
-                                                    <YAxis tick={{ fontSize: 12 }} stroke="#999" />
-                                                    <Tooltip />
-                                                    <Legend />
-                                                    <Bar dataKey="DIRECT_BONUS" fill="#3b82f6" name="Direct" />
-                                                    <Bar dataKey="MATCHING_BONUS" fill="#10b981" name="Matching" />
-                                                    <Bar dataKey="LEADERSHIP_BONUS" fill="#f59e0b" name="Leadership" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         )}
 
@@ -453,17 +594,6 @@ export default function Dashboard() {
                         {/* Users Tab */}
                         {tab === 'users' && (
                             <div className="space-y-6">
-                                {/* Rank Distribution Stats */}
-                                {rankStats.length > 0 && (
-                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                        {rankStats.map((stat) => (
-                                            <div key={stat.rank} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                                <div className="text-gray-500 text-xs uppercase font-medium tracking-wider mb-1">{stat.rank}</div>
-                                                <div className="text-2xl font-bold text-gray-900">{stat.count}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
 
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                                     <table className="w-full text-sm">

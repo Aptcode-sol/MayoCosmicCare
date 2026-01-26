@@ -200,7 +200,7 @@ export default function Dashboard() {
                             {(user?.role === 'ADMIN' || user?.hasPurchased) ? (
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                                     <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/products')}>
-                                        <CardContent className="p-6 flex items-center gap-4">
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-3">
                                             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                                                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -214,7 +214,7 @@ export default function Dashboard() {
                                     </Card>
 
                                     <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/dashboard/tree')}>
-                                        <CardContent className="p-6 flex items-center gap-4">
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-3">
                                             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                                                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -270,7 +270,7 @@ export default function Dashboard() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                                     <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/products')}>
-                                        <CardContent className="p-6 flex items-center gap-4">
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-3">
                                             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                                                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -284,7 +284,7 @@ export default function Dashboard() {
                                     </Card>
 
                                     <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/dashboard/tree')}>
-                                        <CardContent className="p-6 flex items-center gap-4">
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-3">
                                             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                                                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />

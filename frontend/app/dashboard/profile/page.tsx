@@ -28,6 +28,7 @@ export default function ProfilePage() {
     const [username, setUsername] = useState('')
     const [phone, setPhone] = useState('')
     const [savingProfile, setSavingProfile] = useState(false)
+    const [isEditingProfile, setIsEditingProfile] = useState(false)
 
     // Email Change State
     const [emailStep, setEmailStep] = useState<'idle' | 'input' | 'otp'>('idle')
@@ -90,6 +91,7 @@ export default function ProfilePage() {
             toast.error(err.response?.data?.error || 'Update failed')
         } finally {
             setSavingProfile(false)
+            setIsEditingProfile(false)
         }
     }
 
@@ -316,30 +318,56 @@ export default function ProfilePage() {
                     <div className="lg:col-span-2 space-y-6">
                         {/* Personal Information */}
                         <Card>
-                            <CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle className="text-base flex items-center gap-2">
                                     <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     Personal Information
                                 </CardTitle>
+                                {!isEditingProfile && (
+                                    <Button variant="outline" size="sm" onClick={() => setIsEditingProfile(true)}>
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                        Edit
+                                    </Button>
+                                )}
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-700">Username</label>
-                                        <Input value={username} onChange={e => setUsername(e.target.value)} className="mt-1" />
+                                {isEditingProfile ? (
+                                    <>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-700">Username</label>
+                                                <Input value={username} onChange={e => setUsername(e.target.value)} className="mt-1" />
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-700">Phone Number</label>
+                                                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className="mt-1" />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="outline" onClick={() => { setIsEditingProfile(false); setUsername(user?.username || ''); setPhone(user?.phone || ''); }}>
+                                                Cancel
+                                            </Button>
+                                            <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                                {savingProfile ? 'Saving...' : 'Save Changes'}
+                                            </Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500">Username</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.username || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.phone || 'Not set'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-700">Phone Number</label>
-                                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className="mt-1" />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end">
-                                    <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                                        {savingProfile ? 'Saving...' : 'Save Changes'}
-                                    </Button>
-                                </div>
+                                )}
                             </CardContent>
                         </Card>
 

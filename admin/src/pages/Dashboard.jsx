@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { isAuthenticated, adminLogout } from '../lib/auth';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function Dashboard() {
     const [positionFilter, setPositionFilter] = useState('all');
     const [rewardedFilter, setRewardedFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+    const [analytics, setAnalytics] = useState(null);
+    const [networkUsers, setNetworkUsers] = useState([]);
     const [showProductForm, setShowProductForm] = useState(false);
     const [productForm, setProductForm] = useState({
         name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: ''
@@ -50,6 +53,12 @@ export default function Dashboard() {
             } else if (tab === 'withdrawals') {
                 const res = await api.get('/api/payouts/admin/list');
                 setWithdrawals(res.data.withdrawals || []);
+            } else if (tab === 'analytics') {
+                const res = await api.get('/api/admin/analytics/stats');
+                setAnalytics(res.data.stats || null);
+            } else if (tab === 'network') {
+                const res = await api.get('/api/admin/analytics/network');
+                setNetworkUsers(res.data.users || []);
             }
         } catch (err) {
             toast.error('Failed to fetch data');
@@ -125,7 +134,7 @@ export default function Dashboard() {
                 {/* Tabs */}
                 <div className="max-w-7xl mx-auto px-6 border-t border-gray-100">
                     <div className="flex gap-1">
-                        {['products', 'users', 'positions', 'withdrawals'].map((t) => (
+                        {['analytics', 'products', 'users', 'network', 'positions', 'withdrawals'].map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setTab(t)}
@@ -147,6 +156,196 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     <>
+                        {/* Analytics Tab */}
+                        {tab === 'analytics' && analytics && (
+                            <div className="space-y-6">
+                                <h2 className="text-lg font-medium text-gray-900">Analytics Overview</h2>
+
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="text-sm text-gray-500 mb-1">Total Users</h3>
+                                        <p className="text-2xl font-bold text-gray-900">{analytics.totalUsers}</p>
+                                        <p className="text-xs text-green-600 mt-1">+{analytics.todayUsers} today</p>
+                                    </div>
+                                    {analytics.bonusTotals.map(b => (
+                                        <div key={b.type} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                            <h3 className="text-sm text-gray-500 mb-1">{b.type.replace(/_/g, ' ')}</h3>
+                                            <p className="text-2xl font-bold text-gray-900">₹{(b.total || 0).toLocaleString()}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Withdrawal Stats */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h3 className="font-medium text-gray-900 mb-4">Withdrawal Summary</h3>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        {analytics.withdrawalStats.map(w => (
+                                            <div key={w.status} className="text-center">
+                                                <p className={`text-2xl font-bold ${w.status === 'APPROVED' ? 'text-green-600' : w.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                    ₹{(w.total || 0).toLocaleString()}
+                                                </p>
+                                                <p className="text-sm text-gray-500">{w.status} ({w.count})</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Position Distribution */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h3 className="font-medium text-gray-900 mb-4">Users by Rank</h3>
+                                    <div className="space-y-3">
+                                        {analytics.usersByRank.map(r => {
+                                            const percentage = (r.count / analytics.totalUsers) * 100;
+                                            const colors = {
+                                                'ROOKIE': 'bg-gray-400', 'ASSOCIATE_EXECUTIVE': 'bg-blue-400',
+                                                'TEAM_EXECUTIVE': 'bg-green-400', 'SR_TEAM_EXECUTIVE': 'bg-yellow-400',
+                                                'AREA_EXECUTIVE': 'bg-orange-400', 'REGIONAL_EXECUTIVE': 'bg-red-400',
+                                                'STATE_EXECUTIVE': 'bg-purple-400', 'VP': 'bg-pink-400'
+                                            };
+                                            return (
+                                                <div key={r.rank} className="flex items-center gap-4">
+                                                    <span className="text-sm text-gray-600 w-40 truncate">{r.rank?.replace(/_/g, ' ') || 'Unknown'}</span>
+                                                    <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className={`h-full ${colors[r.rank] || 'bg-indigo-400'}`} style={{ width: `${percentage}%` }}></div>
+                                                    </div>
+                                                    <span className="text-sm font-medium text-gray-900 w-16 text-right">{r.count}</span>
+                                                    <span className="text-xs text-gray-500 w-12">{percentage.toFixed(1)}%</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Monthly Trends Chart */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <h3 className="font-medium text-gray-900 mb-4">Monthly User Signups</h3>
+                                    <div className="h-64">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={analytics.monthlyUsers}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#999" />
+                                                <YAxis tick={{ fontSize: 12 }} stroke="#999" />
+                                                <Tooltip />
+                                                <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: '#8b5cf6' }} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Monthly Bonus Trends */}
+                                {analytics.monthlyBonuses.length > 0 && (
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                        <h3 className="font-medium text-gray-900 mb-4">Monthly Bonus Distribution</h3>
+                                        <div className="h-64">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={(() => {
+                                                    const grouped = {};
+                                                    analytics.monthlyBonuses.forEach(b => {
+                                                        if (!grouped[b.month]) grouped[b.month] = { month: b.month };
+                                                        grouped[b.month][b.type] = b.total;
+                                                    });
+                                                    return Object.values(grouped);
+                                                })()}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#999" />
+                                                    <YAxis tick={{ fontSize: 12 }} stroke="#999" />
+                                                    <Tooltip />
+                                                    <Legend />
+                                                    <Bar dataKey="DIRECT_BONUS" fill="#3b82f6" name="Direct" />
+                                                    <Bar dataKey="MATCHING_BONUS" fill="#10b981" name="Matching" />
+                                                    <Bar dataKey="LEADERSHIP_BONUS" fill="#f59e0b" name="Leadership" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Network Tab */}
+                        {tab === 'network' && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-medium text-gray-900">Full Network ({networkUsers.length} members)</h2>
+                                </div>
+
+                                {/* Network Stats */}
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
+                                        <p className="text-3xl font-bold text-gray-900">{networkUsers.filter(u => u.hasPurchased).length}</p>
+                                        <p className="text-sm text-gray-500">Active (Purchased)</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
+                                        <p className="text-3xl font-bold text-blue-600">{networkUsers.filter(u => u.position === 'left').length}</p>
+                                        <p className="text-sm text-gray-500">Left Position</p>
+                                    </div>
+                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
+                                        <p className="text-3xl font-bold text-purple-600">{networkUsers.filter(u => u.position === 'right').length}</p>
+                                        <p className="text-sm text-gray-500">Right Position</p>
+                                    </div>
+                                </div>
+
+                                {/* Network Table */}
+                                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left">User</th>
+                                                <th className="px-6 py-4 text-left">Position</th>
+                                                <th className="px-6 py-4 text-left">Rank</th>
+                                                <th className="px-6 py-4 text-left">Left/Right Count</th>
+                                                <th className="px-6 py-4 text-left">Purchased</th>
+                                                <th className="px-6 py-4 text-left">Joined</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {networkUsers.length > 0 ? networkUsers.slice(0, 100).map((u) => (
+                                                <tr key={u.id} className="hover:bg-gray-50/50">
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-gray-900 font-medium">{u.username}</div>
+                                                        <div className="text-gray-500 text-xs">{u.email}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${u.position === 'left' ? 'bg-blue-100 text-blue-700' : u.position === 'right' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                            {u.position || 'ROOT'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600 text-xs">{u.rank?.replace(/_/g, ' ')}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-blue-600">{u.leftMemberCount || 0}</span>
+                                                        <span className="text-gray-400 mx-1">/</span>
+                                                        <span className="text-purple-600">{u.rightMemberCount || 0}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {u.hasPurchased ? (
+                                                            <span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+                                                        ) : (
+                                                            <span className="w-2 h-2 bg-gray-300 rounded-full inline-block"></span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-500 text-xs">
+                                                        {new Date(u.createdAt).toLocaleDateString()}
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                                        No users in network
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                    {networkUsers.length > 100 && (
+                                        <div className="px-6 py-3 bg-gray-50 text-center text-sm text-gray-500">
+                                            Showing first 100 of {networkUsers.length} users
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Products Tab */}
                         {tab === 'products' && (
                             <div className="space-y-6">

@@ -197,80 +197,107 @@ export default function Dashboard() {
 
                         {/* Quick Actions */}
                         <AnimateOnScroll animation="fade-up">
-                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                                <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/products')}>
-                                    <CardContent className="p-6 flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                                            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Products</h3>
-                                            <p className="text-sm text-gray-500">Browse store</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                            {(user?.role === 'ADMIN' || user?.hasPurchased) ? (
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/products')}>
+                                        <CardContent className="p-6 flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">Products</h3>
+                                                <p className="text-sm text-gray-500">Browse store</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
 
-                                <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/dashboard/tree')}>
-                                    <CardContent className="p-6 flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                                            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Network</h3>
-                                            <p className="text-sm text-gray-500">View tree</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/dashboard/tree')}>
+                                        <CardContent className="p-6 flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">Network</h3>
+                                                <p className="text-sm text-gray-500">View tree</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
 
-                                {/* Referral Links - Only show if user has purchased or is admin */}
-                                {(user?.role === 'ADMIN' || user?.hasPurchased) ? (
-                                    <>
-                                        <Card>
-                                            <CardContent className="p-6">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-blue-50/50 rounded-lg flex items-center justify-center">
-                                                            <span className="text-blue-600 font-bold text-xs">L</span>
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-sm font-semibold text-gray-900">Left Link</h3>
-                                                        </div>
+                                    <Card>
+                                        <CardContent className="p-6">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-50/50 rounded-lg flex items-center justify-center">
+                                                        <span className="text-blue-600 font-bold text-xs">L</span>
                                                     </div>
-                                                    <Button variant="ghost" size="sm" onClick={() => {
-                                                        const randomEven = [0, 2, 4, 6, 8][Math.floor(Math.random() * 5)];
-                                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomEven}`)
-                                                        toast.success('Copied!')
-                                                    }}>Copy</Button>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card>
-                                            <CardContent className="p-6">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-purple-50/50 rounded-lg flex items-center justify-center">
-                                                            <span className="text-purple-600 font-bold text-xs">R</span>
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-sm font-semibold text-gray-900">Right Link</h3>
-                                                        </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold text-gray-900">Left Link</h3>
                                                     </div>
-                                                    <Button variant="ghost" size="sm" onClick={() => {
-                                                        const randomOdd = [1, 3, 5, 7, 9][Math.floor(Math.random() * 5)];
-                                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomOdd}`)
-                                                        toast.success('Copied!')
-                                                    }}>Copy</Button>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    </>
-                                ) : (
-                                    <Card className="col-span-2">
+                                                <Button variant="ghost" size="sm" onClick={() => {
+                                                    const randomEven = [0, 2, 4, 6, 8][Math.floor(Math.random() * 5)];
+                                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomEven}`)
+                                                    toast.success('Copied!')
+                                                }}>Copy</Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardContent className="p-6">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-purple-50/50 rounded-lg flex items-center justify-center">
+                                                        <span className="text-purple-600 font-bold text-xs">R</span>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold text-gray-900">Right Link</h3>
+                                                    </div>
+                                                </div>
+                                                <Button variant="ghost" size="sm" onClick={() => {
+                                                    const randomOdd = [1, 3, 5, 7, 9][Math.floor(Math.random() * 5)];
+                                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomOdd}`)
+                                                    toast.success('Copied!')
+                                                }}>Copy</Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/products')}>
+                                        <CardContent className="p-6 flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">Products</h3>
+                                                <p className="text-sm text-gray-500">Browse store</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => router.push('/dashboard/tree')}>
+                                        <CardContent className="p-6 flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">Network</h3>
+                                                <p className="text-sm text-gray-500">View tree</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
                                         <CardContent className="p-6 text-center">
                                             <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
                                                 <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,8 +308,8 @@ export default function Dashboard() {
                                             <p className="text-sm text-gray-500">Buy a product to unlock your referral links</p>
                                         </CardContent>
                                     </Card>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </AnimateOnScroll>
 
                         {/* Recent Transactions */}

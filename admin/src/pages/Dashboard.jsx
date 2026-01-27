@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAuthenticated, adminLogout } from '../lib/auth';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import AdminTreeView from '../components/AdminTreeView';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [networkUsers, setNetworkUsers] = useState([]);
     const [showProductForm, setShowProductForm] = useState(false);
+    const [editingProduct, setEditingProduct] = useState(null);
     const [productForm, setProductForm] = useState({
         name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: ''
     });
@@ -69,14 +71,37 @@ export default function Dashboard() {
 
     const createProduct = async () => {
         try {
-            await api.post('/api/admin/products', productForm);
-            toast.success('Product created');
-            setShowProductForm(false);
-            setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '' });
+            if (editingProduct) {
+                await api.put(`/api/admin/products/${editingProduct.id}`, productForm);
+                toast.success('Product updated');
+            } else {
+                await api.post('/api/admin/products', productForm);
+                toast.success('Product created');
+            }
+            closeProductModal();
             fetchData();
         } catch (err) {
-            toast.error('Failed to create product');
+            toast.error(editingProduct ? 'Failed to update product' : 'Failed to create product');
         }
+    };
+
+    const openEditProduct = (product) => {
+        setEditingProduct(product);
+        setProductForm({
+            name: product.name,
+            price: product.price,
+            bv: product.bv,
+            stock: product.stock,
+            description: product.description || '',
+            imageUrl: product.imageUrl || ''
+        });
+        setShowProductForm(true);
+    };
+
+    const closeProductModal = () => {
+        setShowProductForm(false);
+        setEditingProduct(null);
+        setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '' });
     };
 
     const deleteProduct = async (id) => {
@@ -408,7 +433,7 @@ export default function Dashboard() {
                         {tab === 'network' && (
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-medium text-gray-900">Full Network ({networkUsers.length} members)</h2>
+                                    <h2 className="text-lg font-medium text-gray-900">Network Tree ({networkUsers.length} members)</h2>
                                 </div>
 
                                 {/* Network Stats */}
@@ -418,71 +443,73 @@ export default function Dashboard() {
                                         <p className="text-sm text-gray-500">Active (Purchased)</p>
                                     </div>
                                     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                                        <p className="text-3xl font-bold text-blue-600">{networkUsers.filter(u => u.position === 'left').length}</p>
+                                        <p className="text-3xl font-bold text-blue-600">{networkUsers.filter(u => u.position === 'LEFT').length}</p>
                                         <p className="text-sm text-gray-500">Left Position</p>
                                     </div>
                                     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                                        <p className="text-3xl font-bold text-purple-600">{networkUsers.filter(u => u.position === 'right').length}</p>
+                                        <p className="text-3xl font-bold text-purple-600">{networkUsers.filter(u => u.position === 'RIGHT').length}</p>
                                         <p className="text-sm text-gray-500">Right Position</p>
                                     </div>
                                 </div>
 
-                                {/* Network Table */}
-                                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left">User</th>
-                                                <th className="px-6 py-4 text-left">Position</th>
-                                                <th className="px-6 py-4 text-left">Rank</th>
-                                                <th className="px-6 py-4 text-left">Left/Right Count</th>
-                                                <th className="px-6 py-4 text-left">Purchased</th>
-                                                <th className="px-6 py-4 text-left">Joined</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {networkUsers.length > 0 ? networkUsers.slice(0, 100).map((u) => (
-                                                <tr key={u.id} className="hover:bg-gray-50/50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="text-gray-900 font-medium">{u.username}</div>
-                                                        <div className="text-gray-500 text-xs">{u.email}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${u.position === 'left' ? 'bg-blue-100 text-blue-700' : u.position === 'right' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
-                                                            {u.position || 'ROOT'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-600 text-xs">{u.rank?.replace(/_/g, ' ')}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-blue-600">{u.leftMemberCount || 0}</span>
-                                                        <span className="text-gray-400 mx-1">/</span>
-                                                        <span className="text-purple-600">{u.rightMemberCount || 0}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        {u.hasPurchased ? (
-                                                            <span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
-                                                        ) : (
-                                                            <span className="w-2 h-2 bg-gray-300 rounded-full inline-block"></span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-500 text-xs">
-                                                        {new Date(u.createdAt).toLocaleDateString()}
-                                                    </td>
-                                                </tr>
-                                            )) : (
-                                                <tr>
-                                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                        No users in network
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                    {networkUsers.length > 100 && (
-                                        <div className="px-6 py-3 bg-gray-50 text-center text-sm text-gray-500">
-                                            Showing first 100 of {networkUsers.length} users
-                                        </div>
-                                    )}
+                                {/* Network Tree Visualization */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <div className="mb-4 text-sm text-gray-500">
+                                        Click nodes to view details. Expand/collapse with the arrow button.
+                                    </div>
+                                    {(() => {
+                                        // Build tree from flat user list
+                                        const buildTree = (users) => {
+                                            if (!users || users.length === 0) return null;
+
+                                            // Create a map of users by id
+                                            const userMap = {};
+                                            users.forEach(u => {
+                                                userMap[u.id] = { ...u, left: null, right: null };
+                                            });
+
+                                            // Find root (user with no parent or first user)
+                                            let root = null;
+                                            users.forEach(u => {
+                                                if (!u.parentId || !userMap[u.parentId]) {
+                                                    if (!root) root = userMap[u.id];
+                                                }
+                                            });
+
+                                            // Build tree relationships
+                                            users.forEach(u => {
+                                                if (u.parentId && userMap[u.parentId]) {
+                                                    const parent = userMap[u.parentId];
+                                                    if (u.position === 'LEFT') {
+                                                        parent.left = userMap[u.id];
+                                                    } else if (u.position === 'RIGHT') {
+                                                        parent.right = userMap[u.id];
+                                                    }
+                                                }
+                                            });
+
+                                            return root;
+                                        };
+
+                                        const treeData = buildTree(networkUsers);
+
+                                        if (!treeData) {
+                                            return (
+                                                <div className="text-center py-12 text-gray-500">
+                                                    No network data available
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <AdminTreeView
+                                                data={treeData}
+                                                onNodeClick={(node) => {
+                                                    toast.success(`${node.username}: ${node.leftMemberCount || 0} left, ${node.rightMemberCount || 0} right`);
+                                                }}
+                                            />
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         )}
@@ -493,66 +520,12 @@ export default function Dashboard() {
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-lg font-medium text-gray-900">Inventory Management</h2>
                                     <button
-                                        onClick={() => setShowProductForm(!showProductForm)}
+                                        onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '' }); setShowProductForm(true); }}
                                         className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-colors text-sm font-medium"
                                     >
-                                        {showProductForm ? 'Cancel' : 'Add Product'}
+                                        Add Product
                                     </button>
                                 </div>
-
-                                {showProductForm && (
-                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                        <h3 className="text-gray-900 font-medium mb-4">Create New Product</h3>
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <input
-                                                placeholder="Product Name"
-                                                value={productForm.name}
-                                                onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                            />
-                                            <input
-                                                type="number"
-                                                placeholder="Price"
-                                                value={productForm.price}
-                                                onChange={(e) => setProductForm({ ...productForm, price: +e.target.value })}
-                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                            />
-                                            <input
-                                                type="number"
-                                                placeholder="BV"
-                                                value={productForm.bv}
-                                                onChange={(e) => setProductForm({ ...productForm, bv: +e.target.value })}
-                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                            />
-                                            <input
-                                                type="number"
-                                                placeholder="Stock"
-                                                value={productForm.stock}
-                                                onChange={(e) => setProductForm({ ...productForm, stock: +e.target.value })}
-                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                            />
-                                            <input
-                                                placeholder="Image URL"
-                                                value={productForm.imageUrl}
-                                                onChange={(e) => setProductForm({ ...productForm, imageUrl: e.target.value })}
-                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 col-span-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                            />
-                                            <textarea
-                                                placeholder="Description"
-                                                value={productForm.description}
-                                                onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                                                className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 col-span-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                                                rows={3}
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={createProduct}
-                                            className="mt-4 px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium"
-                                        >
-                                            Save Product
-                                        </button>
-                                    </div>
-                                )}
 
                                 <div className="grid md:grid-cols-3 gap-6">
                                     {products.map((product) => (
@@ -563,7 +536,13 @@ export default function Dashboard() {
                                                     alt={product.name}
                                                     className="w-full h-full object-cover"
                                                 />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => openEditProduct(product)}
+                                                        className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-900 rounded-lg text-sm font-medium"
+                                                    >
+                                                        Edit
+                                                    </button>
                                                     <button
                                                         onClick={() => deleteProduct(product.id)}
                                                         className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
@@ -588,6 +567,103 @@ export default function Dashboard() {
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Product Modal Overlay */}
+                                {showProductForm && (
+                                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                                        <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <h3 className="text-lg font-semibold text-gray-900">
+                                                    {editingProduct ? 'Edit Product' : 'Add New Product'}
+                                                </h3>
+                                                <button
+                                                    onClick={closeProductModal}
+                                                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                                                >
+                                                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                                                    <input
+                                                        placeholder="Enter product name"
+                                                        value={productForm.name}
+                                                        onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="0"
+                                                            value={productForm.price}
+                                                            onChange={(e) => setProductForm({ ...productForm, price: +e.target.value })}
+                                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">BV</label>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="0"
+                                                            value={productForm.bv}
+                                                            onChange={(e) => setProductForm({ ...productForm, bv: +e.target.value })}
+                                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        value={productForm.stock}
+                                                        onChange={(e) => setProductForm({ ...productForm, stock: +e.target.value })}
+                                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                                                    <input
+                                                        placeholder="https://..."
+                                                        value={productForm.imageUrl}
+                                                        onChange={(e) => setProductForm({ ...productForm, imageUrl: e.target.value })}
+                                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                                    <textarea
+                                                        placeholder="Product description..."
+                                                        value={productForm.description}
+                                                        onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                                        rows={3}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3 mt-6">
+                                                <button
+                                                    onClick={closeProductModal}
+                                                    className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-sm font-medium"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={createProduct}
+                                                    className="flex-1 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium"
+                                                >
+                                                    {editingProduct ? 'Update Product' : 'Create Product'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 

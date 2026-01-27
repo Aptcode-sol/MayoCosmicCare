@@ -227,42 +227,34 @@ export default function Dashboard() {
                                         </CardContent>
                                     </Card>
 
-                                    <Card>
-                                        <CardContent className="p-6">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-blue-50/50 rounded-lg flex items-center justify-center">
-                                                        <span className="text-blue-600 font-bold text-xs">L</span>
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-sm font-semibold text-gray-900">Left Link</h3>
-                                                    </div>
-                                                </div>
-                                                <Button variant="ghost" size="sm" onClick={() => {
-                                                    const randomEven = [0, 2, 4, 6, 8][Math.floor(Math.random() * 5)];
-                                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomEven}`)
-                                                    toast.success('Copied!')
-                                                }}>Copy</Button>
+                                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => {
+                                        const randomEven = [0, 2, 4, 6, 8][Math.floor(Math.random() * 5)];
+                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomEven}`)
+                                        toast.success('Left Link Copied!')
+                                    }}>
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                                <span className="text-blue-600 font-bold text-xl">L</span>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">Left Link</h3>
+                                                <p className="text-sm text-gray-500">Click to copy</p>
                                             </div>
                                         </CardContent>
                                     </Card>
 
-                                    <Card>
-                                        <CardContent className="p-6">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-purple-50/50 rounded-lg flex items-center justify-center">
-                                                        <span className="text-purple-600 font-bold text-xs">R</span>
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-sm font-semibold text-gray-900">Right Link</h3>
-                                                    </div>
-                                                </div>
-                                                <Button variant="ghost" size="sm" onClick={() => {
-                                                    const randomOdd = [1, 3, 5, 7, 9][Math.floor(Math.random() * 5)];
-                                                    navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomOdd}`)
-                                                    toast.success('Copied!')
-                                                }}>Copy</Button>
+                                    <Card className="hover:border-gray-300 transition-colors cursor-pointer group" onClick={() => {
+                                        const randomOdd = [1, 3, 5, 7, 9][Math.floor(Math.random() * 5)];
+                                        navigator.clipboard.writeText(`${window.location.origin}/register?sponsor=${user?.id}${randomOdd}`)
+                                        toast.success('Right Link Copied!')
+                                    }}>
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                                            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                                                <span className="text-purple-600 font-bold text-xl">R</span>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">Right Link</h3>
+                                                <p className="text-sm text-gray-500">Click to copy</p>
                                             </div>
                                         </CardContent>
                                     </Card>

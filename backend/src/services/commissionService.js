@@ -52,9 +52,78 @@ function calculate2to1Matching(leftCount, rightCount) {
 }
 
 /**
+ * Credit leadership bonus to sponsor when referral earns income.
+ * @param {PrismaClient} prismaClient - Transaction client (required)
+ * @param {string} sponsorId - The sponsor's user ID
+ * @param {number} referralEarning - Amount earned by the referral
+ * @param {string} referralId - The referral's user ID (for audit trail)
+ */
+async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, referralId) {
+    if (!prismaClient || !sponsorId || referralEarning <= 0) return null;
+
+    const percent = parseInt(process.env.LEADERSHIP_BONUS_PERCENT || '10', 10);
+    const dailyCap = parseInt(process.env.DAILY_LEADERSHIP_BONUS_CAP || '5000', 10);
+
+    // Calculate bonus amount
+    const bonusAmount = Math.floor((referralEarning * percent) / 100);
+    if (bonusAmount <= 0) return null;
+
+    // Check daily limit
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    let counter = await prismaClient.dailyLeadershipCounter.findFirst({
+        where: { userId: sponsorId, date: { gte: todayStart, lt: todayEnd } }
+    });
+
+    const earnedToday = counter?.amount || 0;
+    const remaining = Math.max(0, dailyCap - earnedToday);
+    if (remaining <= 0) {
+        console.log(`[LEADERSHIP] Sponsor ${sponsorId} hit daily cap (${dailyCap})`);
+        return null;
+    }
+
+    const actualBonus = Math.min(bonusAmount, remaining);
+
+    // Credit wallet
+    await prismaClient.wallet.upsert({
+        where: { userId: sponsorId },
+        update: { balance: { increment: actualBonus } },
+        create: { userId: sponsorId, balance: actualBonus }
+    });
+
+    // Create transaction
+    await prismaClient.transaction.create({
+        data: {
+            userId: sponsorId,
+            type: 'LEADERSHIP_BONUS',
+            amount: actualBonus,
+            detail: `Leadership bonus (${percent}% of referral earnings)`
+        }
+    });
+
+    // Update daily counter
+    try {
+        await prismaClient.dailyLeadershipCounter.create({
+            data: { userId: sponsorId, date: todayStart, amount: actualBonus }
+        });
+    } catch (e) {
+        if (e?.code === 'P2002') {
+            await prismaClient.dailyLeadershipCounter.updateMany({
+                where: { userId: sponsorId, date: { gte: todayStart, lt: todayEnd } },
+                data: { amount: { increment: actualBonus } }
+            });
+        } else throw e;
+    }
+
+    console.log(`[LEADERSHIP] Credited ${actualBonus} to sponsor ${sponsorId} (${percent}% of ${referralEarning})`);
+    return { sponsorId, amount: actualBonus };
+}
+/**
  * Credit direct referral bonus to sponsor wallet.
  */
-async function creditDirectBonus(prismaClient, sponsorId, bv) {
+async function creditDirectBonus(prismaClient, sponsorId, bv, referralId = null) {
     const bonusAmount = parseInt(process.env.DIRECT_BONUS_AMOUNT || '500', 10);
     const db = prismaClient || prisma;
 
@@ -218,6 +287,11 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
 
         try { const { broadcastPayout } = require('../routes/sse'); broadcastPayout(payout).catch?.(() => { }); } catch (e) { }
 
+        // Trigger leadership bonus for user's sponsor
+        if (user.sponsorId && bonus > 0) {
+            await creditLeadershipBonus(tx, user.sponsorId, bonus, userId);
+        }
+
         return payout;
     };
 
@@ -225,4 +299,4 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
     return await db.$transaction(runMatching);
 }
 
-module.exports = { creditDirectBonus, processMatchingBonus, calculate2to1Matching };
+module.exports = { creditDirectBonus, processMatchingBonus, calculate2to1Matching, creditLeadershipBonus };

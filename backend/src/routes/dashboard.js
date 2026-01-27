@@ -122,19 +122,41 @@ router.get('/incentives', authenticate, async (req, res) => {
 
         let directBonus = 0;
         let matchingBonus = 0;
+        let leadershipBonus = 0;
         let totalPaid = 0;
 
         aggregations.forEach(agg => {
             if (agg.type === 'DIRECT_BONUS') directBonus = (agg._sum.amount || 0);
             if (agg.type === 'MATCHING_BONUS') matchingBonus = (agg._sum.amount || 0);
+            if (agg.type === 'LEADERSHIP_BONUS') leadershipBonus = (agg._sum.amount || 0);
         });
-        totalPaid = directBonus + matchingBonus;
+        totalPaid = directBonus + matchingBonus + leadershipBonus;
+
+        // Get today's counters
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+        const [todayLeadership, todayMatching] = await Promise.all([
+            prisma.dailyLeadershipCounter.findFirst({
+                where: { userId, date: { gte: todayStart, lt: todayEnd } }
+            }),
+            prisma.dailyPairCounter.findFirst({
+                where: { userId, date: { gte: todayStart, lt: todayEnd } }
+            })
+        ]);
+
+        // Calculate today's matching bonus from pairs
+        const bonusPerMatch = parseInt(process.env.MATCHING_BONUS_PER_MATCH || '700', 10);
+        const todayMatchingBonus = (todayMatching?.pairs || 0) * bonusPerMatch;
+        const matchingPairCap = parseInt(process.env.DAILY_PAIR_CAP || '10', 10);
+        const matchingBonusCap = matchingPairCap * bonusPerMatch;
 
         // History
         const history = await prisma.transaction.findMany({
             where: {
                 userId,
-                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS'] }
+                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS'] }
             },
             orderBy: { createdAt: 'desc' },
             take: 20
@@ -143,7 +165,18 @@ router.get('/incentives', authenticate, async (req, res) => {
         res.json({
             ok: true,
             data: {
-                summary: { totalPaid, directBonus, matchingBonus },
+                summary: {
+                    totalPaid,
+                    directBonus,
+                    matchingBonus,
+                    leadershipBonus,
+                    todayLeadershipBonus: todayLeadership?.amount || 0,
+                    leadershipDailyCap: parseInt(process.env.DAILY_LEADERSHIP_BONUS_CAP || '5000', 10),
+                    todayMatchingBonus,
+                    matchingDailyCap: matchingBonusCap,
+                    todayPairs: todayMatching?.pairs || 0,
+                    dailyPairCap: matchingPairCap
+                },
                 history
             }
         });

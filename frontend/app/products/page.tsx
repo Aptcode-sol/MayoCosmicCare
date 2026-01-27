@@ -96,17 +96,6 @@ export default function Products() {
                                                 <span className="text-sm font-semibold text-gray-900 border border-gray-900 px-6 py-2 uppercase tracking-widest">Sold Out</span>
                                             </div>
                                         )}
-
-                                        {/* Overlay Action */}
-                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                            <Button
-                                                variant="secondary"
-                                                className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-lg"
-                                                onClick={() => window.location.href = `/products/${product.id}`}
-                                            >
-                                                View Details
-                                            </Button>
-                                        </div>
                                     </div>
 
                                     <CardHeader className="pt-6 pb-2">

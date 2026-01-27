@@ -69,7 +69,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             by: ['type'],
             _sum: { amount: true },
             _count: { id: true },
-            where: { type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS'] } }
+            where: { type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS'] } }
         });
 
         // Total wallet balance across all users
@@ -89,7 +89,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             _sum: { amount: true },
             where: {
                 createdAt: { gte: startOfToday },
-                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS'] }
+                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS'] }
             }
         });
 
@@ -98,7 +98,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             _sum: { amount: true },
             where: {
                 createdAt: { gte: startOfMonth },
-                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS'] }
+                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS'] }
             }
         });
 

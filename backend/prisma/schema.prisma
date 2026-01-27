@@ -51,6 +51,7 @@ model User {
   withdrawals      Withdrawal[]
   pairPayouts      PairPayoutRecord[]
   dailyPairCounters DailyPairCounter[]
+  dailyLeadershipCounters DailyLeadershipCounter[]
   rankChanges      RankChange[]
   orders           Order[]
 }
@@ -73,15 +74,21 @@ model RankChange {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  price       Int
-  bv          Int
-  description String?
-  stock       Int      @default(0)
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  orderItems  OrderItem[]
+  id                 String   @id @default(cuid())
+  name               String
+  price              Int
+  bv                 Int
+  description        String?
+  stock              Int      @default(0)
+  imageUrl           String?
+  // Bonus Configuration
+  directBonus        Int      @default(3000)   // ₹ credited to sponsor on referral
+  matchingBonus      Int      @default(2000)   // ₹ per pair (for future use)
+  dailyCap           Int      @default(40000)  // Max matching bonus per day (for future use)
+  taxPercent         Float    @default(5.0)    // Tax deduction %
+  adminChargePercent Float    @default(5.0)    // Admin fee %
+  createdAt          DateTime @default(now())
+  orderItems         OrderItem[]
 }
 
 model Wallet {
@@ -146,6 +153,18 @@ model DailyPairCounter {
   @@unique([userId, date])
 }
 
+model DailyLeadershipCounter {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  date      DateTime
+  amount    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@unique([userId, date])
+}
+
 enum Role {
   ADMIN
   USER
@@ -155,6 +174,7 @@ enum TxType {
   PURCHASE
   DIRECT_BONUS
   MATCHING_BONUS
+  LEADERSHIP_BONUS
   WITHDRAW
   REFUND
   ADMIN_CREDIT

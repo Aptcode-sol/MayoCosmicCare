@@ -20,6 +20,11 @@ interface IncentiveData {
         totalPaid: number
         directBonus: number
         matchingBonus: number
+        leadershipBonus: number
+        todayLeadershipBonus: number
+        leadershipDailyCap: number
+        todayMatchingBonus: number
+        matchingDailyCap: number
     }
     history: Transaction[]
 }
@@ -59,7 +64,7 @@ export default function Incentives() {
         )
     }
 
-    const summary = data?.summary || { totalPaid: 0, directBonus: 0, matchingBonus: 0 }
+    const summary = data?.summary || { totalPaid: 0, directBonus: 0, matchingBonus: 0, leadershipBonus: 0, todayLeadershipBonus: 0, leadershipDailyCap: 5000, todayMatchingBonus: 0, matchingDailyCap: 7000 }
     const history = data?.history || []
 
     return (
@@ -82,7 +87,7 @@ export default function Incentives() {
 
             {/* Payout Summary Cards */}
             <AnimateOnScroll animation="fade-up" delay={100}>
-                <div className="grid md:grid-cols-3 gap-6 mb-12">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -119,7 +124,42 @@ export default function Incentives() {
                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Matching Bonus</p>
                         </div>
                         <p className="text-4xl font-light text-gray-900">₹{summary.matchingBonus.toLocaleString()}</p>
-                        <p className="text-sm text-gray-500 mt-2">From team matching</p>
+                        <div className="mt-2">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Today: ₹{summary.todayMatchingBonus.toLocaleString()}</span>
+                                <span>Cap: ₹{summary.matchingDailyCap.toLocaleString()}</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-purple-500 rounded-full transition-all"
+                                    style={{ width: `${Math.min(100, (summary.todayMatchingBonus / summary.matchingDailyCap) * 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                            </div>
+                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Leadership Bonus</p>
+                        </div>
+                        <p className="text-4xl font-light text-gray-900">₹{summary.leadershipBonus.toLocaleString()}</p>
+                        <div className="mt-2">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Today: ₹{summary.todayLeadershipBonus}</span>
+                                <span>Cap: ₹{summary.leadershipDailyCap}</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-amber-500 rounded-full transition-all"
+                                    style={{ width: `${Math.min(100, (summary.todayLeadershipBonus / summary.leadershipDailyCap) * 100)}%` }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </AnimateOnScroll>
@@ -151,9 +191,11 @@ export default function Incentives() {
                                             <td className="px-6 py-4">
                                                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${tx.type === 'DIRECT_BONUS'
                                                     ? 'bg-blue-100 text-blue-700'
-                                                    : 'bg-purple-100 text-purple-700'
+                                                    : tx.type === 'LEADERSHIP_BONUS'
+                                                        ? 'bg-amber-100 text-amber-700'
+                                                        : 'bg-purple-100 text-purple-700'
                                                     }`}>
-                                                    {tx.type === 'DIRECT_BONUS' ? 'Direct' : 'Matching'}
+                                                    {tx.type === 'DIRECT_BONUS' ? 'Direct' : tx.type === 'LEADERSHIP_BONUS' ? 'Leadership' : 'Matching'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{tx.detail || '-'}</td>

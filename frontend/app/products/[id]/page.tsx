@@ -1,11 +1,12 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { listPublic, purchase } from '../../../lib/services/products'
+import { listPublic } from '../../../lib/services/products'
 import { Button } from "@/components/ui/Button"
 import toast from 'react-hot-toast'
 import { parseApiError } from '../../../lib/api'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { useCart } from '../../../context/CartContext'
 
 interface Product {
     id: string
@@ -20,6 +21,7 @@ interface Product {
 export default function ProductDetail() {
     const params = useParams()
     const router = useRouter()
+    const { addToCart } = useCart()
     const [product, setProduct] = useState<Product | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -48,7 +50,7 @@ export default function ProductDetail() {
         }
     }
 
-    async function handlePurchase() {
+    function handleAddToCart() {
         if (!product) return
 
         const token = localStorage.getItem('accessToken')
@@ -58,13 +60,13 @@ export default function ProductDetail() {
             return
         }
 
-        try {
-            await purchase(product.id)
-            toast.success(`Successfully purchased ${product.name}!`)
-        } catch (err: unknown) {
-            const { message } = parseApiError(err)
-            toast.error(String(message || 'Purchase failed'))
-        }
+        addToCart({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            imageUrl: product.imageUrl
+        })
     }
 
     if (loading) {
@@ -79,6 +81,9 @@ export default function ProductDetail() {
     }
 
     if (!product) return null
+
+    // Check if this is a mattress product
+    const isMattress = product.name.toLowerCase().includes('mattress') || product.name.toLowerCase().includes('magnetic')
 
     return (
         <div className="min-h-screen bg-white">
@@ -143,7 +148,7 @@ export default function ProductDetail() {
                                 <Button
                                     size="lg"
                                     className="w-full md:w-auto min-w-[200px] h-14 text-lg bg-gray-900 hover:bg-gray-800"
-                                    onClick={handlePurchase}
+                                    onClick={handleAddToCart}
                                     disabled={product.stock === 0}
                                 >
                                     {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
@@ -152,7 +157,97 @@ export default function ProductDetail() {
                         </div>
                     </AnimateOnScroll>
                 </div>
+
+                {/* Mattress Features Section - Only show for mattress products */}
+                {isMattress && (
+                    <>
+                        {/* Main Features Grid */}
+                        <AnimateOnScroll animation="fade-up" delay={100}>
+                            <div className="mt-24 pt-16 border-t border-gray-100">
+                                <h2 className="text-3xl font-light text-gray-900 mb-12 text-center">Key Features</h2>
+                                <div className="grid md:grid-cols-3 gap-8">
+                                    <div className="bg-gray-50 rounded-3xl p-8">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-6">
+                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Blood Circulation</h3>
+                                        <p className="text-gray-500 leading-relaxed">
+                                            Enhances smooth blood flow from head to toe, naturally improving oxygen delivery to all 78 vital organs
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-3xl p-8">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Energy Boost</h3>
+                                        <p className="text-gray-500 leading-relaxed">
+                                            Absorbs glucose & fatty acids, converting them into high energy while reducing fatigue and tiredness
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-3xl p-8">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Deep Sleep</h3>
+                                        <p className="text-gray-500 leading-relaxed">
+                                            Experience restorative deep sleep that helps your body heal, recover, and rejuvenate naturally
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </AnimateOnScroll>
+
+                        {/* Health Benefits */}
+                        <AnimateOnScroll animation="fade-up" delay={200}>
+                            <div className="mt-16 bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-10 lg:p-16">
+                                <h3 className="text-2xl font-light text-white mb-10 text-center">
+                                    Comprehensive Health Benefits
+                                </h3>
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {[
+                                        { icon: "💪", text: "Increases Strength & Resistance" },
+                                        { icon: "🩸", text: "Controls BP & Cholesterol" },
+                                        { icon: "🧠", text: "Improves Brain Health" },
+                                        { icon: "🦴", text: "Helps Joint & Bone Pain" },
+                                        { icon: "⚡", text: "Boosts Body Flexibility" },
+                                        { icon: "🛡️", text: "EMF Radiation Protection" },
+                                        { icon: "🌿", text: "Anti-Aging Benefits" },
+                                        { icon: "✨", text: "Complete Body Detox" },
+                                    ].map((benefit, i) => (
+                                        <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
+                                            <span className="text-2xl">{benefit.icon}</span>
+                                            <span className="text-white/90 text-sm font-medium">{benefit.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </AnimateOnScroll>
+
+                        {/* Trust Badges */}
+                        <AnimateOnScroll animation="fade-up" delay={300}>
+                            <div className="flex flex-wrap justify-center gap-6 mt-16">
+                                {['100% Natural', 'Scientifically Proven', 'Zero Side Effects', 'Drug-Free Therapy'].map((badge, i) => (
+                                    <div key={i} className="flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-full border border-gray-100">
+                                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="font-medium text-gray-700">{badge}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </AnimateOnScroll>
+                    </>
+                )}
             </div>
         </div>
     )
 }
+

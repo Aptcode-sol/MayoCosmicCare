@@ -39,7 +39,13 @@ async function main() {
                 bv: 7000,
                 stock: 1000,
                 description: 'Premium comfort mattress with 10-year warranty',
-                imageUrl: 'https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/74c1a2e8-6769-50cf-9456-9956fbe5be84/78b7eb7a-896e-57ff-b047-c69590dd28e7.jpg'
+                imageUrl: 'https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/74c1a2e8-6769-50cf-9456-9956fbe5be84/78b7eb7a-896e-57ff-b047-c69590dd28e7.jpg',
+                // Bonus Configuration
+                directBonus: 3000,
+                matchingBonus: 2000,
+                dailyCap: 40000,
+                taxPercent: 5.0,
+                adminChargePercent: 5.0
             }
         });
         console.log('✓ Product created');

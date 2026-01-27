@@ -22,7 +22,8 @@ export default function Dashboard() {
     const [showProductForm, setShowProductForm] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [productForm, setProductForm] = useState({
-        name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: ''
+        name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '',
+        directBonus: 3000, matchingBonus: 2000, dailyCap: 40000, taxPercent: 5, adminChargePercent: 5
     });
 
     useEffect(() => {
@@ -93,7 +94,12 @@ export default function Dashboard() {
             bv: product.bv,
             stock: product.stock,
             description: product.description || '',
-            imageUrl: product.imageUrl || ''
+            imageUrl: product.imageUrl || '',
+            directBonus: product.directBonus ?? 3000,
+            matchingBonus: product.matchingBonus ?? 2000,
+            dailyCap: product.dailyCap ?? 40000,
+            taxPercent: product.taxPercent ?? 5,
+            adminChargePercent: product.adminChargePercent ?? 5
         });
         setShowProductForm(true);
     };
@@ -101,7 +107,7 @@ export default function Dashboard() {
     const closeProductModal = () => {
         setShowProductForm(false);
         setEditingProduct(null);
-        setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '' });
+        setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '', directBonus: 3000, matchingBonus: 2000, dailyCap: 40000, taxPercent: 5, adminChargePercent: 5 });
     };
 
     const deleteProduct = async (id) => {
@@ -520,7 +526,7 @@ export default function Dashboard() {
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-lg font-medium text-gray-900">Inventory Management</h2>
                                     <button
-                                        onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '' }); setShowProductForm(true); }}
+                                        onClick={() => { setEditingProduct(null); setProductForm({ name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '', directBonus: 3000, matchingBonus: 2000, dailyCap: 40000, taxPercent: 5, adminChargePercent: 5 }); setShowProductForm(true); }}
                                         className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-colors text-sm font-medium"
                                     >
                                         Add Product
@@ -562,6 +568,11 @@ export default function Dashboard() {
                                                 <div className="flex justify-between text-sm border-t border-gray-50 pt-3">
                                                     <span className="text-gray-900 font-medium">₹{product.price}</span>
                                                     <span className="text-gray-500">{product.bv} BV</span>
+                                                </div>
+                                                {/* Bonus Info */}
+                                                <div className="flex gap-2 mt-2 text-xs">
+                                                    <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded">Direct: ₹{product.directBonus ?? 3000}</span>
+                                                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">Match: ₹{product.matchingBonus ?? 2000}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -645,6 +656,65 @@ export default function Dashboard() {
                                                         className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                                                         rows={3}
                                                     />
+                                                </div>
+
+                                                {/* Bonus Configuration Section */}
+                                                <div className="pt-4 border-t border-gray-100">
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Bonus Configuration</h4>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-600 mb-1">Direct Bonus (₹)</label>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="3000"
+                                                                value={productForm.directBonus}
+                                                                onChange={(e) => setProductForm({ ...productForm, directBonus: +e.target.value })}
+                                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-sm"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-600 mb-1">Matching Bonus (₹)</label>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="2000"
+                                                                value={productForm.matchingBonus}
+                                                                onChange={(e) => setProductForm({ ...productForm, matchingBonus: +e.target.value })}
+                                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-sm"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-600 mb-1">Daily Cap (₹)</label>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="40000"
+                                                                value={productForm.dailyCap}
+                                                                onChange={(e) => setProductForm({ ...productForm, dailyCap: +e.target.value })}
+                                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-sm"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-600 mb-1">Tax (%)</label>
+                                                            <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                placeholder="5"
+                                                                value={productForm.taxPercent}
+                                                                onChange={(e) => setProductForm({ ...productForm, taxPercent: +e.target.value })}
+                                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-sm"
+                                                            />
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <label className="block text-xs font-medium text-gray-600 mb-1">Admin Charge (%)</label>
+                                                            <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                placeholder="5"
+                                                                value={productForm.adminChargePercent}
+                                                                onChange={(e) => setProductForm({ ...productForm, adminChargePercent: +e.target.value })}
+                                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-sm"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="flex gap-3 mt-6">

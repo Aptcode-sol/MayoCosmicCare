@@ -53,11 +53,11 @@ export default function Login() {
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <LocalLabel htmlFor="username">Username</LocalLabel>
+                            <LocalLabel htmlFor="username">Username or Email</LocalLabel>
                             <Input
                                 id="username"
                                 type="text"
-                                placeholder="Enter your username"
+                                placeholder="Enter your username or email"
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 required

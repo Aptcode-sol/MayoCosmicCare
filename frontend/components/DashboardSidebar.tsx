@@ -29,7 +29,7 @@ const icons: Record<string, ReactNode> = {
 }
 
 interface DashboardSidebarProps {
-    user?: { username?: string; email?: string } | null
+    user?: { username?: string; name?: string; email?: string } | null
     isExpanded: boolean
     setIsExpanded: (expanded: boolean) => void
 }
@@ -121,7 +121,7 @@ export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: Da
                     <div className="flex items-center gap-3 px-3 py-3">
                         {/* Avatar with gradient */}
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-medium text-xs shrink-0">
-                            {(user?.username || 'U').slice(0, 2).toUpperCase()}
+                            {(user?.name || user?.username || 'U').slice(0, 2).toUpperCase()}
                         </div>
                         {/* User Info - Visible when expanded */}
                         <div
@@ -130,8 +130,8 @@ export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: Da
                                 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}
                             `}
                         >
-                            <p className="text-sm font-medium text-gray-900 truncate">{user?.username || 'User'}</p>
-                            <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">{user?.name || user?.username || 'User'}</p>
+                            <p className="text-xs text-gray-500 truncate">{user?.username}</p>
                         </div>
                     </div>
 

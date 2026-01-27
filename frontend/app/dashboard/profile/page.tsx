@@ -11,6 +11,7 @@ import toast from 'react-hot-toast'
 interface UserData {
     id: string
     username: string
+    name?: string
     email: string
     phone?: string
     kycStatus?: string
@@ -26,6 +27,7 @@ export default function ProfilePage() {
 
     // Personal Info State
     const [username, setUsername] = useState('')
+    const [name, setName] = useState('')
     const [phone, setPhone] = useState('')
     const [savingProfile, setSavingProfile] = useState(false)
     const [isEditingProfile, setIsEditingProfile] = useState(false)
@@ -61,6 +63,7 @@ export default function ProfilePage() {
             if (data.ok && data.user) {
                 setUser(data.user)
                 setUsername(data.user.username || '')
+                setName(data.user.name || '')
                 setPhone(data.user.phone || '')
                 setKycStatus(data.user.kycStatus || 'NOT_STARTED')
                 setKycDocs({
@@ -80,7 +83,7 @@ export default function ProfilePage() {
     const handleSaveProfile = async () => {
         setSavingProfile(true)
         try {
-            const res = await updateProfile({ username, phone })
+            const res = await updateProfile({ name, username, phone })
             if (res.ok) {
                 toast.success('Profile updated')
                 loadUser()
@@ -241,11 +244,11 @@ export default function ProfilePage() {
                             <CardContent className="pt-0 -mt-10 text-center">
                                 <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center mx-auto mb-4 border-4 border-white">
                                     <span className="text-2xl font-bold text-indigo-600">
-                                        {(user?.username || 'U').slice(0, 2).toUpperCase()}
+                                        {(user?.name || user?.username || 'U').slice(0, 2).toUpperCase()}
                                     </span>
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">{user?.username}</h2>
-                                <p className="text-gray-500 text-sm">{user?.email}</p>
+                                <h2 className="text-xl font-bold text-gray-900">{user?.name || user?.username}</h2>
+                                <p className="text-gray-500 text-sm">{user?.username}</p>
                                 {user?.phone && <p className="text-gray-400 text-xs mt-1">📱 {user.phone}</p>}
 
                                 <div className="border-t border-gray-100 mt-4 pt-4 space-y-2">
@@ -339,16 +342,20 @@ export default function ProfilePage() {
                                     <>
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-sm font-medium text-gray-700">Username</label>
-                                                <Input value={username} onChange={e => setUsername(e.target.value)} className="mt-1" />
+                                                <label className="text-sm font-medium text-gray-700">Full Name</label>
+                                                <Input value={name} onChange={e => setName(e.target.value)} className="mt-1" />
                                             </div>
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Phone Number</label>
-                                                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className="mt-1" />
+                                                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className="mt-1" disabled />
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-700">Username</label>
+                                                <Input value={username} onChange={e => setUsername(e.target.value)} className="mt-1" disabled />
                                             </div>
                                         </div>
                                         <div className="flex justify-end gap-2">
-                                            <Button variant="outline" onClick={() => { setIsEditingProfile(false); setUsername(user?.username || ''); setPhone(user?.phone || ''); }}>
+                                            <Button variant="outline" onClick={() => { setIsEditingProfile(false); setUsername(user?.username || ''); setName(user?.name || ''); setPhone(user?.phone || ''); }}>
                                                 Cancel
                                             </Button>
                                             <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -359,12 +366,16 @@ export default function ProfilePage() {
                                 ) : (
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-sm font-medium text-gray-500">Username</label>
-                                            <p className="text-gray-900 font-medium mt-1">{user?.username || '-'}</p>
+                                            <label className="text-sm font-medium text-gray-500">Full Name</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.name || '-'}</p>
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Phone Number</label>
                                             <p className="text-gray-900 font-medium mt-1">{user?.phone || 'Not set'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500">Username</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.username || '-'}</p>
                                         </div>
                                     </div>
                                 )}

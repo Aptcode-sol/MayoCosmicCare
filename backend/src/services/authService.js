@@ -18,8 +18,10 @@ function genRefreshToken() {
     return crypto.randomBytes(48).toString('hex');
 }
 
-async function register({ username, email, phone, password, sponsorId, leg, otp }) {
-    if (!username || !email || !password) throw new Error('username/email/password required');
+async function register({ name, email, phone, password, sponsorId, leg, otp }) {
+    if (!email || !password || !name) throw new Error('name, email and password required');
+    // Username is now auto-generated
+
 
     // OTP Verification
     if (process.env.NODE_ENV !== 'test') { // Skip OTP in test environment if needed, or strictly enforce
@@ -109,6 +111,22 @@ async function register({ username, email, phone, password, sponsorId, leg, otp 
     const hashed = await bcrypt.hash(password, 10);
     const emailVerifyToken = crypto.randomBytes(32).toString('hex');
 
+    // Generate custom ID/Username
+    const now = new Date();
+    const yearShort = now.getFullYear() % 100;
+
+    // Increment counter for current year
+    const counterRecord = await prisma.userCounter.upsert({
+        where: { year: yearShort },
+        update: { count: { increment: 1 } },
+        create: { year: yearShort, count: 1 }
+    });
+
+    // Format: m + YY + XXXX (base 36 padded)
+    const seq = counterRecord.count.toString(36).toLowerCase();
+    const padded = seq.padStart(4, '0');
+    const generatedUsername = `m${yearShort}${padded}`;
+
     // Generate custom ID starting with 'mcc'
     const customId = 'mcc' + crypto.randomUUID().replace(/-/g, '');
 
@@ -118,7 +136,8 @@ async function register({ username, email, phone, password, sponsorId, leg, otp 
         user = await prisma.user.create({
             data: {
                 id: customId,
-                username,
+                username: generatedUsername,
+                name,
                 email,
                 phone,
                 password: hashed,
@@ -161,11 +180,18 @@ async function register({ username, email, phone, password, sponsorId, leg, otp 
     return result;
 }
 
-async function login({ email, password, isAdminLogin = false }) {
-    console.log('[LOGIN] Attempting login for:', email, 'isAdminLogin:', isAdminLogin);
-    const user = await prisma.user.findUnique({ where: { email } });
+async function login({ email: identifier, password, isAdminLogin = false }) {
+    console.log('[LOGIN] Attempting login for:', identifier, 'isAdminLogin:', isAdminLogin);
+    const user = await prisma.user.findFirst({
+        where: {
+            OR: [
+                { email: identifier },
+                { username: identifier }
+            ]
+        }
+    });
     if (!user) {
-        console.log('[LOGIN] User not found:', email);
+        console.log('[LOGIN] User not found:', identifier);
         throw new Error('Invalid credentials');
     }
     console.log('[LOGIN] User found:', user.id, 'email:', user.email, 'role:', user.role, 'blocked:', user.isBlocked);
@@ -192,7 +218,7 @@ async function login({ email, password, isAdminLogin = false }) {
     const refresh = genRefreshToken();
     // store refresh token
     await prisma.refreshToken.create({ data: { userId: user.id, token: refresh } });
-    console.log('[LOGIN] Login successful for:', email);
+    console.log('[LOGIN] Login successful for:', identifier);
     return { accessToken, refreshToken: refresh };
 }
 
@@ -351,12 +377,13 @@ async function verifyOtpCode(email, otp) {
 
 
 // ===== UPDATE PROFILE FUNCTION =====
-async function updateProfile(userId, { username, email, phone, password, currentPassword }) {
+async function updateProfile(userId, { name, username, email, phone, password, currentPassword }) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
     const updateData = {};
 
+    if (name && name !== user.name) updateData.name = name;
     if (username && username !== user.username) updateData.username = username;
     if (email && email !== user.email) updateData.email = email;
     if (phone && phone !== user.phone) updateData.phone = phone;

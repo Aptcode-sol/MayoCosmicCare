@@ -118,18 +118,6 @@ function TreeNode({
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-indigo-50 rounded-lg px-2 py-1.5 text-center">
-                        <div className="font-bold text-indigo-600">{displayNode.leftMemberCount || 0}</div>
-                        <div className="text-gray-500">Left</div>
-                    </div>
-                    <div className="bg-pink-50 rounded-lg px-2 py-1.5 text-center">
-                        <div className="font-bold text-pink-600">{displayNode.rightMemberCount || 0}</div>
-                        <div className="text-gray-500">Right</div>
-                    </div>
-                </div>
-
                 {/* Wallet Badge */}
                 <div className="mt-2 bg-green-50 rounded-lg px-2 py-1 text-center">
                     <span className="text-xs font-medium text-green-700">₹{(displayNode.walletBalance || 0).toLocaleString()}</span>

@@ -123,8 +123,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         const totalProducts = await prisma.product.count();
         const lowStockProducts = await prisma.product.count({ where: { stock: { lt: 10 } } });
 
-        // ===== TIME SERIES DATA =====
-        // Daily new users (last 30 days)
+        // Daily new users (last 30 days) with bonus stats
         const dailyUsers = await prisma.$queryRaw`
             SELECT DATE("createdAt") as date, COUNT(*) as count
             FROM "User"
@@ -133,11 +132,49 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             ORDER BY date ASC
         `;
 
-        // Monthly user signups (last 12 months)
+        // Get daily bonus stats
+        const dailyBonusStats = await prisma.$queryRaw`
+            SELECT DATE("createdAt") as date, type, SUM(amount) as total
+            FROM "Transaction"
+            WHERE "createdAt" >= ${thirtyDaysAgo}
+            AND type IN ('DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS')
+            GROUP BY DATE("createdAt"), type
+            ORDER BY date ASC
+        `;
+
+        // Get daily orders
+        const dailyOrders = await prisma.$queryRaw`
+            SELECT DATE("createdAt") as date, COUNT(*) as count
+            FROM "Order"
+            WHERE "createdAt" >= ${thirtyDaysAgo} AND status = 'PAID'
+            GROUP BY DATE("createdAt")
+            ORDER BY date ASC
+        `;
+
+        // Monthly user signups (last 12 months) with bonus stats
         const monthlyUsers = await prisma.$queryRaw`
             SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*) as count
             FROM "User"
             WHERE "createdAt" >= ${twelveMonthsAgo}
+            GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
+            ORDER BY month ASC
+        `;
+
+        // Get monthly bonus stats
+        const monthlyBonusStats = await prisma.$queryRaw`
+            SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, type, SUM(amount) as total
+            FROM "Transaction"
+            WHERE "createdAt" >= ${twelveMonthsAgo}
+            AND type IN ('DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS')
+            GROUP BY TO_CHAR("createdAt", 'YYYY-MM'), type
+            ORDER BY month ASC
+        `;
+
+        // Get monthly orders
+        const monthlyOrderStats = await prisma.$queryRaw`
+            SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*) as count
+            FROM "Order"
+            WHERE "createdAt" >= ${twelveMonthsAgo} AND status = 'PAID'
             GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
             ORDER BY month ASC
         `;
@@ -226,8 +263,31 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                 },
                 // Time Series
                 trends: {
-                    dailyUsers: dailyUsers.map(d => ({ date: d.date, count: Number(d.count) })),
-                    monthlyUsers: monthlyUsers.map(m => ({ month: m.month, count: Number(m.count) })),
+                    dailyUsers: dailyUsers.map(d => {
+                        const dateStr = d.date?.toISOString?.().split('T')[0] || d.date;
+                        const bonuses = dailyBonusStats.filter(b => (b.date?.toISOString?.().split('T')[0] || b.date) === dateStr);
+                        const orderData = dailyOrders.find(o => (o.date?.toISOString?.().split('T')[0] || o.date) === dateStr);
+                        return {
+                            date: dateStr,
+                            count: Number(d.count),
+                            directBonus: Number(bonuses.find(b => b.type === 'DIRECT_BONUS')?.total || 0),
+                            matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
+                            leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
+                            orders: Number(orderData?.count || 0)
+                        };
+                    }),
+                    monthlyUsers: monthlyUsers.map(m => {
+                        const bonuses = monthlyBonusStats.filter(b => b.month === m.month);
+                        const orderData = monthlyOrderStats.find(o => o.month === m.month);
+                        return {
+                            month: m.month,
+                            count: Number(m.count),
+                            directBonus: Number(bonuses.find(b => b.type === 'DIRECT_BONUS')?.total || 0),
+                            matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
+                            leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
+                            orders: Number(orderData?.count || 0)
+                        };
+                    }),
                     monthlyBonuses: monthlyBonuses.map(b => ({ month: b.month, type: b.type, total: Number(b.total) })),
                     monthlyWithdrawals: monthlyWithdrawals.map(w => ({ month: w.month, total: Number(w.total) })),
                     dailyRevenue: dailyRevenue.map(d => ({ date: d.date, total: Number(d.total) }))

@@ -60,18 +60,6 @@ function TreeNode({ node, level = 0, onNodeClick }) {
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-indigo-50 rounded-lg px-2 py-1.5 text-center">
-                        <div className="font-bold text-indigo-600">{node.leftMemberCount || 0}</div>
-                        <div className="text-gray-500">Left</div>
-                    </div>
-                    <div className="bg-pink-50 rounded-lg px-2 py-1.5 text-center">
-                        <div className="font-bold text-pink-600">{node.rightMemberCount || 0}</div>
-                        <div className="text-gray-500">Right</div>
-                    </div>
-                </div>
-
                 {/* Purchased Badge */}
                 <div className={`mt-2 ${node.hasPurchased ? 'bg-green-50' : 'bg-gray-50'} rounded-lg px-2 py-1 text-center`}>
                     <span className={`text-xs font-medium ${node.hasPurchased ? 'text-green-700' : 'text-gray-400'}`}>

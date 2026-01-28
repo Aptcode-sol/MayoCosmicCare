@@ -25,6 +25,8 @@ export default function Dashboard() {
         name: '', price: 0, bv: 0, stock: 0, description: '', imageUrl: '',
         directBonus: 3000, matchingBonus: 2000, dailyCap: 40000, taxPercent: 5, adminChargePercent: 5
     });
+    const [graphFilter, setGraphFilter] = useState('months'); // 'months' or 'days'
+    const [selectedPeriod, setSelectedPeriod] = useState(null); // selected month or day for detailed stats
 
     useEffect(() => {
         if (!isAuthenticated()) {
@@ -190,49 +192,166 @@ export default function Dashboard() {
                         {/* Analytics Tab */}
                         {tab === 'analytics' && analytics && (
                             <div className="space-y-6">
-                                {/* User Overview Cards */}
-                                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                                                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
+                                {/* User Trends Chart - Moved to top with filter */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-semibold text-gray-900">User Signups</h3>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setGraphFilter('months'); setSelectedPeriod(null); }}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${graphFilter === 'months' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                            >
+                                                Months
+                                            </button>
+                                            <button
+                                                onClick={() => { setGraphFilter('days'); setSelectedPeriod(null); }}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${graphFilter === 'days' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                            >
+                                                Days
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="h-48">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart
+                                                data={graphFilter === 'months' ? (analytics.trends?.monthlyUsers || []) : (analytics.trends?.dailyUsers || [])}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <defs>
+                                                    <linearGradient id="colorUsersMain" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                                                <XAxis dataKey={graphFilter === 'months' ? 'month' : 'date'} tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
+                                                <YAxis tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
+                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="count"
+                                                    stroke="#8b5cf6"
+                                                    strokeWidth={2}
+                                                    fill="url(#colorUsersMain)"
+                                                    name="Users"
+                                                    activeDot={{
+                                                        r: 8,
+                                                        style: { cursor: 'pointer' },
+                                                        onClick: (e, payload) => {
+                                                            if (payload && payload.payload) {
+                                                                setSelectedPeriod(payload.payload);
+                                                            }
+                                                        }
+                                                    }}
+                                                    dot={{ r: 4, fill: '#8b5cf6', style: { cursor: 'pointer' } }}
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    {/* Stats Panel - Always visible */}
+                                    <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="font-medium text-gray-900">
+                                                {selectedPeriod
+                                                    ? `${selectedPeriod.month || selectedPeriod.date} Stats`
+                                                    : 'Lifetime Stats'
+                                                }
+                                            </h4>
+                                            {selectedPeriod && (
+                                                <button onClick={() => setSelectedPeriod(null)} className="text-indigo-600 text-sm hover:underline">
+                                                    Show Lifetime
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-3">
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-orange-600">
+                                                    ₹{selectedPeriod
+                                                        ? (selectedPeriod.directBonus || 0).toLocaleString()
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Direct Referral</p>
                                             </div>
-                                            <div>
-                                                <p className="text-2xl font-bold text-gray-900">{analytics.users?.total || 0}</p>
-                                                <p className="text-xs text-gray-500">Total Users</p>
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-green-600">
+                                                    ₹{selectedPeriod
+                                                        ? (selectedPeriod.matchingBonus || 0).toLocaleString()
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Matching Bonus</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-purple-600">
+                                                    ₹{selectedPeriod
+                                                        ? (selectedPeriod.leadershipBonus || 0).toLocaleString()
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0).toLocaleString()
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Leadership Bonus</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-blue-600">
+                                                    {selectedPeriod
+                                                        ? (selectedPeriod.orders || 0)
+                                                        : (analytics.orders?.total || 0)
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Orders</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                </svg>
+                                </div>
+
+                                {/* Stats List - Text based with colored bars */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-semibold text-gray-900">User Statistics</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-1.5 bg-indigo-500 rounded-full"></div>
+                                                <span className="text-gray-700">Total Users</span>
                                             </div>
-                                            <div>
-                                                <p className="text-2xl font-bold text-green-600">+{analytics.users?.today || 0}</p>
-                                                <p className="text-xs text-gray-500">Today</p>
-                                            </div>
+                                            <span className="font-bold text-gray-900">{analytics.users?.total || 0}</span>
                                         </div>
-                                    </div>
-                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                        <p className="text-2xl font-bold text-gray-900">{analytics.users?.thisWeek || 0}</p>
-                                        <p className="text-xs text-gray-500">This Week</p>
-                                    </div>
-                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                        <p className="text-2xl font-bold text-gray-900">{analytics.users?.thisMonth || 0}</p>
-                                        <p className="text-xs text-gray-500">This Month</p>
-                                    </div>
-                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                        <p className="text-2xl font-bold text-emerald-600">{analytics.users?.active || 0}</p>
-                                        <p className="text-xs text-gray-500">Active (Purchased)</p>
-                                    </div>
-                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                        <p className="text-2xl font-bold text-amber-600">{analytics.users?.pending || 0}</p>
-                                        <p className="text-xs text-gray-500">Pending Purchase</p>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-1.5 bg-green-500 rounded-full"></div>
+                                                <span className="text-gray-700">Today</span>
+                                            </div>
+                                            <span className="font-bold text-green-600">+{analytics.users?.today || 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-1.5 bg-blue-500 rounded-full"></div>
+                                                <span className="text-gray-700">This Week</span>
+                                            </div>
+                                            <span className="font-bold text-blue-600">{analytics.users?.thisWeek || 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-14 h-1.5 bg-purple-500 rounded-full"></div>
+                                                <span className="text-gray-700">This Month</span>
+                                            </div>
+                                            <span className="font-bold text-purple-600">{analytics.users?.thisMonth || 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-1.5 bg-emerald-500 rounded-full"></div>
+                                                <span className="text-gray-700">Active (Purchased)</span>
+                                            </div>
+                                            <span className="font-bold text-emerald-600">{analytics.users?.active || 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-6 h-1.5 bg-amber-500 rounded-full"></div>
+                                                <span className="text-gray-700">Pending Purchase</span>
+                                            </div>
+                                            <span className="font-bold text-amber-600">{analytics.users?.pending || 0}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -246,14 +365,10 @@ export default function Dashboard() {
                                             </svg>
                                             Position Distribution
                                         </h3>
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div className="text-center p-4 bg-blue-50 rounded-xl">
                                                 <p className="text-3xl font-bold text-blue-600">{analytics.positions?.LEFT || 0}</p>
                                                 <p className="text-sm text-gray-600 mt-1">Left</p>
-                                            </div>
-                                            <div className="text-center p-4 bg-gray-50 rounded-xl">
-                                                <p className="text-3xl font-bold text-gray-600">{analytics.positions?.ROOT || 0}</p>
-                                                <p className="text-sm text-gray-600 mt-1">Root</p>
                                             </div>
                                             <div className="text-center p-4 bg-purple-50 rounded-xl">
                                                 <p className="text-3xl font-bold text-purple-600">{analytics.positions?.RIGHT || 0}</p>
@@ -299,11 +414,7 @@ export default function Dashboard() {
                                         </svg>
                                         Financial Overview
                                     </h3>
-                                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                                        <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white">
-                                            <p className="text-xs opacity-80">Total Wallet Balance</p>
-                                            <p className="text-2xl font-bold mt-1">₹{(analytics.financial?.totalWalletBalance || 0).toLocaleString()}</p>
-                                        </div>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="p-4 bg-orange-50 rounded-xl">
                                             <p className="text-xs text-gray-500">Direct Bonus</p>
                                             <p className="text-xl font-bold text-orange-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()}</p>
@@ -331,15 +442,24 @@ export default function Dashboard() {
                                     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                                         <h3 className="font-semibold text-gray-900 mb-4">Withdrawal Summary</h3>
                                         <div className="grid grid-cols-3 gap-4">
-                                            {analytics.financial?.withdrawals?.map(w => (
-                                                <div key={w.status} className={`text-center p-4 rounded-xl ${w.status === 'APPROVED' ? 'bg-green-50' : w.status === 'PENDING' ? 'bg-yellow-50' : 'bg-red-50'}`}>
-                                                    <p className={`text-xl font-bold ${w.status === 'APPROVED' ? 'text-green-600' : w.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                        ₹{(w.total || 0).toLocaleString()}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 mt-1">{w.status}</p>
-                                                    <p className="text-xs text-gray-400">{w.count} requests</p>
+                                            {analytics.financial?.withdrawals?.length > 0 ? (
+                                                analytics.financial.withdrawals.map(w => (
+                                                    <div key={w.status} className={`text-center p-4 rounded-xl ${w.status === 'APPROVED' ? 'bg-green-50' : w.status === 'PENDING' ? 'bg-yellow-50' : 'bg-red-50'}`}>
+                                                        <p className={`text-xl font-bold ${w.status === 'APPROVED' ? 'text-green-600' : w.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                            ₹{(w.total || 0).toLocaleString()}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-1">{w.status}</p>
+                                                        <p className="text-xs text-gray-400">{w.count} requests</p>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-3 text-center py-8 text-gray-400">
+                                                    <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                    <p className="text-sm">No withdrawal history yet</p>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                     </div>
 
@@ -380,28 +500,6 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                 )}
-
-                                {/* User Trends Chart */}
-                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <h3 className="font-semibold text-gray-900 mb-4">Monthly User Signups</h3>
-                                    <div className="h-64">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={analytics.trends?.monthlyUsers || []}>
-                                                <defs>
-                                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                                                <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
-                                                <YAxis tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
-                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                                <Area type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} fill="url(#colorUsers)" name="Users" />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
 
                                 {/* Ranks Distribution */}
                                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -792,6 +890,16 @@ export default function Dashboard() {
                         {/* Positions Tab */}
                         {tab === 'positions' && (
                             <div className="space-y-6">
+                                {/* Header with count */}
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-medium text-gray-900">
+                                        Position Changes
+                                        <span className="ml-2 px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                                            {positions.length}
+                                        </span>
+                                    </h2>
+                                </div>
+
                                 {/* Filters */}
                                 <div className="flex flex-wrap gap-4">
                                     <select

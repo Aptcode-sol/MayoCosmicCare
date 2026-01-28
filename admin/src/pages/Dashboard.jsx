@@ -304,55 +304,75 @@ export default function Dashboard() {
                                     </div>
                                 </div>
 
-                                {/* Stats List - Text based with colored bars */}
+                                {/* User Statistics - Improved Card Layout */}
                                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="font-semibold text-gray-900">User Statistics</h3>
+                                    <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        User Statistics
+                                    </h3>
+
+                                    {/* Primary Stat: Total Users */}
+                                    <div className="mb-6 p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
+                                        <p className="text-sm text-indigo-700 font-medium mb-2">Total Users</p>
+                                        <p className="text-4xl font-bold text-indigo-900">{analytics.users?.total || 0}</p>
+                                        <p className="text-sm text-indigo-600 mt-2">All registered members in the network</p>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-1.5 bg-indigo-500 rounded-full"></div>
-                                                <span className="text-gray-700">Total Users</span>
+
+                                    {/* Secondary Stats Grid: Time-based */}
+                                    <div className="mb-6">
+                                        <p className="text-sm font-medium text-gray-600 mb-3">New Users by Period</p>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                                                <p className="text-xs text-green-700 font-medium mb-2">Today</p>
+                                                <p className="text-2xl font-bold text-green-600">+{analytics.users?.today || 0}</p>
+                                                <p className="text-xs text-green-600 mt-1">Added today</p>
                                             </div>
-                                            <span className="font-bold text-gray-900">{analytics.users?.total || 0}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-1.5 bg-green-500 rounded-full"></div>
-                                                <span className="text-gray-700">Today</span>
+                                            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                                <p className="text-xs text-blue-700 font-medium mb-2">This Week</p>
+                                                <p className="text-2xl font-bold text-blue-600">{analytics.users?.thisWeek || 0}</p>
+                                                <p className="text-xs text-blue-600 mt-1">Last 7 days</p>
                                             </div>
-                                            <span className="font-bold text-green-600">+{analytics.users?.today || 0}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-1.5 bg-blue-500 rounded-full"></div>
-                                                <span className="text-gray-700">This Week</span>
+                                            <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                                                <p className="text-xs text-purple-700 font-medium mb-2">This Month</p>
+                                                <p className="text-2xl font-bold text-purple-600">{analytics.users?.thisMonth || 0}</p>
+                                                <p className="text-xs text-purple-600 mt-1">Last 30 days</p>
                                             </div>
-                                            <span className="font-bold text-blue-600">{analytics.users?.thisWeek || 0}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-14 h-1.5 bg-purple-500 rounded-full"></div>
-                                                <span className="text-gray-700">This Month</span>
-                                            </div>
-                                            <span className="font-bold text-purple-600">{analytics.users?.thisMonth || 0}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-1.5 bg-emerald-500 rounded-full"></div>
-                                                <span className="text-gray-700">Active (Purchased)</span>
-                                            </div>
-                                            <span className="font-bold text-emerald-600">{analytics.users?.active || 0}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-6 h-1.5 bg-amber-500 rounded-full"></div>
-                                                <span className="text-gray-700">Pending Purchase</span>
-                                            </div>
-                                            <span className="font-bold text-amber-600">{analytics.users?.pending || 0}</span>
                                         </div>
                                     </div>
+
+                                    {/* Tertiary Stats: Status */}
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600 mb-3">User Status</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                                                <p className="text-xs text-emerald-700 font-medium mb-2">Active (Purchased)</p>
+                                                <p className="text-2xl font-bold text-emerald-600">{analytics.users?.active || 0}</p>
+                                                <p className="text-xs text-emerald-600 mt-1">Completed purchase</p>
+                                            </div>
+                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                                <p className="text-xs text-amber-700 font-medium mb-2">Pending Purchase</p>
+                                                <p className="text-2xl font-bold text-amber-600">{analytics.users?.pending || 0}</p>
+                                                <p className="text-xs text-amber-600 mt-1">Awaiting first purchase</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Info Row: Conversion Rate */}
+                                    {analytics.users?.total > 0 && (
+                                        <div className="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-gray-700 font-medium">Conversion Rate</span>
+                                                <span className="text-lg font-bold text-gray-900">
+                                                    {Math.round((analytics.users?.active / analytics.users?.total) * 100)}%
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {analytics.users?.active} active out of {analytics.users?.total} total users
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Position Distribution & KYC Stats */}

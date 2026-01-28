@@ -185,6 +185,7 @@ router.get('/me', authenticate, async (req, res) => {
             select: {
                 id: true,
                 username: true,
+                name: true,
                 email: true,
                 phone: true,
                 kycStatus: true,
@@ -244,7 +245,7 @@ router.get('/me', authenticate, async (req, res) => {
         const { children, ...userData } = userRec;
         const user = {
             ...userData,
-            name: userData.username,
+            name: userRec.name || userData.username, // Use actual name if available, else username
             leftMemberCount,
             rightMemberCount
         };

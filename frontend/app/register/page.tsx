@@ -17,7 +17,7 @@ function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelH
 
 export default function Register() {
     const router = useRouter()
-    const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '', otp: '' })
+    const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', sponsorId: '', phone: '', otp: '' })
     const [otpSent, setOtpSent] = useState(false)
     const [otpTimer, setOtpTimer] = useState(0)
     const [isOtpVerified, setIsOtpVerified] = useState(false)
@@ -214,13 +214,14 @@ export default function Register() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <LocalLabel htmlFor="username">Username</LocalLabel>
+                                <LocalLabel htmlFor="name">Name <span className="text-xs text-gray-500 font-normal">(As per PAN)</span></LocalLabel>
                                 <Input
-                                    id="username"
+                                    id="name"
                                     type="text"
-                                    value={form.username}
-                                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                                    value={form.name}
+                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
                                     required
+                                    placeholder="Full Name"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -285,15 +286,6 @@ export default function Register() {
                             </div>
                         )}
 
-                        <div className="space-y-2">
-                            <LocalLabel htmlFor="phone">Phone</LocalLabel>
-                            <Input
-                                id="phone"
-                                type="tel"
-                                value={form.phone}
-                                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                            />
-                        </div>
 
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">

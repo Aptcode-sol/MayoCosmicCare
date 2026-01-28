@@ -11,6 +11,7 @@ datasource db {
 model User {
   id               String   @id @default(cuid())
   username         String   @unique
+  name             String?
   email            String   @unique
   phone            String?  @unique
   password         String
@@ -238,5 +239,10 @@ enum OrderStatus {
   PENDING
   PAID
   FAILED
+}
+
+model UserCounter {
+  year  Int @id
+  count Int @default(0)
 }
 

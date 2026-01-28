@@ -4,7 +4,7 @@ import DashboardSidebar from './DashboardSidebar'
 
 interface DashboardLayoutProps {
     children: ReactNode
-    user?: { username?: string; email?: string } | null
+    user?: { username?: string; name?: string; email?: string } | null
 }
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {

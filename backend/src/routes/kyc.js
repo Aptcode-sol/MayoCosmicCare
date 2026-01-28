@@ -19,7 +19,11 @@ router.get('/status', authenticate, async (req, res) => {
         res.json({ ok: true, ...result });
     } catch (err) {
         console.error('KYC Status Error', err);
-        res.status(500).json({ ok: false, error: err.message });
+        // If it's a known error message (like name mismatch), send 400 Bad Request
+        if (err.message.includes('KYC Failed') || err.message.includes('not initiated')) {
+            return res.status(400).json({ ok: false, error: err.message });
+        }
+        res.status(500).json({ ok: false, error: 'Internal Server Error' });
     }
 });
 

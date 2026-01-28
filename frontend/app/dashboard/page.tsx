@@ -110,7 +110,7 @@ export default function Dashboard() {
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
                                         <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Dashboard</h1>
-                                        <p className="text-gray-500 mt-1">Welcome back, {user?.username || user?.name || 'Partner'}</p>
+                                        <p className="text-gray-500 mt-1">Welcome back, {user?.name || user?.username || 'Partner'}</p>
                                     </div>
                                 </div>
                             </AnimateOnScroll>

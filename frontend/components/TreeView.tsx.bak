@@ -63,14 +63,7 @@ function TreeNode({
     // Check if children need to be loaded
     const needsChildrenLoaded = hasChildren && !displayNode.left && !displayNode.right
 
-    const displayName = (displayNode as any).name
-        || (displayNode as any).fullName
-        || (displayNode as any).full_name
-        || (displayNode as any).firstName
-        || (displayNode as any).firstname
-        || (displayNode as any).first_name
-        || displayNode.username
-        || 'User'
+    const displayName = (displayNode as any).name || (displayNode as any).firstName || displayNode.username || 'User'
     const initials = displayName
         .split(/[\s_-]/)
         .map(s => s[0] || '')
@@ -136,17 +129,22 @@ function TreeNode({
                     <div className="bg-green-50 rounded-lg px-2 py-1 text-center">
                         <span className="font-medium text-green-700">₹{(displayNode.walletBalance || 0).toLocaleString()}</span>
                     </div>
-                    {/* Always show member counts even if both are zero */}
-                    <div className="grid grid-cols-2 gap-1">
-                        <div className="bg-indigo-50 rounded px-1.5 py-1 text-center">
-                            <div className="text-indigo-600 font-bold text-sm">{leftCount}</div>
-                            <div className="text-indigo-500 text-[10px]">Left</div>
+                    {showCounts && (
+                        <div className="grid grid-cols-2 gap-1">
+                            {leftCount > 0 && (
+                                <div className="bg-indigo-50 rounded px-1.5 py-1 text-center">
+                                    <div className="text-indigo-600 font-bold text-sm">{leftCount}</div>
+                                    <div className="text-indigo-500 text-[10px]">Left</div>
+                                </div>
+                            )}
+                            {rightCount > 0 && (
+                                <div className="bg-pink-50 rounded px-1.5 py-1 text-center">
+                                    <div className="text-pink-600 font-bold text-sm">{rightCount}</div>
+                                    <div className="text-pink-500 text-[10px]">Right</div>
+                                </div>
+                            )}
                         </div>
-                        <div className="bg-pink-50 rounded px-1.5 py-1 text-center">
-                            <div className="text-pink-600 font-bold text-sm">{rightCount}</div>
-                            <div className="text-pink-500 text-[10px]">Right</div>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Expand/Collapse Button */}

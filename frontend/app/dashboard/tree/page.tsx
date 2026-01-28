@@ -11,6 +11,8 @@ import AnimateOnScroll from '@/components/AnimateOnScroll'
 
 type TreeNodeData = {
     id: string
+    name?: string
+    firstName?: string
     username?: string
     position?: string
     leftMemberCount?: number
@@ -30,10 +32,10 @@ function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: (
                 <div className="p-6">
                     <div className="flex items-center gap-4 mb-6">
                         <div className="w-14 h-14 rounded-full bg-gray-900 flex items-center justify-center text-white text-lg font-medium shadow-md">
-                            {(node.username || 'U').slice(0, 2).toUpperCase()}
+                            {(node.name || node.firstName || node.username || 'U').slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                            <h3 className="font-semibold text-lg text-gray-900">{node.username || 'User'}</h3>
+                            <h3 className="font-semibold text-lg text-gray-900">{node.name || node.firstName || node.username || 'User'}</h3>
                             <p className="text-sm text-gray-500 font-medium bg-gray-100 rounded-full px-2 py-0.5 inline-block mt-1">
                                 {node.position || 'ROOT'}
                             </p>

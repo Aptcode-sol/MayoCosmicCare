@@ -19,7 +19,7 @@ function TreeNode({ node, level = 0, onNodeClick }) {
         );
     }
 
-    const displayName = node.name || node.fullName || node.full_name || node.firstName || node.firstname || node.first_name || node.username || 'User';
+    const displayName = node.name || node.firstName || node.username || 'User';
     const initials = displayName
         .split(/[\s_-]/)
         .map(s => s[0] || '')
@@ -32,7 +32,7 @@ function TreeNode({ node, level = 0, onNodeClick }) {
     const leftBV = Number(node.leftBV || 0);
     const rightBV = Number(node.rightBV || 0);
     const hasChildren = Boolean(node.left || node.right || leftCount > 0 || rightCount > 0);
-    const showBV = leftBV > 0 || rightBV > 0;
+    const showStats = leftCount > 0 || rightCount > 0 || leftBV > 0 || rightBV > 0;
 
     const borderColor = node.position === 'LEFT'
         ? 'border-indigo-500'
@@ -66,30 +66,35 @@ function TreeNode({ node, level = 0, onNodeClick }) {
 
                 {/* Business Volume & Status Info */}
                 <div className="mt-3 space-y-2">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                        {/* BV Display - Only show if BV > 0 */}
-                        {showBV && (
-                            <>
-                                <div className="bg-indigo-50 rounded px-2 py-1 text-center">
-                                    <div className="text-indigo-600 font-bold">{leftBV}</div>
-                                    <div className="text-indigo-500 text-[10px]">L BV</div>
-                                </div>
-                                <div className="bg-pink-50 rounded px-2 py-1 text-center">
-                                    <div className="text-pink-600 font-bold">{rightBV}</div>
-                                    <div className="text-pink-500 text-[10px]">R BV</div>
-                                </div>
-                            </>
-                        )}
-                        {/* Member Count Display - Always show */}
-                        <div className="bg-indigo-50 rounded px-2 py-1 text-center">
-                            <div className="text-indigo-600 font-bold">{leftCount}</div>
-                            <div className="text-indigo-500 text-[10px]">Left</div>
+                    {/* Member Count Display - Only show if count > 0 */}
+                    {showStats ? (
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                            {(leftBV > 0 || rightBV > 0) && (
+                                <>
+                                    <div className="bg-indigo-50 rounded px-2 py-1 text-center">
+                                        <div className="text-indigo-600 font-bold">{leftBV}</div>
+                                        <div className="text-indigo-500 text-[10px]">L BV</div>
+                                    </div>
+                                    <div className="bg-pink-50 rounded px-2 py-1 text-center">
+                                        <div className="text-pink-600 font-bold">{rightBV}</div>
+                                        <div className="text-pink-500 text-[10px]">R BV</div>
+                                    </div>
+                                </>
+                            )}
+                            {(leftCount > 0 || rightCount > 0) && (
+                                <>
+                                    <div className="bg-indigo-50 rounded px-2 py-1 text-center">
+                                        <div className="text-indigo-600 font-bold">{leftCount}</div>
+                                        <div className="text-indigo-500 text-[10px]">Left</div>
+                                    </div>
+                                    <div className="bg-pink-50 rounded px-2 py-1 text-center">
+                                        <div className="text-pink-600 font-bold">{rightCount}</div>
+                                        <div className="text-pink-500 text-[10px]">Right</div>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        <div className="bg-pink-50 rounded px-2 py-1 text-center">
-                            <div className="text-pink-600 font-bold">{rightCount}</div>
-                            <div className="text-pink-500 text-[10px]">Right</div>
-                        </div>
-                    </div>
+                    ) : null}
 
                     {/* Purchased Badge */}
                     <div className={`${node.hasPurchased ? 'bg-green-50' : 'bg-gray-50'} rounded-lg px-2 py-1 text-center`}>

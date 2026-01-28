@@ -192,119 +192,7 @@ export default function Dashboard() {
                         {/* Analytics Tab */}
                         {tab === 'analytics' && analytics && (
                             <div className="space-y-6">
-                                {/* User Trends Chart - Moved to top with filter */}
-                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="font-semibold text-gray-900">User Signups</h3>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => { setGraphFilter('months'); setSelectedPeriod(null); }}
-                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${graphFilter === 'months' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                            >
-                                                Months
-                                            </button>
-                                            <button
-                                                onClick={() => { setGraphFilter('days'); setSelectedPeriod(null); }}
-                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${graphFilter === 'days' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                            >
-                                                Days
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="h-48">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart
-                                                data={graphFilter === 'months' ? (analytics.trends?.monthlyUsers || []) : (analytics.trends?.dailyUsers || [])}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <defs>
-                                                    <linearGradient id="colorUsersMain" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                                                <XAxis dataKey={graphFilter === 'months' ? 'month' : 'date'} tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
-                                                <YAxis tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
-                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="count"
-                                                    stroke="#8b5cf6"
-                                                    strokeWidth={2}
-                                                    fill="url(#colorUsersMain)"
-                                                    name="Users"
-                                                    activeDot={{
-                                                        r: 8,
-                                                        style: { cursor: 'pointer' },
-                                                        onClick: (e, payload) => {
-                                                            if (payload && payload.payload) {
-                                                                setSelectedPeriod(payload.payload);
-                                                            }
-                                                        }
-                                                    }}
-                                                    dot={{ r: 4, fill: '#8b5cf6', style: { cursor: 'pointer' } }}
-                                                />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    {/* Stats Panel - Always visible */}
-                                    <div className="mt-4 p-4 bg-gray-50 rounded-xl">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <h4 className="font-medium text-gray-900">
-                                                {selectedPeriod
-                                                    ? `${selectedPeriod.month || selectedPeriod.date} Stats`
-                                                    : 'Lifetime Stats'
-                                                }
-                                            </h4>
-                                            {selectedPeriod && (
-                                                <button onClick={() => setSelectedPeriod(null)} className="text-indigo-600 text-sm hover:underline">
-                                                    Show Lifetime
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="grid grid-cols-4 gap-3">
-                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
-                                                <p className="text-lg font-bold text-orange-600">
-                                                    ₹{selectedPeriod
-                                                        ? (selectedPeriod.directBonus || 0).toLocaleString()
-                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()
-                                                    }
-                                                </p>
-                                                <p className="text-xs text-gray-500">Direct Referral</p>
-                                            </div>
-                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
-                                                <p className="text-lg font-bold text-green-600">
-                                                    ₹{selectedPeriod
-                                                        ? (selectedPeriod.matchingBonus || 0).toLocaleString()
-                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()
-                                                    }
-                                                </p>
-                                                <p className="text-xs text-gray-500">Matching Bonus</p>
-                                            </div>
-                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
-                                                <p className="text-lg font-bold text-purple-600">
-                                                    ₹{selectedPeriod
-                                                        ? (selectedPeriod.leadershipBonus || 0).toLocaleString()
-                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0).toLocaleString()
-                                                    }
-                                                </p>
-                                                <p className="text-xs text-gray-500">Leadership Bonus</p>
-                                            </div>
-                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
-                                                <p className="text-lg font-bold text-blue-600">
-                                                    {selectedPeriod
-                                                        ? (selectedPeriod.orders || 0)
-                                                        : (analytics.orders?.total || 0)
-                                                    }
-                                                </p>
-                                                <p className="text-xs text-gray-500">Orders</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* User Statistics - Improved Card Layout */}
+                                {/* User Statistics - Improved Card Layout - MOVED TO TOP */}
                                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                                     <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
                                         <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,6 +262,152 @@ export default function Dashboard() {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* User Trends Chart - Moved below User Statistics */}
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-semibold text-gray-900">User Signups</h3>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setGraphFilter('months'); setSelectedPeriod(null); }}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${graphFilter === 'months' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                            >
+                                                Months
+                                            </button>
+                                            <button
+                                                onClick={() => { setGraphFilter('days'); setSelectedPeriod(null); }}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${graphFilter === 'days' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                            >
+                                                Days
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="h-48">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart
+                                                data={graphFilter === 'months' ? (analytics.trends?.monthlyUsers || []) : (analytics.trends?.dailyUsers || [])}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <defs>
+                                                    <linearGradient id="colorUsersMain" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                                                <XAxis
+                                                    dataKey={graphFilter === 'months' ? 'month' : 'date'}
+                                                    tick={{ fontSize: 11 }}
+                                                    stroke="#999"
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    tickFormatter={(value) => {
+                                                        if (graphFilter === 'months') {
+                                                            // Format as short month: Jan, Feb, etc.
+                                                            const date = new Date(value);
+                                                            return date.toLocaleString('en-US', { month: 'short' });
+                                                        } else {
+                                                            // Format as day number only: 1, 2, 3... no year
+                                                            const date = new Date(value);
+                                                            return date.getDate().toString();
+                                                        }
+                                                    }}
+                                                />
+                                                <YAxis tick={{ fontSize: 11 }} stroke="#999" axisLine={false} tickLine={false} />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                                    formatter={(value) => value}
+                                                    labelFormatter={(label) => {
+                                                        if (graphFilter === 'months') {
+                                                            const date = new Date(label);
+                                                            return date.toLocaleString('en-US', { month: 'short' });
+                                                        } else {
+                                                            const date = new Date(label);
+                                                            const day = date.getDate();
+                                                            const month = date.toLocaleString('en-US', { month: 'short' });
+                                                            const ordinal = ['st', 'nd', 'rd'][((day + 90) % 10 - 1) % 3] || 'th';
+                                                            return `${month} ${day}${ordinal}`;
+                                                        }
+                                                    }}
+                                                />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="count"
+                                                    stroke="#8b5cf6"
+                                                    strokeWidth={2}
+                                                    fill="url(#colorUsersMain)"
+                                                    name="Users"
+                                                    activeDot={{
+                                                        r: 8,
+                                                        style: { cursor: 'pointer', outline: 'none' },
+                                                        onClick: (e, payload) => {
+                                                            if (payload && payload.payload) {
+                                                                setSelectedPeriod(payload.payload);
+                                                            }
+                                                        }
+                                                    }}
+                                                    dot={{ r: 4, fill: '#8b5cf6', style: { cursor: 'pointer', outline: 'none' } }}
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    {/* Stats Panel - Always visible */}
+                                    <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="font-medium text-gray-900">
+                                                {selectedPeriod
+                                                    ? `${selectedPeriod.month || selectedPeriod.date} Stats`
+                                                    : 'Lifetime Stats'
+                                                }
+                                            </h4>
+                                            {selectedPeriod && (
+                                                <button onClick={() => setSelectedPeriod(null)} className="text-indigo-600 text-sm hover:underline">
+                                                    Show Lifetime
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-3">
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-orange-600">
+                                                    ₹{selectedPeriod
+                                                        ? (selectedPeriod.directBonus || 0).toLocaleString()
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Direct Referral</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-green-600">
+                                                    ₹{selectedPeriod
+                                                        ? (selectedPeriod.matchingBonus || 0).toLocaleString()
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Matching Bonus</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-purple-600">
+                                                    ₹{selectedPeriod
+                                                        ? (selectedPeriod.leadershipBonus || 0).toLocaleString()
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0).toLocaleString()
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Leadership Bonus</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
+                                                <p className="text-lg font-bold text-blue-600">
+                                                    {selectedPeriod
+                                                        ? (selectedPeriod.orders || 0)
+                                                        : (analytics.orders?.total || 0)
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-gray-500">Purchases</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
 
                                 {/* Position Distribution & KYC Stats */}
                                 <div className="grid lg:grid-cols-2 gap-6">
@@ -445,13 +479,14 @@ export default function Dashboard() {
                                             <p className="text-xl font-bold text-green-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()}</p>
                                             <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.count || 0} transactions</p>
                                         </div>
+                                        <div className="p-4 bg-purple-50 rounded-xl">
+                                            <p className="text-xs text-gray-500">Leadership Bonus</p>
+                                            <p className="text-xl font-bold text-purple-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0).toLocaleString()}</p>
+                                            <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.count || 0} transactions</p>
+                                        </div>
                                         <div className="p-4 bg-blue-50 rounded-xl">
                                             <p className="text-xs text-gray-500">Today's Bonuses</p>
                                             <p className="text-xl font-bold text-blue-600 mt-1">₹{(analytics.financial?.todayBonuses || 0).toLocaleString()}</p>
-                                        </div>
-                                        <div className="p-4 bg-purple-50 rounded-xl">
-                                            <p className="text-xs text-gray-500">This Month</p>
-                                            <p className="text-xl font-bold text-purple-600 mt-1">₹{(analytics.financial?.monthBonuses || 0).toLocaleString()}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -525,29 +560,39 @@ export default function Dashboard() {
                                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                                     <h3 className="font-semibold text-gray-900 mb-4">Users by Rank</h3>
                                     <div className="space-y-3">
-                                        {(analytics.ranks || []).map(r => {
-                                            const percentage = analytics.users?.total ? (r.count / analytics.users.total) * 100 : 0;
-                                            const colors = {
-                                                'ROOKIE': 'bg-gray-400', 'Rookie': 'bg-gray-400',
-                                                'ASSOCIATE_EXECUTIVE': 'bg-blue-400', 'Associate Executive': 'bg-blue-400',
-                                                'TEAM_EXECUTIVE': 'bg-green-400', 'Team Executive': 'bg-green-400',
-                                                'SR_TEAM_EXECUTIVE': 'bg-yellow-400', 'Sr Team Executive': 'bg-yellow-400',
-                                                'AREA_EXECUTIVE': 'bg-orange-400', 'Area Executive': 'bg-orange-400',
-                                                'REGIONAL_EXECUTIVE': 'bg-red-400', 'Regional Executive': 'bg-red-400',
-                                                'STATE_EXECUTIVE': 'bg-purple-400', 'State Executive': 'bg-purple-400',
-                                                'VP': 'bg-pink-400'
-                                            };
-                                            return (
-                                                <div key={r.rank} className="flex items-center gap-4">
-                                                    <span className="text-sm text-gray-600 w-40 truncate">{r.rank?.replace(/_/g, ' ') || 'Unknown'}</span>
-                                                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                                                        <div className={`h-full ${colors[r.rank] || 'bg-indigo-400'} rounded-full transition-all`} style={{ width: `${Math.max(percentage, 3)}%` }}></div>
+                                        {(() => {
+                                            const rankOrder = ['ROOKIE', 'ASSOCIATE_EXECUTIVE', 'TEAM_EXECUTIVE', 'SR_TEAM_EXECUTIVE', 'AREA_EXECUTIVE', 'REGIONAL_EXECUTIVE', 'STATE_EXECUTIVE', 'VP'];
+                                            const sortedRanks = (analytics.ranks || []).sort((a, b) => {
+                                                const indexA = rankOrder.indexOf(a.rank);
+                                                const indexB = rankOrder.indexOf(b.rank);
+                                                return (indexA === -1 ? rankOrder.length : indexA) - (indexB === -1 ? rankOrder.length : indexB);
+                                            });
+
+                                            return sortedRanks.map(r => {
+                                                const percentage = analytics.users?.total ? (r.count / analytics.users.total) * 100 : 0;
+                                                const colors = {
+                                                    'ROOKIE': 'bg-gray-400', 'Rookie': 'bg-gray-400',
+                                                    'ASSOCIATE_EXECUTIVE': 'bg-blue-400', 'Associate Executive': 'bg-blue-400',
+                                                    'TEAM_EXECUTIVE': 'bg-green-400', 'Team Executive': 'bg-green-400',
+                                                    'SR_TEAM_EXECUTIVE': 'bg-yellow-400', 'Sr Team Executive': 'bg-yellow-400',
+                                                    'AREA_EXECUTIVE': 'bg-orange-400', 'Area Executive': 'bg-orange-400',
+                                                    'REGIONAL_EXECUTIVE': 'bg-red-400', 'Regional Executive': 'bg-red-400',
+                                                    'STATE_EXECUTIVE': 'bg-purple-400', 'State Executive': 'bg-purple-400',
+                                                    'VP': 'bg-pink-400'
+                                                };
+
+                                                return (
+                                                    <div key={r.rank} className="flex items-center gap-4">
+                                                        <span className="text-sm text-gray-600 w-40 truncate">{r.rank?.replace(/_/g, ' ') || 'Unknown'}</span>
+                                                        <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className={`h-full ${colors[r.rank] || 'bg-indigo-400'} rounded-full transition-all`} style={{ width: `${Math.max(percentage, 3)}%` }}></div>
+                                                        </div>
+                                                        <span className="text-sm font-medium text-gray-900 w-12 text-right">{r.count}</span>
+                                                        <span className="text-xs text-gray-500 w-12">{percentage.toFixed(0)}%</span>
                                                     </div>
-                                                    <span className="text-sm font-medium text-gray-900 w-12 text-right">{r.count}</span>
-                                                    <span className="text-xs text-gray-500 w-12">{percentage.toFixed(0)}%</span>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            });
+                                        })()}
                                     </div>
                                 </div>
                             </div>

@@ -64,16 +64,11 @@ function TreeNode({
     const needsChildrenLoaded = hasChildren && !displayNode.left && !displayNode.right
 
     const displayName = (displayNode as any).name
-        || (displayNode as any).fullName
-        || (displayNode as any).full_name
-        || (displayNode as any).firstName
-        || (displayNode as any).firstname
-        || (displayNode as any).first_name
         || displayNode.username
         || 'User'
     const initials = displayName
         .split(/[\s_-]/)
-        .map(s => s[0] || '')
+        .map((s: string) => s[0] || '')
         .join('')
         .toUpperCase()
         .slice(0, 2)

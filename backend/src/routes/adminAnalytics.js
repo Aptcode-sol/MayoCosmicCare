@@ -308,6 +308,7 @@ router.get('/network', authenticate, adminOnly, async (req, res) => {
             select: {
                 id: true,
                 username: true,
+                name: true,
                 email: true,
                 rank: true,
                 hasPurchased: true,

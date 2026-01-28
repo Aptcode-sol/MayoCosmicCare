@@ -1,23 +1,15 @@
 "use client"
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import UserAvatar from './UserAvatar'
 import { Button } from "./ui/Button"
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
     const { items, setIsOpen } = useCart()
-
-    // Check auth status after hydration to avoid SSR mismatch
-    useEffect(() => {
-        try {
-            setIsLoggedIn(!!localStorage.getItem('accessToken'))
-        } catch {
-            setIsLoggedIn(false)
-        }
-    }, [])
+    const { isLoggedIn, isLoading } = useAuth()
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -62,7 +54,9 @@ export default function Header() {
 
                     {/* Auth Section */}
                     <div className="hidden md:flex items-center gap-4">
-                        {isLoggedIn ? (
+                        {isLoading ? (
+                            <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse" />
+                        ) : isLoggedIn ? (
                             <UserAvatar />
                         ) : (
                             <>

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminLogin } from '../lib/auth';
+import { adminLogin, isAuthenticated } from '../lib/auth';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -8,6 +8,13 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // If already authenticated, redirect to dashboard
+    useEffect(() => {
+        if (isAuthenticated()) {
+            navigate('/dashboard');
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -17,7 +24,8 @@ export default function Login() {
             const result = await adminLogin(email, password);
             if (result.ok) {
                 toast.success('Welcome back!');
-                navigate('/dashboard');
+                // Force page reload to ensure fresh state
+                window.location.href = '/dashboard';
             } else {
                 toast.error(result.error || 'Login failed');
             }

@@ -1,67 +1,16 @@
 "use client"
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
-import { getUser } from '../lib/services/users'
-import { me } from '../lib/services/auth'
+import { useState, useRef, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 export default function UserAvatar() {
-    const [username, setUsername] = useState('')
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const router = useRouter()
+    const { user, logout } = useAuth()
+
+    // Get username from auth context
+    const username = user?.username || user?.name || 'User'
 
     useEffect(() => {
-        let mounted = true
-
-        async function resolveName() {
-            const token = localStorage.getItem('accessToken')
-            if (!token) return
-
-            // 1) Try decode token
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]))
-                const nameFromToken = payload.username || payload.name || ''
-                if (nameFromToken) {
-                    if (!mounted) return
-                    setUsername(nameFromToken)
-                    return
-                }
-            } catch {
-                // ignore decode errors and continue to server fallbacks
-            }
-
-            // 2) Try /api/auth/me via axios service (ensures auth/refresh behavior is applied)
-            try {
-                const res = await me()
-                const u = res?.user || res || null
-                if (u?.username || u?.name) {
-                    if (mounted) setUsername(u.username || u.name)
-                    return
-                }
-
-                // 3) If only id returned, fetch public user record
-                if (u?.id) {
-                    try {
-                        const ud = await getUser(u.id)
-                        const full = ud?.user || ud
-                        if (full?.username || full?.name) {
-                            if (mounted) setUsername(full.username || full.name)
-                            return
-                        }
-                    } catch {
-                        // ignore
-                    }
-                }
-            } catch {
-                // ignore - user may be unauthenticated
-            }
-
-            if (mounted) setUsername('User')
-        }
-
-        resolveName()
-
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setDropdownOpen(false)
@@ -69,14 +18,12 @@ export default function UserAvatar() {
         }
 
         document.addEventListener('mousedown', handleClickOutside)
-        return () => { mounted = false; document.removeEventListener('mousedown', handleClickOutside) }
+        return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
     const handleLogout = () => {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        toast.success('Logged out successfully')
-        router.push('/login')
+        setDropdownOpen(false)
+        logout()
     }
 
     const initials = username

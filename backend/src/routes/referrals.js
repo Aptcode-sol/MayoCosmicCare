@@ -29,6 +29,7 @@ async function buildBinaryTree(userId, depth = 6) {
     select: {
       id: true,
       username: true,
+      name: true,
       position: true,
       createdAt: true,
       wallet: { select: { balance: true } },
@@ -59,6 +60,7 @@ async function buildBinaryTree(userId, depth = 6) {
   return {
     id: user.id,
     username: user.username,
+    name: user.name,
     position: user.position || 'ROOT',
     leftMemberCount,
     rightMemberCount,

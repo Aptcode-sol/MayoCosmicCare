@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { login } from '../../lib/services/auth'
+import { login as loginApi } from '../../lib/services/auth'
 import { parseApiError } from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
@@ -16,6 +17,7 @@ function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelH
 
 export default function Login() {
     const router = useRouter()
+    const { login } = useAuth()
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -27,12 +29,13 @@ export default function Login() {
         setLoading(true)
 
         try {
-            const response = await login({ email: formData.username, password: formData.password })
-            localStorage.setItem('accessToken', response.accessToken)
-            localStorage.setItem('refreshToken', response.refreshToken)
+            const response = await loginApi({ email: formData.username, password: formData.password })
+
+            // Use auth context login to properly update global state
+            login(response.accessToken, response.refreshToken)
+
             toast.success('Welcome back!')
-            // Use full page navigation to ensure Header re-checks auth state
-            window.location.href = '/dashboard'
+            router.push('/dashboard')
         } catch (error: unknown) {
             const { message } = parseApiError(error)
             toast.error(String(message || 'Invalid credentials'))

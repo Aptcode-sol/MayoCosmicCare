@@ -39,14 +39,42 @@ export function parseApiError(err: unknown) {
     return { message, status: null, data: null, code: null }
 }
 
+// Helper to clear auth and redirect
+function clearAuthAndRedirect() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    // Only redirect if not already on login page to prevent redirect loop
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.assign('/login');
+    }
+}
+
 // Handle token refresh on 401 and normalize errors
 api.interceptors.response.use(
     (response) => response,
     async (error: unknown) => {
         const axiosErr = axios.isAxiosError(error) ? error as AxiosError : null
         const originalRequest = axiosErr?.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined
+        const status = axiosErr?.response?.status
+        const responseData = axiosErr?.response?.data as any
 
-        if (axiosErr?.response?.status === 401 && originalRequest && !originalRequest._retry) {
+        // Handle user not found, blocked, or other auth-related errors
+        if (status === 404 || status === 403) {
+            // User not found or forbidden - clear auth
+            const errorMsg = responseData?.error || responseData?.message || ''
+            if (
+                errorMsg.toLowerCase().includes('user not found') ||
+                errorMsg.toLowerCase().includes('blocked') ||
+                errorMsg.toLowerCase().includes('forbidden') ||
+                errorMsg.toLowerCase().includes('not authorized')
+            ) {
+                clearAuthAndRedirect()
+                return Promise.reject(parseApiError(error))
+            }
+        }
+
+        // Handle 401 with token refresh attempt
+        if (status === 401 && originalRequest && !originalRequest._retry) {
             originalRequest._retry = true;
 
             const refreshToken = localStorage.getItem('refreshToken');
@@ -67,21 +95,22 @@ api.interceptors.response.use(
                         return api(originalRequest as AxiosRequestConfig);
                     } else {
                         console.warn('Refresh endpoint returned no tokens', d)
-                        // fall through to failure branch
+                        clearAuthAndRedirect()
                     }
                 } catch (err: unknown) {
                     console.debug('Token refresh failed', err)
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    try {
-                        // prefer client-side navigation if router is available
-                        window.location.assign('/login')
-                    } catch {
-                        window.location.href = '/login'
-                    }
+                    clearAuthAndRedirect()
                     return Promise.reject(parseApiError(err));
                 }
+            } else {
+                // No refresh token available
+                clearAuthAndRedirect()
             }
+        }
+
+        // For 401 that already retried or has no refresh token
+        if (status === 401) {
+            clearAuthAndRedirect()
         }
 
         return Promise.reject(parseApiError(error));

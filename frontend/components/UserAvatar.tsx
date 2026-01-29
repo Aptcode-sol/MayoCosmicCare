@@ -7,8 +7,8 @@ export default function UserAvatar() {
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logout } = useAuth()
 
-    // Get username from auth context
-    const username = user?.username || user?.name || 'User'
+    // Get name for avatar initials (prefer name over username to match sidebar)
+    const displayName = user?.name || user?.username || 'User'
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -26,12 +26,8 @@ export default function UserAvatar() {
         logout()
     }
 
-    const initials = username
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2) || 'U'
+    // Match sidebar avatar style: 2 character initials from name
+    const initials = (user?.name || user?.username || 'U').slice(0, 2).toUpperCase()
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -39,7 +35,8 @@ export default function UserAvatar() {
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 hover:opacity-80 transition"
             >
-                <div className="w-10 h-10 rounded-full bg-[#8b7355] flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-200">
+                {/* Gradient avatar matching sidebar style */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm border-2 border-white shadow-sm">
                     {initials}
                 </div>
             </button>
@@ -47,7 +44,7 @@ export default function UserAvatar() {
             {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="px-4 py-3 border-b border-gray-200">
-                        <p className="text-sm font-medium text-gray-900">{username}</p>
+                        <p className="text-sm font-medium text-gray-900">{displayName}</p>
                         <p className="text-xs text-gray-500 mt-0.5">Manage your account</p>
                     </div>
                     <a

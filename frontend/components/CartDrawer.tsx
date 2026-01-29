@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { Button } from '@/components/ui/Button';
 import { load } from '@cashfreepayments/cashfree-js';
@@ -9,28 +9,39 @@ import toast from 'react-hot-toast';
 import SponsorSelectModal from './SponsorSelectModal';
 
 export default function CartDrawer() {
-    const { items, removeFromCart, total, isOpen, setIsOpen, clearCart } = useCart();
+    const { items, removeFromCart, updateQuantity, total, isOpen, setIsOpen, clearCart } = useCart();
     const [loading, setLoading] = useState(false);
     const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
-    // Logic for Cashfree
+    // Handle animation states
+    useEffect(() => {
+        if (isOpen) {
+            setIsVisible(true);
+            requestAnimationFrame(() => {
+                setIsAnimating(true);
+            });
+        } else {
+            setIsAnimating(false);
+            const timer = setTimeout(() => {
+                setIsVisible(false);
+            }, 300); // Match transition duration
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    // Logic for Cashfree - KYC CHECK REMOVED (only needed for withdrawal)
     const processCheckout = async (sponsorId?: string) => {
         setLoading(true);
         try {
-            // 0. Verify Auth & KYC
+            // 0. Verify Auth only (no KYC check for purchase)
             let user;
             try {
                 const res = await me();
                 user = res.user || res;
             } catch (e) {
                 toast.error('Please login to checkout');
-                setLoading(false);
-                return;
-            }
-
-            if (user.role !== 'ADMIN' && user.kycStatus !== 'VERIFIED') {
-                toast.error('KYC Verification Required. Please complete KYC in your profile.');
-                setTimeout(() => window.location.href = '/dashboard/profile', 2000);
                 setLoading(false);
                 return;
             }
@@ -50,7 +61,7 @@ export default function CartDrawer() {
                 price: i.price
             }));
 
-            const activeSponsorId = sponsorId || (hasSponsor ? undefined : undefined); // code handles it if passed
+            const activeSponsorId = sponsorId || (hasSponsor ? undefined : undefined);
 
             const { payment_session_id, order_id } = await createOrder(orderItems, activeSponsorId);
 
@@ -69,7 +80,6 @@ export default function CartDrawer() {
                 }
                 if (result.paymentDetails) {
                     console.log("Payment Completed");
-                    // Verify on server
                     try {
                         const verifyRes = await verifyPayment(order_id);
                         if (verifyRes.status === 'PAID') {
@@ -93,18 +103,25 @@ export default function CartDrawer() {
         }
     };
 
-    if (!isOpen) return null;
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    if (!isVisible) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+            {/* Backdrop with fade animation */}
+            <div
+                className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
+                onClick={handleClose}
+            />
 
-            {/* Drawer */}
-            <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Drawer with slide animation */}
+            <div className={`relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col transition-transform duration-300 ease-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h2 className="text-lg font-semibold text-gray-900">Your Cart ({items.length})</h2>
-                    <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700">
+                    <button onClick={handleClose} className="text-gray-500 hover:text-gray-700 transition-colors">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
@@ -112,7 +129,8 @@ export default function CartDrawer() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {items.length === 0 ? (
                         <div className="text-center py-20 text-gray-500">
-                            Your cart is empty.
+                            <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                            <p>Your cart is empty.</p>
                         </div>
                     ) : (
                         items.map(item => (
@@ -122,7 +140,24 @@ export default function CartDrawer() {
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="font-medium text-gray-900">{item.name}</h3>
-                                    <p className="text-gray-500 text-sm">Qty: {item.quantity}</p>
+
+                                    {/* Quantity Controls */}
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <button
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                                        </button>
+                                        <span className="w-8 text-center font-medium text-gray-900">{item.quantity}</span>
+                                        <button
+                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        </button>
+                                    </div>
+
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString()}</span>
                                         <button

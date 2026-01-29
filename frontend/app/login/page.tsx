@@ -35,7 +35,15 @@ export default function Login() {
             login(response.accessToken, response.refreshToken)
 
             toast.success('Welcome back!')
-            router.push('/dashboard')
+
+            // Check for return URL and redirect there, otherwise go to dashboard
+            const returnUrl = typeof window !== 'undefined' ? localStorage.getItem('returnUrl') : null
+            if (returnUrl) {
+                localStorage.removeItem('returnUrl')
+                router.push(returnUrl)
+            } else {
+                router.push('/dashboard')
+            }
         } catch (error: unknown) {
             const { message } = parseApiError(error)
             toast.error(String(message || 'Invalid credentials'))

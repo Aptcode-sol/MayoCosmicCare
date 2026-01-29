@@ -1,14 +1,15 @@
 "use client"
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { parseApiError } from '../../lib/api'
 import { listPublic } from '../../lib/services/products'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import AnimateOnScroll from '@/components/AnimateOnScroll'
-import { me } from '../../lib/services/auth'
 import { useCart } from '../../context/CartContext'
-import SponsorSelectModal from '@/components/SponsorSelectModal'
+import { useAuth } from '../../context/AuthContext'
 
 interface Product {
     id: string
@@ -21,7 +22,9 @@ interface Product {
 }
 
 export default function Products() {
+    const router = useRouter()
     const { addToCart } = useCart()
+    const { isLoggedIn } = useAuth()
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -39,6 +42,27 @@ export default function Products() {
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleAddToCart = (product: Product) => {
+        if (!isLoggedIn) {
+            // Store return URL and redirect to login
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('returnUrl', window.location.pathname)
+            }
+            toast.error('Please login to add items to cart')
+            router.push('/login')
+            return
+        }
+
+        addToCart({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            imageUrl: product.imageUrl
+        })
+        toast.success('Added to cart!')
     }
 
     if (loading) {
@@ -72,58 +96,54 @@ export default function Products() {
                                 <Card
                                     className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-500 bg-white h-full"
                                 >
-                                    <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
-                                        {product.imageUrl ? (
-                                            <img
-                                                src={product.imageUrl}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                                                <svg className="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                        )}
-                                        {product.stock <= 5 && product.stock > 0 && (
-                                            <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider rounded-full shadow-sm">
-                                                Low Stock
-                                            </div>
-                                        )}
-                                        {product.stock === 0 && (
-                                            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex items-center justify-center z-10">
-                                                <span className="text-sm font-semibold text-gray-900 border border-gray-900 px-6 py-2 uppercase tracking-widest">Sold Out</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <CardHeader className="pt-6 pb-2">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <CardTitle className="text-lg font-medium text-gray-900 line-clamp-1">{product.name}</CardTitle>
-                                            <span className="text-lg font-semibold text-gray-900">₹{product.price.toLocaleString()}</span>
+                                    <Link href={`/products/${product.id}`} className="block cursor-pointer">
+                                        <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+                                            {product.imageUrl ? (
+                                                <img
+                                                    src={product.imageUrl}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                                    <svg className="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            {product.stock <= 5 && product.stock > 0 && (
+                                                <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider rounded-full shadow-sm">
+                                                    Low Stock
+                                                </div>
+                                            )}
+                                            {product.stock === 0 && (
+                                                <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex items-center justify-center z-10">
+                                                    <span className="text-sm font-semibold text-gray-900 border border-gray-900 px-6 py-2 uppercase tracking-widest">Sold Out</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="flex gap-2 text-xs">
-                                            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{product.bv} BV</span>
-                                            <span className="text-gray-400 font-medium">In Stock</span>
-                                        </div>
-                                    </CardHeader>
 
-                                    <CardContent className="pb-4">
-                                        <CardDescription className="line-clamp-2 text-sm text-gray-500 leading-relaxed min-h-[2.5rem]">
-                                            {product.description}
-                                        </CardDescription>
-                                    </CardContent>
+                                        <CardHeader className="pt-6 pb-2">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <CardTitle className="text-lg font-medium text-gray-900 line-clamp-1">{product.name}</CardTitle>
+                                                <span className="text-lg font-semibold text-gray-900">₹{product.price.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex gap-2 text-xs">
+                                                <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{product.bv} BV</span>
+                                                <span className="text-gray-400 font-medium">In Stock</span>
+                                            </div>
+                                        </CardHeader>
+
+                                        <CardContent className="pb-4">
+                                            <CardDescription className="line-clamp-2 text-sm text-gray-500 leading-relaxed min-h-[2.5rem]">
+                                                {product.description}
+                                            </CardDescription>
+                                        </CardContent>
+                                    </Link>
 
                                     <CardFooter className="pt-0 pb-6">
                                         <Button
-                                            onClick={() => addToCart({
-                                                id: product.id,
-                                                name: product.name,
-                                                price: product.price,
-                                                quantity: 1,
-                                                imageUrl: product.imageUrl
-                                            })}
+                                            onClick={() => handleAddToCart(product)}
                                             disabled={product.stock === 0}
                                             className="w-full bg-gray-900 hover:bg-gray-800 text-white transition-colors"
                                         >
@@ -147,4 +167,3 @@ export default function Products() {
         </div>
     )
 }
-

@@ -32,6 +32,11 @@ async function buildBinaryTree(userId, depth = 6) {
       name: true,
       position: true,
       createdAt: true,
+      sponsor: {
+        select: {
+          username: true
+        }
+      },
       wallet: { select: { balance: true } },
       // Get children (users whose parentId is this user)
       children: {
@@ -61,6 +66,7 @@ async function buildBinaryTree(userId, depth = 6) {
     id: user.id,
     username: user.username,
     name: user.name,
+    referredBy: user.sponsor?.username || '—',
     position: user.position || 'ROOT',
     leftMemberCount,
     rightMemberCount,

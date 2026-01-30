@@ -339,6 +339,11 @@ router.get('/network', authenticate, adminOnly, async (req, res) => {
                 rank: true,
                 hasPurchased: true,
                 createdAt: true,
+                sponsor: {
+                    select: {
+                        username: true
+                    }
+                },
                 parentId: true,
                 position: true,
                 leftMemberCount: true,

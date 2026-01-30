@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
+import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
 
 interface Transaction {
     id: string
@@ -199,8 +200,32 @@ export default function Wallet() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {/* Left Column Skeleton */}
+                        <div className="lg:col-span-1 space-y-6">
+                            <SkeletonCard className="h-40 bg-white p-6 rounded-2xl border border-gray-100" />
+                            <SkeletonCard className="h-64 bg-white p-6 rounded-2xl border border-gray-100" />
+                        </div>
+
+                        {/* Right Column Skeleton */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                                <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse mb-6"></div>
+                                <SkeletonTable rows={5} />
+                            </div>
+                            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                                <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse mb-6"></div>
+                                <SkeletonTable rows={5} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <>

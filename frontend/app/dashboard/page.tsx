@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button"
 import DashboardLayout from '@/components/DashboardLayout'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import RankProgress from '@/components/RankProgress'
+import { SkeletonCard } from "@/components/ui/SkeletonCard"
 
 interface User {
     id: string
@@ -95,10 +96,38 @@ export default function Dashboard() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-center animate-pulse">
-                        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-sm text-gray-500">Loading dashboard...</p>
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Rank Progress Skeleton */}
+                    <div className="h-24 bg-gray-100 rounded-2xl animate-pulse"></div>
+
+                    {/* Stats Grid Skeleton */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[1, 2, 3, 4].map((i) => (
+                            <SkeletonCard key={i} className="h-32 bg-white p-6 rounded-xl border border-gray-100" />
+                        ))}
+                    </div>
+
+                    {/* Quick Actions Skeleton */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[1, 2, 3, 4].map((i) => (
+                            <SkeletonCard key={i} className="h-40 bg-white p-6 rounded-xl border border-gray-100" />
+                        ))}
+                    </div>
+
+                    {/* Recent Transactions Skeleton */}
+                    <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
+                        <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <SkeletonCard key={i} className="h-16" />
+                            ))}
+                        </div>
                     </div>
                 </div>
             ) : (

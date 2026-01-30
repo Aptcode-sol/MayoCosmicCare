@@ -7,6 +7,7 @@ import { me, updateProfile, sendEmailChangeOtp, verifyEmailChange, sendForgotPas
 import DashboardLayout from '@/components/DashboardLayout'
 import api from '@/lib/api'
 import toast from 'react-hot-toast'
+import { SkeletonCard } from "@/components/ui/SkeletonCard"
 
 interface UserData {
     id: string
@@ -212,13 +213,31 @@ export default function ProfilePage() {
         }
     }
 
+
+
     if (loading) {
         return (
-            <DashboardLayout>
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-center animate-pulse">
-                        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-sm text-gray-500">Loading profile...</p>
+            <DashboardLayout user={user}>
+                <div className="container mx-auto px-4 py-8 pt-0 max-w-5xl space-y-8">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        {/* Left Column Skeleton */}
+                        <div className="lg:col-span-1 space-y-6">
+                            <SkeletonCard className="h-64 bg-white p-6 rounded-2xl border border-gray-100" />
+                            <SkeletonCard className="h-40 bg-white p-6 rounded-2xl border border-gray-100" />
+                        </div>
+
+                        {/* Right Column Skeleton */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <SkeletonCard className="h-40 bg-white p-6 rounded-2xl border border-gray-100" />
+                            <SkeletonCard className="h-40 bg-white p-6 rounded-2xl border border-gray-100" />
+                            <SkeletonCard className="h-64 bg-white p-6 rounded-2xl border border-gray-100" />
+                        </div>
                     </div>
                 </div>
             </DashboardLayout>

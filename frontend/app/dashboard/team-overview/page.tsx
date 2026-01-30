@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import { me } from '@/lib/services/auth'
 import { getTeamStats, TeamStats } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { SkeletonCard } from "@/components/ui/SkeletonCard"
 
 export default function TeamOverview() {
     const router = useRouter()
@@ -36,8 +37,25 @@ export default function TeamOverview() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Stats Grid Skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                            <SkeletonCard key={i} className="h-40 bg-white p-6 rounded-xl border border-gray-100" />
+                        ))}
+                    </div>
+
+                    {/* Charts Skeleton */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <SkeletonCard className="h-80 bg-white p-6 rounded-xl border border-gray-100" />
+                        <SkeletonCard className="h-80 bg-white p-6 rounded-xl border border-gray-100" />
+                    </div>
                 </div>
             ) : (
                 <>

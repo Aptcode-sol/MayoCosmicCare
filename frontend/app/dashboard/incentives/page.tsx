@@ -6,6 +6,7 @@ import { me } from '@/lib/services/auth'
 import { getIncentives } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import RankTable from '@/components/RankTable'
+import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
 
 interface Transaction {
     id: string
@@ -72,11 +73,40 @@ export default function Incentives() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
+
+
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
-                <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-            </div>
+            <DashboardLayout user={user}>
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Rank Table Skeleton */}
+                    <div className="space-y-4">
+                        <div className="h-6 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                        <SkeletonTable rows={3} />
+                    </div>
+
+                    {/* Payout Summary Cards Skeleton */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[1, 2, 3, 4].map((i) => (
+                            <SkeletonCard key={i} className="h-40 bg-white p-6 rounded-2xl border border-gray-100" />
+                        ))}
+                    </div>
+
+                    {/* Transaction History Skeleton */}
+                    <div className="space-y-4">
+                        <div className="h-6 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                            <SkeletonTable rows={5} />
+                        </div>
+                    </div>
+                </div>
+            </DashboardLayout>
         )
     }
 

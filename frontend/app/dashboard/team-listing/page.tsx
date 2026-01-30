@@ -6,6 +6,7 @@ import { me } from '@/lib/services/auth'
 import { getTeamList } from '@/lib/services/dashboard'
 import { Button } from '@/components/ui/Button'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
 
 interface Member {
     id: string
@@ -89,8 +90,20 @@ export default function TeamListing() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Filters Skeleton */}
+                    <div className="h-24 bg-white rounded-2xl border border-gray-100 animate-pulse"></div>
+
+                    {/* Members Table Skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                        <SkeletonTable rows={10} />
+                    </div>
                 </div>
             ) : (
                 <>

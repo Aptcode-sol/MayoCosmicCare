@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import { me } from '@/lib/services/auth'
 import { getMatchingReport } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
 
 interface MatchingData {
     current: {
@@ -71,8 +72,24 @@ export default function MatchingReport() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Current Summary Skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                        <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse mb-6"></div>
+                        <SkeletonTable rows={4} />
+                    </div>
+
+                    {/* History Skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                        <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse mb-6"></div>
+                        <SkeletonTable rows={5} />
+                    </div>
                 </div>
             ) : (
                 <>

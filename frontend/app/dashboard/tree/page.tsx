@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { me } from '@/lib/services/auth'
 import TreeView from '@/components/TreeView'
 import DashboardLayout from '@/components/DashboardLayout'
+import { SkeletonCard } from "@/components/ui/SkeletonCard"
 import { Card } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import AnimateOnScroll from '@/components/AnimateOnScroll'
@@ -35,7 +36,8 @@ function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: (
                             {(node.name || node.firstName || node.username || 'U').slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                            <h3 className="font-semibold text-lg text-gray-900">{node.name || node.firstName || node.username || 'User'}</h3>
+                            <h3 className="font-semibold text-lg text-gray-900">{node.name || node.firstName || 'User'}</h3>
+                            <p className="text-sm font-medium text-gray-900">@{node.username}</p>
                             <p className="text-sm text-gray-500 font-medium bg-gray-100 rounded-full px-2 py-0.5 inline-block mt-1">
                                 {node.position || 'ROOT'}
                             </p>
@@ -62,7 +64,7 @@ function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: (
                         </div>
 
                         <div className="flex justify-between items-center text-xs text-gray-400 pt-2 border-t border-gray-50">
-                            <span className="font-mono">{node.id}</span>
+                            <span>Referred By: {node.referredBy || '—'}</span>
                             <span>Date: {node.createdAt ? new Date(node.createdAt).toLocaleDateString() : '—'}</span>
                         </div>
                     </div>
@@ -190,10 +192,33 @@ export default function Tree() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-center animate-pulse">
-                        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-sm text-gray-500">Loading network structure...</p>
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Legend Skeleton */}
+                    <div className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse"></div>
+
+                    {/* Tree Container Skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-[600px] animate-pulse relative overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-8">
+                                <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                <div className="flex gap-16">
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                </div>
+                                <div className="flex gap-8">
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             ) : (

@@ -6,6 +6,7 @@ import { me } from '@/lib/services/auth'
 import { getTransactions } from '@/lib/services/dashboard'
 import { Button } from '@/components/ui/Button'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
 
 interface Transaction {
     id: string
@@ -37,7 +38,8 @@ const typeLabels: Record<string, { label: string, color: string }> = {
     WITHDRAW: { label: 'Withdrawal', color: 'bg-red-100 text-red-700' },
     REFUND: { label: 'Refund', color: 'bg-green-100 text-green-700' },
     ADMIN_CREDIT: { label: 'Admin Credit', color: 'bg-emerald-100 text-emerald-700' },
-    ADMIN_DEBIT: { label: 'Admin Debit', color: 'bg-rose-100 text-rose-700' }
+    ADMIN_DEBIT: { label: 'Admin Debit', color: 'bg-rose-100 text-rose-700' },
+    LEADERSHIP_BONUS: { label: 'Leadership Bonus', color: 'bg-amber-100 text-amber-700' }
 }
 
 export default function Transactions() {
@@ -87,8 +89,27 @@ export default function Transactions() {
     return (
         <DashboardLayout user={user}>
             {(loading && !transactions.length) ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                <div className="container mx-auto px-6 py-10 space-y-10">
+                    {/* Header Skeleton */}
+                    <div className="space-y-2">
+                        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+                    </div>
+
+                    {/* Stats Cards Skeleton */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[1, 2, 3, 4].map((i) => (
+                            <SkeletonCard key={i} className="h-24 bg-white p-4 rounded-xl border border-gray-100" />
+                        ))}
+                    </div>
+
+                    {/* Filters Skeleton */}
+                    <div className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse"></div>
+
+                    {/* Transactions Table Skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                        <SkeletonTable rows={10} />
+                    </div>
                 </div>
             ) : (
                 <>
@@ -130,6 +151,7 @@ export default function Transactions() {
                                     <option value="all">All Transactions</option>
                                     <option value="DIRECT_BONUS">Direct Bonus</option>
                                     <option value="MATCHING_BONUS">Matching Bonus</option>
+                                    <option value="LEADERSHIP_BONUS">Leadership Bonus</option>
                                     <option value="PURCHASE">Purchases</option>
                                     <option value="WITHDRAW">Withdrawals</option>
                                 </select>

@@ -103,21 +103,47 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         });
 
         // ===== ORDER/PURCHASE METRICS =====
+        // Count both Order records (from payment gateway) and PURCHASE transactions (direct API)
         const totalOrders = await prisma.order.count({ where: { status: 'PAID' } });
+        const totalPurchases = await prisma.transaction.count({ where: { type: 'PURCHASE' } });
+        const totalOrdersAndPurchases = totalOrders + totalPurchases;
+
         const todayOrders = await prisma.order.count({
             where: { status: 'PAID', createdAt: { gte: startOfToday } }
         });
+        const todayPurchases = await prisma.transaction.count({
+            where: { type: 'PURCHASE', createdAt: { gte: startOfToday } }
+        });
+        const todayOrdersAndPurchases = todayOrders + todayPurchases;
+
         const monthOrders = await prisma.order.count({
             where: { status: 'PAID', createdAt: { gte: startOfMonth } }
         });
-        const totalRevenue = await prisma.order.aggregate({
+        const monthPurchases = await prisma.transaction.count({
+            where: { type: 'PURCHASE', createdAt: { gte: startOfMonth } }
+        });
+        const monthOrdersAndPurchases = monthOrders + monthPurchases;
+
+        // Calculate revenue from orders and purchase transactions
+        const orderRevenue = await prisma.order.aggregate({
             _sum: { totalAmount: true },
             where: { status: 'PAID' }
         });
-        const monthRevenue = await prisma.order.aggregate({
+        const purchaseRevenue = await prisma.transaction.aggregate({
+            _sum: { amount: true },
+            where: { type: 'PURCHASE' }
+        });
+        const totalRevenue = (orderRevenue._sum.totalAmount || 0) + (purchaseRevenue._sum.amount || 0);
+
+        const monthOrderRevenue = await prisma.order.aggregate({
             _sum: { totalAmount: true },
             where: { status: 'PAID', createdAt: { gte: startOfMonth } }
         });
+        const monthPurchaseRevenue = await prisma.transaction.aggregate({
+            _sum: { amount: true },
+            where: { type: 'PURCHASE', createdAt: { gte: startOfMonth } }
+        });
+        const monthRevenue = (monthOrderRevenue._sum.totalAmount || 0) + (monthPurchaseRevenue._sum.amount || 0);
 
         // ===== PRODUCT METRICS =====
         const totalProducts = await prisma.product.count();
@@ -250,11 +276,11 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                 },
                 // Orders/Revenue
                 orders: {
-                    total: totalOrders,
-                    today: todayOrders,
-                    thisMonth: monthOrders,
-                    totalRevenue: totalRevenue._sum.totalAmount || 0,
-                    monthRevenue: monthRevenue._sum.totalAmount || 0
+                    total: totalOrdersAndPurchases,
+                    today: todayOrdersAndPurchases,
+                    thisMonth: monthOrdersAndPurchases,
+                    totalRevenue: totalRevenue,
+                    monthRevenue: monthRevenue
                 },
                 // Products
                 products: {

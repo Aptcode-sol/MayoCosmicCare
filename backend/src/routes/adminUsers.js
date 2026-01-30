@@ -5,26 +5,47 @@ const { requireAdmin } = require('../middleware/adminMiddleware');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Get all users (admin only)
+// Get all users (admin only) - with pagination
 router.get('/', authenticate, requireAdmin, async (req, res) => {
     try {
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                phone: true,
-                sponsorId: true,
-                role: true,
-                isBlocked: true,
-                fraudFlag: true,
-                leftBV: true,
-                rightBV: true,
-                createdAt: true
-            },
-            orderBy: { createdAt: 'desc' }
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const skip = (page - 1) * limit;
+
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    phone: true,
+                    sponsorId: true,
+                    role: true,
+                    isBlocked: true,
+                    fraudFlag: true,
+                    leftBV: true,
+                    rightBV: true,
+                    createdAt: true
+                },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit
+            }),
+            prisma.user.count()
+        ]);
+
+        const totalPages = Math.ceil(total / limit);
+        res.json({
+            users,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+            }
         });
-        res.json({ users });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch users' });

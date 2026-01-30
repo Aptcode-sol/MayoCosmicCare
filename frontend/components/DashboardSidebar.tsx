@@ -83,7 +83,6 @@ export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: Da
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                title={!isExpanded ? item.label : undefined}
                                 className={`
                                     flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium 
                                     transition-colors duration-300 ease-in-out group relative
@@ -92,6 +91,7 @@ export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: Da
                                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                     }
                                 `}
+                                title={item.label}
                             >
                                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     {icons[item.icon]}
@@ -138,7 +138,7 @@ export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: Da
                     {/* Logout Button */}
                     <button
                         onClick={handleLogout}
-                        title={!isExpanded ? 'Logout' : undefined}
+                        title="Logout"
                         className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors duration-300 ease-in-out group relative"
                     >
                         <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

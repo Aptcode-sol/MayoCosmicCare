@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const payoutService = require('../services/payoutService');
+const prisma = require('../prismaClient');
 
 // POST /api/payouts/request
 router.post('/request', async (req, res) => {
@@ -18,12 +19,39 @@ router.post('/request', async (req, res) => {
 
 const { checkRole } = require('../middleware/roleMiddleware');
 
-// GET /api/payouts/admin/list
+// GET /api/payouts/admin/list - with pagination
 router.get('/admin/list', checkRole(['ADMIN']), async (req, res) => {
     try {
         const { status } = req.query;
-        const withdrawals = await payoutService.listWithdrawals(status);
-        res.json({ withdrawals });
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const skip = (page - 1) * limit;
+
+        const where = status ? { status } : {};
+
+        const [withdrawals, total] = await Promise.all([
+            prisma.withdrawal.findMany({
+                where,
+                include: { user: { select: { username: true, email: true, phone: true } } },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit
+            }),
+            prisma.withdrawal.count({ where })
+        ]);
+
+        const totalPages = Math.ceil(total / limit);
+        res.json({
+            withdrawals,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -73,6 +101,7 @@ router.get('/my-list', async (req, res) => {
     }
 });
 
-const prisma = require('../prismaClient'); // Require prisma for my-list if not using service method
+
+
 
 module.exports = router;

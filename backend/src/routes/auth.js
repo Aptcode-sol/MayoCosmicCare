@@ -207,6 +207,14 @@ router.get('/me', authenticate, async (req, res) => {
                 totalPairs: true,
                 sponsorId: true,
                 parentId: true,
+                // Get sponsor details for "Referred By" display
+                sponsor: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true
+                    }
+                },
                 // Get immediate children to find left/right child
                 children: {
                     select: { id: true, position: true }
@@ -241,7 +249,7 @@ router.get('/me', authenticate, async (req, res) => {
         const leftMemberCount = leftChild ? 1 + await countDescendants(leftChild.id) : 0;
         const rightMemberCount = rightChild ? 1 + await countDescendants(rightChild.id) : 0;
 
-        // Build response without children field
+        // Build response without children field (keep sponsor)
         const { children, ...userData } = userRec;
         const user = {
             ...userData,

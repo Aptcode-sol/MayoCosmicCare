@@ -36,13 +36,15 @@ module.exports = {
         } else {
             // Fallback: process matching synchronously without queue
             console.log('Queue not available, processing matching synchronously for', userId);
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
             try {
                 const { processMatchingBonus } = require('../services/commissionService');
-                const { PrismaClient } = require('@prisma/client');
-                const prisma = new PrismaClient();
                 await processMatchingBonus(prisma, userId);
             } catch (err) {
                 console.error('Sync matching processing failed:', err.message);
+            } finally {
+                await prisma.$disconnect();
             }
         }
     }

@@ -11,9 +11,15 @@ export default function Dashboard() {
     const [tab, setTab] = useState('products');
     const [products, setProducts] = useState([]);
     const [users, setUsers] = useState([]);
+    const [usersPage, setUsersPage] = useState(1);
+    const [usersPagination, setUsersPagination] = useState(null);
     const [rankStats, setRankStats] = useState([]);
     const [positions, setPositions] = useState([]);
+    const [positionsPage, setPositionsPage] = useState(1);
+    const [positionsPagination, setPositionsPagination] = useState(null);
     const [withdrawals, setWithdrawals] = useState([]);
+    const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+    const [withdrawalsPagination, setWithdrawalsPagination] = useState(null);
     const [positionFilter, setPositionFilter] = useState('all');
     const [rewardedFilter, setRewardedFilter] = useState('all');
     const [loading, setLoading] = useState(true);
@@ -34,7 +40,7 @@ export default function Dashboard() {
             return;
         }
         fetchData();
-    }, [tab, navigate]);
+    }, [tab, navigate, usersPage, positionsPage, withdrawalsPage, positionFilter, rewardedFilter]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -43,21 +49,26 @@ export default function Dashboard() {
                 const res = await api.get('/api/admin/products');
                 setProducts(res.data.products || []);
             } else if (tab === 'users') {
-                const res = await api.get('/api/admin/users');
+                const res = await api.get(`/api/admin/users?page=${usersPage}&limit=25`);
                 setUsers(res.data.users || []);
+                setUsersPagination(res.data.pagination || null);
                 try {
                     const rankRes = await api.get('/api/admin/users/stats/ranks');
                     setRankStats(rankRes.data.stats || []);
                 } catch (e) { console.warn('Failed to fetch rank stats', e); }
             } else if (tab === 'positions') {
                 const params = new URLSearchParams();
+                params.append('page', positionsPage);
+                params.append('limit', '25');
                 if (positionFilter !== 'all') params.append('rank', positionFilter);
                 if (rewardedFilter !== 'all') params.append('rewarded', rewardedFilter);
                 const res = await api.get(`/api/admin/positions?${params.toString()}`);
                 setPositions(res.data.rankChanges || []);
+                setPositionsPagination(res.data.pagination || null);
             } else if (tab === 'withdrawals') {
-                const res = await api.get('/api/payouts/admin/list');
+                const res = await api.get(`/api/payouts/admin/list?page=${withdrawalsPage}&limit=25`);
                 setWithdrawals(res.data.withdrawals || []);
+                setWithdrawalsPagination(res.data.pagination || null);
             } else if (tab === 'analytics') {
                 const res = await api.get('/api/admin/analytics/stats');
                 setAnalytics(res.data.stats || null);
@@ -903,6 +914,33 @@ export default function Dashboard() {
                         {/* Users Tab */}
                         {tab === 'users' && (
                             <div className="space-y-6">
+                                {/* Pagination Info */}
+                                {usersPagination && (
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {(usersPage - 1) * 25 + 1} to {Math.min(usersPage * 25, usersPagination.total)} of {usersPagination.total} users
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setUsersPage(p => Math.max(1, p - 1))}
+                                                disabled={!usersPagination.hasPrev}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                                Page {usersPage} of {usersPagination.totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setUsersPage(p => p + 1)}
+                                                disabled={!usersPagination.hasNext}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                                     <table className="w-full text-sm">
@@ -915,7 +953,7 @@ export default function Dashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {users.map((user) => (
+                                            {users.length > 0 ? users.map((user) => (
                                                 <tr key={user.id} className="hover:bg-gray-50/50">
                                                     <td className="px-6 py-4">
                                                         <div className="text-gray-900 font-medium">{user.username}</div>
@@ -944,10 +982,44 @@ export default function Dashboard() {
                                                         </button>
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                                        No users found
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Pagination Controls at Bottom */}
+                                {usersPagination && (
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {(usersPage - 1) * 25 + 1} to {Math.min(usersPage * 25, usersPagination.total)} of {usersPagination.total} users
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setUsersPage(p => Math.max(1, p - 1))}
+                                                disabled={!usersPagination.hasPrev}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                                Page {usersPage} of {usersPagination.totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setUsersPage(p => p + 1)}
+                                                disabled={!usersPagination.hasNext}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                         )}
@@ -960,7 +1032,7 @@ export default function Dashboard() {
                                     <h2 className="text-lg font-medium text-gray-900">
                                         Position Changes
                                         <span className="ml-2 px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                                            {positions.length}
+                                            {positionsPagination?.total || positions.length}
                                         </span>
                                     </h2>
                                 </div>
@@ -969,7 +1041,7 @@ export default function Dashboard() {
                                 <div className="flex flex-wrap gap-4">
                                     <select
                                         value={positionFilter}
-                                        onChange={(e) => { setPositionFilter(e.target.value); }}
+                                        onChange={(e) => { setPositionFilter(e.target.value); setPositionsPage(1); }}
                                         className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                                     >
                                         <option value="all">All Positions</option>
@@ -986,20 +1058,42 @@ export default function Dashboard() {
                                     </select>
                                     <select
                                         value={rewardedFilter}
-                                        onChange={(e) => { setRewardedFilter(e.target.value); }}
+                                        onChange={(e) => { setRewardedFilter(e.target.value); setPositionsPage(1); }}
                                         className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                                     >
                                         <option value="all">All Status</option>
                                         <option value="pending">Pending Reward</option>
                                         <option value="rewarded">Rewarded</option>
                                     </select>
-                                    <button
-                                        onClick={fetchData}
-                                        className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium"
-                                    >
-                                        Apply Filters
-                                    </button>
                                 </div>
+
+                                {/* Pagination Info */}
+                                {positionsPagination && (
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {(positionsPage - 1) * 25 + 1} to {Math.min(positionsPage * 25, positionsPagination.total)} of {positionsPagination.total} positions
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setPositionsPage(p => Math.max(1, p - 1))}
+                                                disabled={!positionsPagination.hasPrev}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                                Page {positionsPage} of {positionsPagination.totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setPositionsPage(p => p + 1)}
+                                                disabled={!positionsPagination.hasNext}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Positions Table */}
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
@@ -1058,13 +1152,77 @@ export default function Dashboard() {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Pagination Controls at Bottom */}
+                                {positionsPagination && (
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {(positionsPage - 1) * 25 + 1} to {Math.min(positionsPage * 25, positionsPagination.total)} of {positionsPagination.total} positions
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setPositionsPage(p => Math.max(1, p - 1))}
+                                                disabled={!positionsPagination.hasPrev}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                                Page {positionsPage} of {positionsPagination.totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setPositionsPage(p => p + 1)}
+                                                disabled={!positionsPagination.hasNext}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {/* Withdrawals Tab */}
                         {tab === 'withdrawals' && (
                             <div className="space-y-6">
-                                <h2 className="text-lg font-medium text-gray-900">Withdrawal Requests</h2>
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-medium text-gray-900">Withdrawal Requests</h2>
+                                    {withdrawalsPagination && (
+                                        <div className="text-sm text-gray-500">
+                                            Total: {withdrawalsPagination.total}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Pagination Info */}
+                                {withdrawalsPagination && (
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {(withdrawalsPage - 1) * 25 + 1} to {Math.min(withdrawalsPage * 25, withdrawalsPagination.total)} of {withdrawalsPagination.total} withdrawals
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setWithdrawalsPage(p => Math.max(1, p - 1))}
+                                                disabled={!withdrawalsPagination.hasPrev}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                                Page {withdrawalsPage} of {withdrawalsPagination.totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setWithdrawalsPage(p => p + 1)}
+                                                disabled={!withdrawalsPagination.hasNext}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                                     <table className="w-full text-sm">
                                         <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
@@ -1134,6 +1292,34 @@ export default function Dashboard() {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Pagination Controls at Bottom */}
+                                {withdrawalsPagination && (
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {(withdrawalsPage - 1) * 25 + 1} to {Math.min(withdrawalsPage * 25, withdrawalsPagination.total)} of {withdrawalsPagination.total} withdrawals
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setWithdrawalsPage(p => Math.max(1, p - 1))}
+                                                disabled={!withdrawalsPagination.hasPrev}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                                Page {withdrawalsPage} of {withdrawalsPagination.totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setWithdrawalsPage(p => p + 1)}
+                                                disabled={!withdrawalsPagination.hasNext}
+                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>

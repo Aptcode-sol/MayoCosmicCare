@@ -19,6 +19,7 @@ interface UserData {
     aadhaar?: string
     createdAt?: string
     wallet?: { balance: number }
+    sponsor?: { id: string, name?: string, username: string }
 }
 
 export default function ProfilePage() {
@@ -264,6 +265,10 @@ export default function ProfilePage() {
                                         <span className="text-gray-500">Wallet Balance</span>
                                         <span className="font-bold text-green-600">₹{user?.wallet?.balance?.toLocaleString() || 0}</span>
                                     </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">Referred By</span>
+                                        <span className="font-medium text-gray-900">{user?.sponsor ? (user.sponsor.name || user.sponsor.username) : 'N/A'}</span>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -321,29 +326,66 @@ export default function ProfilePage() {
                     <div className="lg:col-span-2 space-y-6">
                         {/* Personal Information */}
                         <Card>
-                            <CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle className="text-base flex items-center gap-2">
                                     <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     Personal Information
                                 </CardTitle>
+                                {/* Allow name editing before KYC verification */}
+                                {kycStatus !== 'VERIFIED' && !isEditingProfile && (
+                                    <Button variant="outline" size="sm" onClick={() => setIsEditingProfile(true)}>
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                        Edit
+                                    </Button>
+                                )}
                             </CardHeader>
                             <CardContent>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500">Full Name</label>
-                                        <p className="text-gray-900 font-medium mt-1">{user?.name || '-'}</p>
+                                {isEditingProfile ? (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-700">Full Name</label>
+                                            <Input value={name} onChange={e => setName(e.target.value)} className="mt-1" placeholder="Enter your name as per PAN" />
+                                            <p className="text-xs text-gray-500 mt-1">Update your name to match your PAN card for KYC verification</p>
+                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                                                <p className="text-gray-900 font-medium mt-1">{user?.phone || 'Not set'}</p>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-500">Username</label>
+                                                <p className="text-gray-900 font-medium mt-1">{user?.username || '-'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="outline" onClick={() => { setIsEditingProfile(false); setName(user?.name || ''); }}>
+                                                Cancel
+                                            </Button>
+                                            <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                                {savingProfile ? 'Saving...' : 'Save Changes'}
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                                        <p className="text-gray-900 font-medium mt-1">{user?.phone || 'Not set'}</p>
+                                ) : (
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500">Full Name</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.name || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.phone || 'Not set'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500">Username</label>
+                                            <p className="text-gray-900 font-medium mt-1">{user?.username || '-'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-gray-500">Username</label>
-                                        <p className="text-gray-900 font-medium mt-1">{user?.username || '-'}</p>
-                                    </div>
-                                </div>
+                                )}
                             </CardContent>
                         </Card>
 

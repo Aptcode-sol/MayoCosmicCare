@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import { me } from '@/lib/services/auth'
 import { getWallet } from '@/lib/services/users'
+import { getTransactions } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
@@ -28,16 +29,30 @@ interface Withdrawal {
     cfTransferId?: string
 }
 
-interface WalletData {
-    wallet: { balance: number } | null
-    transactions: Transaction[]
+interface Pagination {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNext: boolean
+    hasPrev: boolean
 }
 
 export default function Wallet() {
     const router = useRouter()
     const [user, setUser] = useState<{ id?: string; username?: string; email?: string; phone?: string } | null>(null)
-    const [walletData, setWalletData] = useState<WalletData | null>(null)
+    const [balance, setBalance] = useState(0)
+
+    // Withdrawals State
     const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
+    const [withdrawalsMeta, setWithdrawalsMeta] = useState<Pagination | null>(null)
+    const [withdrawalPage, setWithdrawalPage] = useState(1)
+
+    // Transactions State
+    const [transactions, setTransactions] = useState<Transaction[]>([])
+    const [transactionsMeta, setTransactionsMeta] = useState<Pagination | null>(null)
+    const [transactionPage, setTransactionPage] = useState(1)
+
     const [loading, setLoading] = useState(true)
 
     // Withdrawal Form State
@@ -51,6 +66,31 @@ export default function Wallet() {
         holderName: ''
     })
 
+    const fetchWallet = async (userId: string) => {
+        const res = await getWallet(userId)
+        setBalance(res.wallet?.balance || 0)
+    }
+
+    const fetchWithdrawals = async (page = 1) => {
+        try {
+            const res = await api.get('/api/payouts/my-list', { params: { page, limit: 10 } })
+            setWithdrawals(res.data.withdrawals || [])
+            setWithdrawalsMeta(res.data.pagination)
+        } catch (error) {
+            console.error('Failed to fetch withdrawals', error)
+        }
+    }
+
+    const fetchTransactions = async (page = 1) => {
+        try {
+            const res = await getTransactions({ page, limit: 10 })
+            setTransactions(res.transactions || [])
+            setTransactionsMeta(res.pagination)
+        } catch (error) {
+            console.error('Failed to fetch transactions', error)
+        }
+    }
+
     const loadData = async () => {
         try {
             const token = localStorage.getItem('accessToken')
@@ -61,12 +101,11 @@ export default function Wallet() {
             setUser(userData)
 
             if (userData?.id) {
-                const [walletRes, withdrawalsRes] = await Promise.all([
-                    getWallet(userData.id),
-                    api.get('/api/payouts/my-list')
-                ]);
-                setWalletData(walletRes)
-                setWithdrawals(withdrawalsRes.data.withdrawals || [])
+                await Promise.all([
+                    fetchWallet(userData.id),
+                    fetchWithdrawals(1),
+                    fetchTransactions(1)
+                ])
             }
         } catch (e) {
             console.error(e)
@@ -79,10 +118,18 @@ export default function Wallet() {
         loadData()
     }, [router])
 
+    useEffect(() => {
+        if (withdrawalPage > 1) fetchWithdrawals(withdrawalPage)
+    }, [withdrawalPage])
+
+    useEffect(() => {
+        if (transactionPage > 1) fetchTransactions(transactionPage)
+    }, [transactionPage])
+
+
     const handleWithdraw = async (e: React.FormEvent) => {
         e.preventDefault()
         const amount = Number(withdrawAmount)
-        const balance = walletData?.wallet?.balance || 0
 
         if (amount < 1000) {
             toast.error('Minimum withdrawal is ₹1000')
@@ -128,7 +175,9 @@ export default function Wallet() {
             await api.post('/api/payouts/request', payload)
             toast.success('Withdrawal requested successfully')
             setWithdrawAmount('')
-            loadData() // Reload all data
+            if (user?.id) fetchWallet(user.id)
+            setWithdrawalPage(1)
+            fetchWithdrawals(1)
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Withdrawal failed')
         } finally {
@@ -141,14 +190,11 @@ export default function Wallet() {
         try {
             const res = await api.post(`/api/payouts/status/${id}`)
             toast.success(`Status updated: ${res.data.status}`, { id: toastId })
-            loadData()
+            fetchWithdrawals(withdrawalPage)
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Failed to check status', { id: toastId })
         }
     }
-
-    const balance = walletData?.wallet?.balance || 0
-    const transactions = walletData?.transactions || []
 
     return (
         <DashboardLayout user={user}>
@@ -274,18 +320,18 @@ export default function Wallet() {
                                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                                     <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                                         <h2 className="text-lg font-medium text-gray-900">Withdrawals</h2>
-                                        <Button variant="ghost" size="sm" onClick={loadData} className="h-8 text-xs">Refresh</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => fetchWithdrawals(withdrawalPage)} className="h-8 text-xs">Refresh</Button>
                                     </div>
-                                    <div className="divide-y divide-gray-100 max-h-[300px] overflow-y-auto">
+                                    <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
                                         {withdrawals.length > 0 ? withdrawals.map((w) => (
                                             <div key={w.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50 transition">
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium text-gray-900">₹{w.amount.toLocaleString()}</span>
                                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${w.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                                                                w.status === 'APPROVED' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                                                    w.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                                        'bg-yellow-100 text-yellow-700'
+                                                            w.status === 'APPROVED' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                                                w.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-yellow-100 text-yellow-700'
                                                             }`}>
                                                             {w.status === 'APPROVED' ? 'PROCESSING' : w.status}
                                                         </span>
@@ -314,6 +360,32 @@ export default function Wallet() {
                                             <div className="p-8 text-center text-gray-400 text-sm">No withdrawals found.</div>
                                         )}
                                     </div>
+                                    {/* Withdrawals Pagination */}
+                                    {withdrawalsMeta && withdrawalsMeta.totalPages > 1 && (
+                                        <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs"
+                                                    disabled={!withdrawalsMeta.hasPrev}
+                                                    onClick={() => setWithdrawalPage(p => p - 1)}
+                                                >
+                                                    Prev
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs"
+                                                    disabled={!withdrawalsMeta.hasNext}
+                                                    onClick={() => setWithdrawalPage(p => p + 1)}
+                                                >
+                                                    Next
+                                                </Button>
+                                            </div>
+                                            <span className="text-xs text-gray-500">Page {withdrawalsMeta.page} of {withdrawalsMeta.totalPages}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </AnimateOnScroll>
 
@@ -323,7 +395,7 @@ export default function Wallet() {
                                     <div className="p-6 border-b border-gray-100">
                                         <h2 className="text-lg font-medium text-gray-900">Transaction History</h2>
                                     </div>
-                                    <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-100">
+                                    <div className="max-h-[500px] overflow-y-auto divide-y divide-gray-100">
                                         {transactions.length > 0 ? transactions.map((tx) => {
                                             const isCredit = tx.type.includes('BONUS') || tx.type.includes('REFUND') || tx.type === 'ADMIN_CREDIT'
                                             return (
@@ -350,6 +422,32 @@ export default function Wallet() {
                                             <div className="p-8 text-center text-gray-400 text-sm">No transactions yet.</div>
                                         )}
                                     </div>
+                                    {/* Transactions Pagination */}
+                                    {transactionsMeta && transactionsMeta.totalPages > 1 && (
+                                        <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs"
+                                                    disabled={!transactionsMeta.hasPrev}
+                                                    onClick={() => setTransactionPage(p => p - 1)}
+                                                >
+                                                    Prev
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs"
+                                                    disabled={!transactionsMeta.hasNext}
+                                                    onClick={() => setTransactionPage(p => p + 1)}
+                                                >
+                                                    Next
+                                                </Button>
+                                            </div>
+                                            <span className="text-xs text-gray-500">Page {transactionsMeta.page} of {transactionsMeta.totalPages}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </AnimateOnScroll>
 

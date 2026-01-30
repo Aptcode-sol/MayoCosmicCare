@@ -17,6 +17,14 @@ interface MatchingData {
         createdAt: string
         detail?: string
     }>
+    pagination?: {
+        page: number
+        limit: number
+        total: number
+        totalPages: number
+        hasNext: boolean
+        hasPrev: boolean
+    }
 }
 
 export default function MatchingReport() {
@@ -24,27 +32,35 @@ export default function MatchingReport() {
     const [user, setUser] = useState<{ username?: string; email?: string } | null>(null)
     const [data, setData] = useState<MatchingData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+
+    const loadData = async (page = 1) => {
+        try {
+            setLoading(true)
+            const token = localStorage.getItem('accessToken')
+            if (!token) { router.push('/login'); return }
+
+            const [userRes, matchingRes] = await Promise.all([
+                me(),
+                getMatchingReport(page)
+            ])
+            setUser(userRes?.user || userRes)
+            setData(matchingRes)
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        const load = async () => {
-            try {
-                const token = localStorage.getItem('accessToken')
-                if (!token) { router.push('/login'); return }
+        loadData(currentPage)
+    }, [router, currentPage])
 
-                const [userRes, matchingRes] = await Promise.all([
-                    me(),
-                    getMatchingReport()
-                ])
-                setUser(userRes?.user || userRes)
-                setData(matchingRes)
-            } catch (e) {
-                console.error(e)
-            } finally {
-                setLoading(false)
-            }
-        }
-        load()
-    }, [router])
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
 
     const current = data?.current || {
         left: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0 },
@@ -188,6 +204,34 @@ export default function MatchingReport() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Pagination */}
+                        {data?.pagination && data.pagination.totalPages > 1 && (
+                            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-2xl border-x border-b">
+                                <p className="text-sm text-gray-500">
+                                    Showing {((data.pagination.page - 1) * data.pagination.limit) + 1} - {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} of {data.pagination.total}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={!data.pagination.hasPrev}
+                                        className="px-3 py-1 text-sm border border-gray-200 rounded-md disabled:opacity-50 hover:bg-gray-50 transition"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="text-sm text-gray-600 px-2">
+                                        Page {data.pagination.page} of {data.pagination.totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={!data.pagination.hasNext}
+                                        className="px-3 py-1 text-sm border border-gray-200 rounded-md disabled:opacity-50 hover:bg-gray-50 transition"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </AnimateOnScroll>
                 </>
             )}

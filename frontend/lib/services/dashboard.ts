@@ -30,8 +30,8 @@ export async function getTeamStats() {
     return res.data.stats as TeamStats
 }
 
-export async function getIncentives() {
-    const res = await api.get('/api/dashboard/incentives')
+export async function getIncentives(page = 1, limit = 20) {
+    const res = await api.get('/api/dashboard/incentives', { params: { page, limit } })
     return res.data.data
 }
 
@@ -40,8 +40,8 @@ export async function getTeamList(params: { search?: string, from?: string, to?:
     return res.data
 }
 
-export async function getMatchingReport() {
-    const res = await api.get('/api/dashboard/matching')
+export async function getMatchingReport(page = 1, limit = 20) {
+    const res = await api.get('/api/dashboard/matching', { params: { page, limit } })
     return res.data
 }
 

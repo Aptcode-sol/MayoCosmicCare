@@ -152,14 +152,22 @@ router.get('/incentives', authenticate, async (req, res) => {
         const matchingPairCap = parseInt(process.env.DAILY_PAIR_CAP || '10', 10);
         const matchingBonusCap = matchingPairCap * bonusPerMatch;
 
-        // History
+        // History with Pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const whereHistory = {
+            userId,
+            type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS'] }
+        };
+
+        const totalHistory = await prisma.transaction.count({ where: whereHistory });
         const history = await prisma.transaction.findMany({
-            where: {
-                userId,
-                type: { in: ['DIRECT_BONUS', 'MATCHING_BONUS', 'LEADERSHIP_BONUS'] }
-            },
+            where: whereHistory,
             orderBy: { createdAt: 'desc' },
-            take: 20
+            skip,
+            take: limit
         });
 
         res.json({
@@ -177,7 +185,15 @@ router.get('/incentives', authenticate, async (req, res) => {
                     todayPairs: todayMatching?.pairs || 0,
                     dailyPairCap: matchingPairCap
                 },
-                history
+                history,
+                pagination: {
+                    page,
+                    limit,
+                    total: totalHistory,
+                    totalPages: Math.ceil(totalHistory / limit),
+                    hasNext: page < Math.ceil(totalHistory / limit),
+                    hasPrev: page > 1
+                }
             }
         });
     } catch (err) {
@@ -338,11 +354,19 @@ router.get('/matching', authenticate, async (req, res) => {
             _sum: { amount: true, leftConsumed: true, rightConsumed: true }
         });
 
-        // Payout History - last 20 matching bonus transactions
+        // Payout History - Pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const whereHistory = { userId, type: 'MATCHING_BONUS' };
+        const totalHistory = await prisma.transaction.count({ where: whereHistory });
+
         const history = await prisma.transaction.findMany({
-            where: { userId, type: 'MATCHING_BONUS' },
+            where: whereHistory,
             orderBy: { createdAt: 'desc' },
-            take: 20
+            skip,
+            take: limit
         });
 
         // Calculate clear metrics:
@@ -396,7 +420,15 @@ router.get('/matching', authenticate, async (req, res) => {
                 totalPaidLeftBV: paidLeftBV,
                 totalPaidRightBV: paidRightBV
             },
-            history
+            history,
+            pagination: {
+                page,
+                limit,
+                total: totalHistory,
+                totalPages: Math.ceil(totalHistory / limit),
+                hasNext: page < Math.ceil(totalHistory / limit),
+                hasPrev: page > 1
+            }
         });
     } catch (err) {
         res.status(500).json({ ok: false, error: err.message });

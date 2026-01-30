@@ -90,12 +90,32 @@ router.get('/my-list', async (req, res) => {
         // Let's add specific logic or use prisma directly here for simplicity or create service method.
         // Better to use service for consistency. Let's assume we can add a simple query in route or modify service.
         // Modifying service is cleaner.
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const where = { userId };
+        const total = await prisma.withdrawal.count({ where });
+
         const withdrawals = await prisma.withdrawal.findMany({
-            where: { userId },
+            where,
             orderBy: { createdAt: 'desc' },
-            include: { user: { select: { username: true } } }
+            include: { user: { select: { username: true } } },
+            skip,
+            take: limit
         });
-        res.json({ withdrawals });
+
+        res.json({
+            withdrawals,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+                hasNext: page < Math.ceil(total / limit),
+                hasPrev: page > 1
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

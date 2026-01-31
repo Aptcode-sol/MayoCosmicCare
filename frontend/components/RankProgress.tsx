@@ -43,26 +43,22 @@ export default function RankProgress({ currentRank, totalPairs }: { currentRank:
                 </svg>
             </div>
 
-            <CardContent className="p-5 relative z-10">
-                <div className="flex items-center justify-between">
-                    <div className="flex-1">
+            <CardContent className="p-4 md:p-5 relative z-10">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex-1 w-full md:w-auto">
                         <p className={`${colors.label} text-xs font-semibold uppercase tracking-wider mb-1`}>Current Rank</p>
-                        <h3 className="text-2xl font-bold mb-2">{currentRank || 'Rookie'}</h3>
+                        <h3 className="text-xl md:text-2xl font-bold mb-2">{currentRank || 'Rookie'}</h3>
                         <div className={`inline-flex items-center gap-2 ${colors.badge} px-3 py-1 rounded-full text-xs backdrop-blur-sm border`}>
                             <span className={colors.label}>Total Pairs:</span>
                             <span className="font-semibold">{totalPairs}</span>
                         </div>
                     </div>
 
-                    <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-lg border border-white/30 shadow-inner">
-                        {(currentRank || 'R')[0]}
-                    </div>
-
                     {nextRank && (
-                        <div className="ml-6 flex-1">
+                        <div className="md:ml-6 flex-1 w-full md:w-auto">
                             <div className="flex justify-between items-center mb-1">
                                 <p className={`${colors.label} text-xs`}>Next: {nextRank.name}</p>
-                                <span className="text-lg font-bold">{Math.round(progress)}%</span>
+                                <span className="text-base md:text-lg font-bold">{Math.round(progress)}%</span>
                             </div>
                             <div className="w-full bg-black/20 rounded-full h-2.5 backdrop-blur-sm overflow-hidden border border-white/10">
                                 <div
@@ -75,7 +71,7 @@ export default function RankProgress({ currentRank, totalPairs }: { currentRank:
                     )}
 
                     {!nextRank && (
-                        <div className="ml-6 flex-1 text-center py-2 bg-white/10 rounded-lg border border-white/10">
+                        <div className="md:ml-6 flex-1 text-center py-2 bg-white/10 rounded-lg border border-white/10">
                             <p className="font-semibold text-sm">🏆 Top Rank!</p>
                         </div>
                     )}

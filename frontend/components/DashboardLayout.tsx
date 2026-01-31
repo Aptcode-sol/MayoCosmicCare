@@ -8,25 +8,55 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
-    // Initialize state from localStorage (SSR-safe)
-    const [isExpanded, setIsExpanded] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('sidebar_expanded') === 'true'
+    // Initialize state - default false for SSR
+    const [isExpanded, setIsExpanded] = useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    // Load from localStorage after mount
+    useEffect(() => {
+        setMounted(true)
+        const saved = localStorage.getItem('sidebar_expanded')
+        if (saved === 'true') {
+            setIsExpanded(true)
         }
-        return false
-    })
+    }, [])
 
     // Persist state to localStorage
     useEffect(() => {
-        localStorage.setItem('sidebar_expanded', String(isExpanded))
-    }, [isExpanded])
+        if (mounted) {
+            localStorage.setItem('sidebar_expanded', String(isExpanded))
+        }
+    }, [isExpanded, mounted])
 
     return (
         <div className="min-h-screen bg-gray-50 pt-12">
+            {/* Mobile Hamburger Button */}
+            <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                style={{ top: 'var(--header-offset, 4rem)' }}
+                className="lg:hidden fixed left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                aria-label="Open menu"
+            >
+                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+
+            {/* Mobile Sidebar Backdrop */}
+            {isMobileMenuOpen && (
+                <div
+                    className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             <DashboardSidebar
                 user={user}
                 isExpanded={isExpanded}
                 setIsExpanded={setIsExpanded}
+                isMobileMenuOpen={isMobileMenuOpen}
+                setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
 
             {/* Main Content */}
@@ -35,7 +65,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                 transition-all duration-300 ease-in-out
                 ${isExpanded ? 'lg:ml-64' : 'lg:ml-20'}
             `}>
-                <div className="container mx-auto px-4 lg:px-8 py-8">
+                <div className="container mx-auto px-3 sm:px-4 lg:px-8 py-8">
                     {children}
                 </div>
             </main>

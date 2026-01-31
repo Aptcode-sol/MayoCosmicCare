@@ -6,6 +6,7 @@ import { me } from '@/lib/services/auth'
 import { getTeamStats, TeamStats } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import { SkeletonCard } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 export default function TeamOverview() {
     const router = useRouter()
@@ -37,7 +38,7 @@ export default function TeamOverview() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
@@ -151,17 +152,17 @@ export default function TeamOverview() {
                                             <p className="text-2xl font-light text-emerald-600">{stats?.totalTeam.activeLeft || 0}</p>
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
-                                            <p className="text-sm text-gray-500">Total BV</p>
-                                            <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.leftBV || 0).toLocaleString()}</p>
+                                            <p className="text-xs md:text-sm text-gray-500">Total BV</p>
+                                            <p className="text-lg md:text-xl font-light text-gray-900">{formatIndian(stats?.totalTeam.leftBV || 0)}</p>
                                         </div>
                                         {/* Paid BV from matching payouts */}
                                         <div className="bg-white rounded-xl p-4">
-                                            <p className="text-sm text-gray-500">Paid BV</p>
-                                            <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.leftPaidBV || 0).toLocaleString()}</p>
+                                            <p className="text-xs md:text-sm text-gray-500">Paid BV</p>
+                                            <p className="text-lg md:text-xl font-light text-gray-900">{formatIndian(stats?.totalTeam.leftPaidBV || 0)}</p>
                                         </div>
                                         <div className="bg-white rounded-xl p-4 col-span-2">
-                                            <p className="text-sm text-gray-500">Carry Forward BV</p>
-                                            <p className="text-2xl font-light text-amber-600">₹{(stats?.carryForward.left || 0).toLocaleString()}</p>
+                                            <p className="text-xs md:text-sm text-gray-500">Carry Forward BV</p>
+                                            <p className="text-lg md:text-xl font-light text-amber-600">{formatIndian(stats?.carryForward.left || 0)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -182,16 +183,16 @@ export default function TeamOverview() {
                                             <p className="text-2xl font-light text-emerald-600">{stats?.totalTeam.activeRight || 0}</p>
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
-                                            <p className="text-sm text-gray-500">Total BV</p>
-                                            <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.rightBV || 0).toLocaleString()}</p>
+                                            <p className="text-xs md:text-sm text-gray-500">Total BV</p>
+                                            <p className="text-lg md:text-xl font-light text-gray-900">{formatIndian(stats?.totalTeam.rightBV || 0)}</p>
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
-                                            <p className="text-sm text-gray-500">Paid BV</p>
-                                            <p className="text-2xl font-light text-gray-900">₹{(stats?.totalTeam.rightPaidBV || 0).toLocaleString()}</p>
+                                            <p className="text-xs md:text-sm text-gray-500">Paid BV</p>
+                                            <p className="text-lg md:text-xl font-light text-gray-900">{formatIndian(stats?.totalTeam.rightPaidBV || 0)}</p>
                                         </div>
                                         <div className="bg-white rounded-xl p-4 col-span-2">
-                                            <p className="text-sm text-gray-500">Carry Forward BV</p>
-                                            <p className="text-2xl font-light text-amber-600">₹{(stats?.carryForward.right || 0).toLocaleString()}</p>
+                                            <p className="text-xs md:text-sm text-gray-500">Carry Forward BV</p>
+                                            <p className="text-lg md:text-xl font-light text-amber-600">{formatIndian(stats?.carryForward.right || 0)}</p>
                                         </div>
                                     </div>
                                 </div>

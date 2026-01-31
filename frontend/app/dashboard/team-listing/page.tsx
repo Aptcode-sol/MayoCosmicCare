@@ -7,6 +7,7 @@ import { getTeamList } from '@/lib/services/dashboard'
 import { Button } from '@/components/ui/Button'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 interface Member {
     id: string
@@ -90,7 +91,7 @@ export default function TeamListing() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
@@ -172,48 +173,48 @@ export default function TeamListing() {
 
                     {/* Members Table */}
                     <AnimateOnScroll animation="fade-up" delay={200}>
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                            <div className="overflow-x-auto">
+                        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
+                            <div className="min-w-[320px]">
                                 {members.length > 0 ? (
                                     <table className="w-full">
                                         <thead>
                                             <tr className="bg-gray-50 border-b border-gray-100">
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                <th className="text-right px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Left BV</th>
-                                                <th className="text-right px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Right BV</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Join</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                <th className="text-right px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">L-BV</th>
+                                                <th className="text-right px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">R-BV</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {members.map((member) => (
                                                 <tr key={member.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium text-gray-600">
-                                                                {(member.username || 'U').slice(0, 2).toUpperCase()}
+                                                    <td className="px-3 md:px-6 py-3 md:py-4">
+                                                        <div className="flex items-center gap-2 md:gap-3">
+                                                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs md:text-sm font-medium text-gray-600 shrink-0">
+                                                                {(member.email || 'U').slice(0, 2).toUpperCase()}
                                                             </div>
-                                                            <span className="text-sm font-medium text-gray-900">{member.username}</span>
+                                                            <span className="text-xs md:text-sm font-medium text-gray-900 truncate">{member.email || 'N/A'}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${(member.team || member.position || '').toUpperCase() === 'LEFT'
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600 truncate">{member.username}</td>
+                                                    <td className="px-3 md:px-6 py-3 md:py-4">
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${(member.team || member.position || '').toUpperCase() === 'LEFT'
                                                             ? 'bg-indigo-50 text-indigo-700'
                                                             : 'bg-pink-50 text-pink-700'
                                                             }`}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full ${(member.team || member.position || '').toUpperCase() === 'LEFT' ? 'bg-indigo-500' : 'bg-pink-500'
+                                                            <span className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full ${(member.team || member.position || '').toUpperCase() === 'LEFT' ? 'bg-indigo-500' : 'bg-pink-500'
                                                                 }`} />
-                                                            {member.team || member.position || 'N/A'}
+                                                            {(member.team || member.position || 'N/A').slice(0, 1)}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                                        {new Date(member.createdAt).toLocaleDateString()}
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">
+                                                        {new Date(member.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${member.status === 'Active'
+                                                    <td className="px-3 md:px-6 py-3 md:py-4">
+                                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${member.status === 'Active'
                                                             ? 'bg-emerald-50 text-emerald-700'
                                                             : member.status === 'Blocked'
                                                                 ? 'bg-red-50 text-red-700'
@@ -222,11 +223,11 @@ export default function TeamListing() {
                                                             {member.status}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                                                        {member.leftBV?.toLocaleString() || 0}
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-900 text-right">
+                                                        {formatIndian(member.leftBV || 0)}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                                                        {member.rightBV?.toLocaleString() || 0}
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-900 text-right">
+                                                        {formatIndian(member.rightBV || 0)}
                                                     </td>
                                                 </tr>
                                             ))}

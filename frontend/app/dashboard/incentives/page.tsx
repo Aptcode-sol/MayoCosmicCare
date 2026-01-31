@@ -7,6 +7,7 @@ import { getIncentives } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import RankTable from '@/components/RankTable'
 import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 interface Transaction {
     id: string
@@ -78,7 +79,7 @@ export default function Incentives() {
     if (loading) {
         return (
             <DashboardLayout user={user}>
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
@@ -143,7 +144,7 @@ export default function Incentives() {
                             </div>
                             <p className="text-sm font-medium text-emerald-100 uppercase tracking-wider">Total Payout</p>
                         </div>
-                        <p className="text-4xl font-light">₹{summary.totalPaid.toLocaleString()}</p>
+                        <p className="text-2xl md:text-4xl font-light">{formatIndian(summary.totalPaid)}</p>
                         <p className="text-sm text-emerald-200 mt-2">All time earnings</p>
                     </div>
 
@@ -156,7 +157,7 @@ export default function Incentives() {
                             </div>
                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Direct Bonus</p>
                         </div>
-                        <p className="text-4xl font-light text-gray-900">₹{summary.directBonus.toLocaleString()}</p>
+                        <p className="text-2xl md:text-4xl font-light text-gray-900">{formatIndian(summary.directBonus)}</p>
                         <p className="text-sm text-gray-500 mt-2">From direct referrals</p>
                     </div>
 
@@ -169,11 +170,11 @@ export default function Incentives() {
                             </div>
                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Matching Bonus</p>
                         </div>
-                        <p className="text-4xl font-light text-gray-900">₹{summary.matchingBonus.toLocaleString()}</p>
+                        <p className="text-2xl md:text-4xl font-light text-gray-900">{formatIndian(summary.matchingBonus)}</p>
                         <div className="mt-2">
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                <span>Today: ₹{summary.todayMatchingBonus.toLocaleString()}</span>
-                                <span>Cap: ₹{summary.matchingDailyCap.toLocaleString()}</span>
+                                <span>Today: {formatIndian(summary.todayMatchingBonus)}</span>
+                                <span>Cap: {formatIndian(summary.matchingDailyCap)}</span>
                             </div>
                             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                 <div
@@ -193,7 +194,7 @@ export default function Incentives() {
                             </div>
                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Leadership Bonus</p>
                         </div>
-                        <p className="text-4xl font-light text-gray-900">₹{summary.leadershipBonus.toLocaleString()}</p>
+                        <p className="text-2xl md:text-4xl font-light text-gray-900">{formatIndian(summary.leadershipBonus)}</p>
                         <div className="mt-2">
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
                                 <span>Today: ₹{summary.todayLeadershipBonus}</span>
@@ -217,25 +218,25 @@ export default function Incentives() {
                         <h2 className="text-xl font-medium text-gray-900">Bonus History</h2>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
                         {history.length > 0 ? (
-                            <table className="w-full">
+                            <table className="w-full min-w-[320px]">
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-100">
-                                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                        <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Detail</th>
-                                        <th className="text-right px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                        <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Detail</th>
+                                        <th className="text-right px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {history.map((tx) => (
-                                        <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                        <tr key={tx.id} className="hover:bg-gray-50 transition-colors border-t border-gray-100">
+                                            <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">
                                                 {new Date(tx.createdAt).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${tx.type === 'DIRECT_BONUS'
+                                            <td className="px-3 md:px-6 py-3 md:py-4">
+                                                <span className={`text-[10px] md:text-xs font-medium px-2 py-1 rounded-full ${tx.type === 'DIRECT_BONUS'
                                                     ? 'bg-blue-100 text-blue-700'
                                                     : tx.type === 'LEADERSHIP_BONUS'
                                                         ? 'bg-amber-100 text-amber-700'
@@ -244,8 +245,8 @@ export default function Incentives() {
                                                     {tx.type === 'DIRECT_BONUS' ? 'Direct' : tx.type === 'LEADERSHIP_BONUS' ? 'Leadership' : 'Matching'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{tx.detail || '-'}</td>
-                                            <td className="px-6 py-4 text-sm font-medium text-emerald-600 text-right">
+                                            <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">{tx.detail || '-'}</td>
+                                            <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-emerald-600 text-right">
                                                 +₹{tx.amount.toLocaleString()}
                                             </td>
                                         </tr>

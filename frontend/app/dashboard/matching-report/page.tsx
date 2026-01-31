@@ -6,6 +6,7 @@ import { me } from '@/lib/services/auth'
 import { getMatchingReport } from '@/lib/services/dashboard'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 interface MatchingData {
     current: {
@@ -72,7 +73,7 @@ export default function MatchingReport() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
@@ -128,9 +129,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-gray-900">Total BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">₹{current.left.totalBV.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">₹{current.right.totalBV.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">₹{(current.left.totalBV + current.right.totalBV).toLocaleString()}</td>
+                                            <td className="py-4 text-right font-medium text-indigo-600">{formatIndian(current.left.totalBV)}</td>
+                                            <td className="py-4 text-right font-medium text-pink-600">{formatIndian(current.right.totalBV)}</td>
+                                            <td className="py-4 text-right font-medium text-gray-900">{formatIndian(current.left.totalBV + current.right.totalBV)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-4">
@@ -143,9 +144,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-gray-900">Paid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">₹{current.left.paidBV.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">₹{current.right.paidBV.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">₹{(current.left.paidBV + current.right.paidBV).toLocaleString()}</td>
+                                            <td className="py-4 text-right font-medium text-indigo-600">{formatIndian(current.left.paidBV)}</td>
+                                            <td className="py-4 text-right font-medium text-pink-600">{formatIndian(current.right.paidBV)}</td>
+                                            <td className="py-4 text-right font-medium text-gray-900">{formatIndian(current.left.paidBV + current.right.paidBV)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors bg-green-50">
                                             <td className="py-4">
@@ -158,9 +159,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-green-800">Unpaid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-semibold text-green-600">₹{current.left.unpaidBV.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-semibold text-green-600">₹{current.right.unpaidBV.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-semibold text-green-700">₹{(current.left.unpaidBV + current.right.unpaidBV).toLocaleString()}</td>
+                                            <td className="py-4 text-right font-semibold text-green-600">{formatIndian(current.left.unpaidBV)}</td>
+                                            <td className="py-4 text-right font-semibold text-green-600">{formatIndian(current.right.unpaidBV)}</td>
+                                            <td className="py-4 text-right font-semibold text-green-700">{formatIndian(current.left.unpaidBV + current.right.unpaidBV)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-4">
@@ -173,9 +174,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-gray-900">Carry Forward</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">₹{current.left.carryForward.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">₹{current.right.carryForward.toLocaleString()}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">₹{(current.left.carryForward + current.right.carryForward).toLocaleString()}</td>
+                                            <td className="py-4 text-right font-medium text-indigo-600">{formatIndian(current.left.carryForward)}</td>
+                                            <td className="py-4 text-right font-medium text-pink-600">{formatIndian(current.right.carryForward)}</td>
+                                            <td className="py-4 text-right font-medium text-gray-900">{formatIndian(current.left.carryForward + current.right.carryForward)}</td>
                                         </tr>
                                     </tbody>
                                 </table>

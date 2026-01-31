@@ -166,7 +166,7 @@ export default function Home() {
             </section>
 
             {/* Stats Section - Full Screen */}
-            <section className="min-h-screen flex items-center justify-center bg-gray-950 px-6 border-y border-gray-900">
+            <section className="min-h-screen flex items-center justify-center bg-gray-950 px-6 py-24 sm:py-32 border-y border-gray-900">
                 <div className="max-w-7xl mx-auto w-full">
                     <AnimateOnScroll animation="fade-up">
                         <div className="text-center mb-24">

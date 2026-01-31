@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button"
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 interface Transaction {
     id: string
@@ -200,7 +201,7 @@ export default function Wallet() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>

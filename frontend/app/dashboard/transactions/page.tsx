@@ -7,6 +7,7 @@ import { getTransactions } from '@/lib/services/dashboard'
 import { Button } from '@/components/ui/Button'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import { SkeletonCard, SkeletonTable } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 interface Transaction {
     id: string
@@ -89,7 +90,7 @@ export default function Transactions() {
     return (
         <DashboardLayout user={user}>
             {(loading && !transactions.length) ? (
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
@@ -123,16 +124,16 @@ export default function Transactions() {
 
                     {/* Stats Cards */}
                     <AnimateOnScroll animation="fade-up" delay={100}>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
                             {stats.map((stat) => (
-                                <div key={stat.type} className="bg-white rounded-xl p-4 border border-gray-100">
-                                    <div className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${typeLabels[stat.type]?.color || 'bg-gray-100 text-gray-700'}`}>
+                                <div key={stat.type} className="bg-white rounded-xl p-3 md:p-4 border border-gray-100">
+                                    <div className={`inline-flex px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium mb-2 ${typeLabels[stat.type]?.color || 'bg-gray-100 text-gray-700'}`}>
                                         {typeLabels[stat.type]?.label || stat.type}
                                     </div>
-                                    <p className={`text-xl font-semibold ${stat.total >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                                        {stat.total >= 0 ? '+' : ''}₹{stat.total.toLocaleString()}
+                                    <p className={`text-sm md:text-lg font-semibold ${stat.total >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                                        {stat.total >= 0 ? '+' : ''}{formatIndian(stat.total)}
                                     </p>
-                                    <p className="text-xs text-gray-500">{stat.count} transactions</p>
+                                    <p className="text-xs text-gray-500">{stat.count} txns</p>
                                 </div>
                             ))}
                         </div>
@@ -166,46 +167,44 @@ export default function Transactions() {
 
                     {/* Transactions Table */}
                     <AnimateOnScroll animation="fade-up" delay={300}>
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
                             {transactions.length > 0 ? (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="bg-gray-50 border-b border-gray-100">
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                                <th className="text-right px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <table className="w-full min-w-[320px]">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                            <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                            <th className="text-right px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {transactions.map((tx) => (
+                                            <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">
+                                                    {new Date(tx.createdAt).toLocaleDateString('en-IN', {
+                                                        day: '2-digit',
+                                                        month: 'short',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </td>
+                                                <td className="px-3 md:px-6 py-3 md:py-4">
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${typeLabels[tx.type]?.color || 'bg-gray-100 text-gray-700'}`}>
+                                                        {typeLabels[tx.type]?.label || tx.type}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600 max-w-xs truncate">
+                                                    {tx.detail || '-'}
+                                                </td>
+                                                <td className={`px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-right ${tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                    {tx.amount >= 0 ? '+' : ''}{formatIndian(tx.amount)}
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {transactions.map((tx) => (
-                                                <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                                        {new Date(tx.createdAt).toLocaleDateString('en-IN', {
-                                                            day: '2-digit',
-                                                            month: 'short',
-                                                            year: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${typeLabels[tx.type]?.color || 'bg-gray-100 text-gray-700'}`}>
-                                                            {typeLabels[tx.type]?.label || tx.type}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                                                        {tx.detail || '-'}
-                                                    </td>
-                                                    <td className={`px-6 py-4 text-sm font-semibold text-right ${tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                        {tx.amount >= 0 ? '+' : ''}₹{tx.amount.toLocaleString()}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </table>
                             ) : (
                                 <div className="text-center py-16">
                                     <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

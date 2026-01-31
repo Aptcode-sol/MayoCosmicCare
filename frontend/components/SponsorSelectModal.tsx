@@ -23,6 +23,7 @@ export default function SponsorSelectModal({ isOpen, onClose, onSelect }: Sponso
     const [suggestions, setSuggestions] = useState<Sponsor[]>([])
     const [loading, setLoading] = useState(false)
     const debouncedQuery = useDebounce(query, 500)
+    const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
 
     useEffect(() => {
         if (!isOpen) {
@@ -59,8 +60,26 @@ export default function SponsorSelectModal({ isOpen, onClose, onSelect }: Sponso
 
     if (!isOpen) return null
 
-    // Ensure we run on client for portal (though "use client" handles most, portal needs document)
-    if (typeof document === 'undefined') return null
+    // Create and manage a dedicated container for the portal so we don't rely on
+    // direct use of document.body across synchronous render/unmounts.
+    useEffect(() => {
+        if (!isOpen) return
+        if (typeof document === 'undefined') return
+        const el = document.createElement('div')
+        document.body.appendChild(el)
+        setPortalContainer(el)
+        return () => {
+            // Only remove if still connected to avoid NotFoundError
+            try {
+                if (el.isConnected) document.body.removeChild(el)
+            } catch (e) {
+                // ignore cleanup errors
+            }
+            setPortalContainer(null)
+        }
+    }, [isOpen])
+
+    if (!portalContainer) return null
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">

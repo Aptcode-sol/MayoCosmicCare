@@ -32,9 +32,17 @@ interface DashboardSidebarProps {
     user?: { username?: string; name?: string; email?: string } | null
     isExpanded: boolean
     setIsExpanded: (expanded: boolean) => void
+    isMobileMenuOpen?: boolean
+    setIsMobileMenuOpen?: (open: boolean) => void
 }
 
-export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: DashboardSidebarProps) {
+export default function DashboardSidebar({
+    user,
+    isExpanded,
+    setIsExpanded,
+    isMobileMenuOpen = false,
+    setIsMobileMenuOpen
+}: DashboardSidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
 
@@ -44,9 +52,93 @@ export default function DashboardSidebar({ user, isExpanded, setIsExpanded }: Da
         router.push('/login')
     }
 
+    const handleMobileLinkClick = () => {
+        if (setIsMobileMenuOpen) {
+            setIsMobileMenuOpen(false)
+        }
+    }
+
     return (
         <>
-            {/* Sidebar - Hidden on mobile, visible on lg+ */}
+            {/* Mobile Sidebar */}
+            <aside
+                className={`
+                    lg:hidden fixed left-0 top-0 h-full w-64 flex flex-col
+                    bg-white border-r border-gray-200 z-50
+                    transform transition-transform duration-300 ease-in-out
+                    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+                `}
+            >
+                {/* Mobile Header with Close Button */}
+                <div className="h-20 flex items-center justify-between px-4 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            M
+                        </div>
+                        <span className="font-semibold text-gray-900 whitespace-nowrap">
+                            MCC Dashboard
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => setIsMobileMenuOpen?.(false)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        aria-label="Close menu"
+                    >
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Mobile Navigation */}
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2">
+                    {navItems.map((item) => {
+                        const isActive = item.href === '/dashboard'
+                            ? pathname === '/dashboard'
+                            : pathname.startsWith(item.href)
+
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={handleMobileLinkClick}
+                                className={`
+                                    flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                    transition-all duration-200 ease-in-out
+                                    ${isActive
+                                        ? 'bg-gradient-to-r from-violet-50 to-pink-50 text-violet-600'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }
+                                `}
+                            >
+                                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {icons[item.icon]}
+                                </svg>
+                                <span className="text-sm font-medium whitespace-nowrap">
+                                    {item.label}
+                                </span>
+                            </Link>
+                        )
+                    })}
+                </nav>
+
+                {/* Mobile Logout */}
+                <div className="p-3 border-t border-gray-100">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {icons.logout}
+                        </svg>
+                        <span className="text-sm font-medium whitespace-nowrap">
+                            Logout
+                        </span>
+                    </button>
+                </div>
+            </aside>
+
+            {/* Desktop Sidebar - Hidden on mobile, visible on lg+ */}
             <aside
                 className={`
                     hidden lg:flex fixed left-0 top-0 h-full flex-col

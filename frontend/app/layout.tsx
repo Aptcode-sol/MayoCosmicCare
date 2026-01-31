@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import ClientToaster from '../components/ClientToaster'
-import Header from '../components/Header'
+import HeaderClient from '../components/HeaderClient'
 import Footer from '../components/Footer'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -25,11 +25,11 @@ import ContextProviders from '../components/ContextProviders'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col`} suppressHydrationWarning>
         <ContextProviders>
           <ClientToaster />
-          <Header />
+          <HeaderClient />
           <div className="flex-1">
             {children}
           </div>

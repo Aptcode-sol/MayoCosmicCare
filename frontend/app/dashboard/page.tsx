@@ -10,6 +10,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import RankProgress from '@/components/RankProgress'
 import { SkeletonCard } from "@/components/ui/SkeletonCard"
+import { formatIndian } from '@/lib/formatIndian'
 
 interface User {
     id: string
@@ -96,7 +97,7 @@ export default function Dashboard() {
     return (
         <DashboardLayout user={user}>
             {loading ? (
-                <div className="container mx-auto px-6 py-10 space-y-10">
+                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-10">
                     {/* Header Skeleton */}
                     <div className="space-y-2">
                         <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse"></div>
@@ -134,19 +135,19 @@ export default function Dashboard() {
                 <>
                     {/* Page Header */}
                     <div className="bg-white border-b border-gray-100">
-                        <div className="container mx-auto px-6 py-8">
+                        <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-8">
                             <AnimateOnScroll animation="fade-up">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
-                                        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Dashboard</h1>
-                                        <p className="text-gray-500 mt-1">Welcome back, {user?.name || user?.username || 'Partner'}</p>
+                                        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 tracking-tight">Dashboard</h1>
+                                        <p className="text-sm md:text-base text-gray-500 mt-1">Welcome back, {user?.name || user?.username || 'Partner'}</p>
                                     </div>
                                 </div>
                             </AnimateOnScroll>
                         </div>
                     </div>
 
-                    <div className="container mx-auto px-6 py-10">
+                    <div className="mx-auto px-2 sm:px-3 lg:px-6 py-10">
                         {/* Full-width Rank Progress */}
                         <AnimateOnScroll animation="fade-up" className="mb-10">
                             <RankProgress
@@ -159,48 +160,48 @@ export default function Dashboard() {
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                             <AnimateOnScroll animation="fade-up" delay={100} className="h-full">
                                 <Card className="h-full">
-                                    <CardContent className="p-6 flex flex-col justify-center h-full">
-                                        <div className="flex items-center justify-between mb-3">
+                                    <CardContent className="p-4 md:p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-2 md:mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet Balance</span>
-                                            <div className="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="w-7 h-7 md:w-8 md:h-8 bg-emerald-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">₹{wallet?.balance?.toLocaleString() || 0}</div>
+                                        <div className="text-lg md:text-2xl font-bold text-gray-900">{formatIndian(wallet?.balance || 0)}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>
 
                             <AnimateOnScroll animation="fade-up" delay={150} className="h-full">
                                 <Card className="h-full">
-                                    <CardContent className="p-6 flex flex-col justify-center h-full">
-                                        <div className="flex items-center justify-between mb-3">
+                                    <CardContent className="p-4 md:p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-2 md:mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Team</span>
-                                            <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="w-7 h-7 md:w-8 md:h-8 bg-indigo-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">{totalMembers}</div>
+                                        <div className="text-lg md:text-2xl font-bold text-gray-900">{totalMembers}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>
 
                             <AnimateOnScroll animation="fade-up" delay={200} className="h-full">
                                 <Card className="h-full">
-                                    <CardContent className="p-6 flex flex-col justify-center h-full">
-                                        <div className="flex items-center justify-between mb-3">
+                                    <CardContent className="p-4 md:p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-2 md:mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Left Leg</span>
-                                            <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11l5-5m0 0l5 5m-5-5v12" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">{leftMembers}</div>
+                                        <div className="text-lg md:text-2xl font-bold text-gray-900">{leftMembers}</div>
                                         <div className="text-xs text-gray-400 mt-1">Carry: {user?.leftCarryCount || 0}</div>
                                     </CardContent>
                                 </Card>
@@ -208,16 +209,16 @@ export default function Dashboard() {
 
                             <AnimateOnScroll animation="fade-up" delay={250} className="h-full">
                                 <Card className="h-full">
-                                    <CardContent className="p-6 flex flex-col justify-center h-full">
-                                        <div className="flex items-center justify-between mb-3">
+                                    <CardContent className="p-4 md:p-6 flex flex-col justify-center h-full">
+                                        <div className="flex items-center justify-between mb-2 md:mb-3">
                                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Right Leg</span>
-                                            <div className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="w-7 h-7 md:w-8 md:h-8 bg-purple-50 rounded-full flex items-center justify-center">
+                                                <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">{rightMembers}</div>
+                                        <div className="text-lg md:text-2xl font-bold text-gray-900">{rightMembers}</div>
                                         <div className="text-xs text-gray-400 mt-1">Carry: {user?.rightCarryCount || 0}</div>
                                     </CardContent>
                                 </Card>
@@ -337,18 +338,18 @@ export default function Dashboard() {
                         <AnimateOnScroll animation="fade-up">
                             <Card>
                                 <CardHeader className="border-b border-gray-100">
-                                    <CardTitle className="text-lg">Recent Transactions</CardTitle>
+                                    <CardTitle className="text-base md:text-lg">Recent Transactions</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     {transactions.length > 0 ? (
-                                        <div className="divide-y divide-gray-100">
+                                        <div className="divide-y divide-gray-100 overflow-x-auto">
                                             {transactions.map((tx) => (
-                                                <div key={tx.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type.includes('BONUS') ? 'bg-green-50 text-green-600' :
+                                                <div key={tx.id} className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 hover:bg-gray-50/50 transition-colors min-w-[320px]">
+                                                    <div className="flex items-center gap-3 md:gap-4">
+                                                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 ${tx.type.includes('BONUS') ? 'bg-green-50 text-green-600' :
                                                             tx.type === 'PURCHASE' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'
                                                             }`}>
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 {tx.type.includes('BONUS') ? (
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                 ) : (
@@ -356,12 +357,12 @@ export default function Dashboard() {
                                                                 )}
                                                             </svg>
                                                         </div>
-                                                        <div>
-                                                            <div className="font-medium text-gray-900">{tx.type.replace(/_/g, ' ')}</div>
-                                                            <div className="text-xs text-gray-500">{tx.detail || 'Transaction'}</div>
+                                                        <div className="min-w-0">
+                                                            <div className="font-semibold text-gray-900 text-sm md:text-base truncate">{tx.type.replace(/_/g, ' ')}</div>
+                                                            <div className="text-[11px] md:text-xs text-gray-500 truncate">{tx.detail || 'Transaction'}</div>
                                                         </div>
                                                     </div>
-                                                    <div className={`font-semibold ${tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? 'text-green-600' : 'text-gray-900'}`}>
+                                                    <div className={`font-semibold text-sm md:text-base shrink-0 ${tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? 'text-green-600' : 'text-gray-900'}`}>
                                                         {tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? '+' : ''}₹{tx.amount}
                                                     </div>
                                                 </div>

@@ -25,13 +25,7 @@ export default function AdminLayout() {
 
     useEffect(() => {
         const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-            if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-                setShowNavbar(false);
-            } else {
-                setShowNavbar(true);
-            }
-            lastScrollY.current = currentScrollY;
+            // Scroll hiding disabled - header always visible
         };
 
         window.addEventListener('scroll', handleScroll);

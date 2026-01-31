@@ -20,7 +20,9 @@ export default function CartDrawer() {
         if (isOpen) {
             setIsVisible(true);
             requestAnimationFrame(() => {
-                setIsAnimating(true);
+                requestAnimationFrame(() => {
+                    setIsAnimating(true);
+                });
             });
         } else {
             setIsAnimating(false);
@@ -66,7 +68,16 @@ export default function CartDrawer() {
             const { payment_session_id, order_id } = await createOrder(orderItems, activeSponsorId);
 
             // 3. Open Cashfree
-            const cashfree = await load({ mode: "sandbox" }); // Change to production in prod
+            let cashfree: any = null
+            try {
+                if (typeof window === 'undefined') throw new Error('window is undefined')
+                cashfree = await load({ mode: "sandbox" }) // Change to production in prod
+            } catch (err) {
+                console.error('Cashfree load error', err)
+                toast.error('Payment service unavailable')
+                setLoading(false)
+                return
+            }
 
             const checkoutOptions = {
                 paymentSessionId: payment_session_id,
@@ -118,7 +129,7 @@ export default function CartDrawer() {
             />
 
             {/* Drawer with slide animation */}
-            <div className={`relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col transition-transform duration-300 ease-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col transition-transform duration-300 ease-in-out will-change-transform ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h2 className="text-lg font-semibold text-gray-900">Your Cart ({items.length})</h2>
                     <button onClick={handleClose} className="text-gray-500 hover:text-gray-700 transition-colors">

@@ -1,5 +1,6 @@
 "use client"
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import UserAvatar from './UserAvatar'
 import { Button } from "./ui/Button"
@@ -16,6 +17,14 @@ export default function Header() {
             <nav className="container mx-auto px-6 h-20 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 group">
+                    <div className="relative w-8 h-8">
+                        <Image
+                            src="/MCC2.png"
+                            alt="Mayo Cosmic Care Logo"
+                            fill
+                            className="object-contain"
+                        />
+                    </div>
                     <span className="text-xl font-semibold text-gray-900 tracking-tight group-hover:text-gray-600 transition-colors">
                         Mayo Cosmic Care
                     </span>

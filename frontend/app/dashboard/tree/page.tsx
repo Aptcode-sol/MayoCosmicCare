@@ -20,6 +20,7 @@ type TreeNodeData = {
     rightMemberCount?: number
     walletBalance?: number
     createdAt?: string
+    referredBy?: string
     left?: TreeNodeData | null
     right?: TreeNodeData | null
 }

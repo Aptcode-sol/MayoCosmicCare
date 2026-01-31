@@ -12,7 +12,7 @@ export default function Login() {
     // If already authenticated, redirect to dashboard
     useEffect(() => {
         if (isAuthenticated()) {
-            navigate('/dashboard');
+            navigate('/dashboard/analytics');
         }
     }, [navigate]);
 
@@ -25,7 +25,7 @@ export default function Login() {
             if (result.ok) {
                 toast.success('Welcome back!');
                 // Force page reload to ensure fresh state
-                window.location.href = '/dashboard';
+                window.location.href = '/dashboard/analytics';
             } else {
                 toast.error(result.error || 'Login failed');
             }

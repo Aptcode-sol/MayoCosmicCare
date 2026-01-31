@@ -6,10 +6,14 @@ import toast from 'react-hot-toast';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import AdminTreeView from '../components/AdminTreeView';
 import { SkeletonCard, SkeletonTable, SkeletonGrid } from '../components/SkeletonCard';
+import { formatIndian } from '../utils/formatIndian';
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [tab, setTab] = useState('analytics');
+    const [mobileTabsOpen, setMobileTabsOpen] = useState(false);
+    const [showNavbar, setShowNavbar] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
     const [products, setProducts] = useState([]);
     const [users, setUsers] = useState([]);
     const [usersPage, setUsersPage] = useState(1);
@@ -43,6 +47,24 @@ export default function Dashboard() {
         }
         fetchData();
     }, [tab, navigate, usersPage, positionsPage, withdrawalsPage, positionFilter, rewardedFilter]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Hide navbar when scrolling down, show when scrolling up
+            if (currentScrollY > lastScrollY && currentScrollY > 50) {
+                setShowNavbar(false);
+            } else {
+                setShowNavbar(true);
+            }
+
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -163,7 +185,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-gray-50/30">
             {/* Header */}
-            <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+            <header className={`bg-white border-b border-gray-100 sticky top-0 z-50 transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div>
                         <h1 className="text-xl font-semibold text-gray-900">Admin Console</h1>
@@ -179,11 +201,12 @@ export default function Dashboard() {
 
                 {/* Tabs */}
                 <div className="max-w-7xl mx-auto px-6 border-t border-gray-100">
-                    <div className="flex gap-1">
+                    {/* Desktop Tabs */}
+                    <div className="hidden sm:flex gap-1">
                         {['analytics', 'products', 'users', 'network', 'positions', 'withdrawals'].map((t) => (
                             <button
                                 key={t}
-                                onClick={() => setTab(t)}
+                                onClick={() => { setTab(t); setMobileTabsOpen(false); }}
                                 className={`px-6 py-3 text-sm font-medium transition-all relative ${tab === t ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
@@ -191,6 +214,38 @@ export default function Dashboard() {
                                 {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />}
                             </button>
                         ))}
+                    </div>
+
+                    {/* Mobile Tabs - Hamburger Menu with slide-in from right */}
+                    <div className="sm:hidden relative">
+                        <button
+                            onClick={() => setMobileTabsOpen(!mobileTabsOpen)}
+                            className="w-full py-3 px-4 flex items-center justify-between text-sm font-medium text-gray-900 hover:bg-gray-50"
+                        >
+                            <span>{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
+                            {/* Hamburger Menu Icon */}
+                            <div className="w-6 h-6 flex flex-col justify-center items-center gap-1.5 cursor-pointer">
+                                <span className={`block w-6 h-0.5 bg-gray-900 transition-all duration-300 origin-center ${mobileTabsOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                                <span className={`block w-6 h-0.5 bg-gray-900 transition-all duration-300 ${mobileTabsOpen ? 'opacity-0' : 'opacity-100'}`}></span>
+                                <span className={`block w-6 h-0.5 bg-gray-900 transition-all duration-300 origin-center ${mobileTabsOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+                            </div>
+                        </button>
+
+                        {/* Slide-in Menu from Right */}
+                        <div className={`absolute top-full right-0 left-0 bg-white border-t border-gray-100 shadow-lg transition-all duration-300 origin-top ${mobileTabsOpen ? 'opacity-100 visible max-h-96 overflow-y-auto' : 'opacity-0 invisible max-h-0'}`}>
+                            <div className="flex flex-col">
+                                {['analytics', 'products', 'users', 'network', 'positions', 'withdrawals'].map((t) => (
+                                    <button
+                                        key={t}
+                                        onClick={() => { setTab(t); setMobileTabsOpen(false); }}
+                                        className={`px-6 py-3 text-sm font-medium text-left transition-colors border-b border-gray-50 ${tab === t ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -269,7 +324,7 @@ export default function Dashboard() {
                                     {/* Secondary Stats Grid: Time-based */}
                                     <div className="mb-6">
                                         <p className="text-sm font-medium text-gray-600 mb-3">New Users by Period</p>
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                             <div className="p-4 bg-green-50 rounded-xl border border-green-200">
                                                 <p className="text-xs text-green-700 font-medium mb-2">Today</p>
                                                 <p className="text-2xl font-bold text-green-600">+{analytics.users?.today || 0}</p>
@@ -424,31 +479,31 @@ export default function Dashboard() {
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                             <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
                                                 <p className="text-lg font-bold text-orange-600">
-                                                    ₹{selectedPeriod
-                                                        ? (selectedPeriod.directBonus || 0).toLocaleString()
-                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()
-                                                    }
+                                                    {formatIndian(selectedPeriod
+                                                        ? (selectedPeriod.directBonus || 0)
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0)
+                                                    )}
                                                 </p>
                                                 <p className="text-xs text-gray-500">Direct Referral</p>
                                             </div>
                                             <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
                                                 <p className="text-lg font-bold text-green-600">
-                                                    ₹{selectedPeriod
-                                                        ? (selectedPeriod.matchingBonus || 0).toLocaleString()
-                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()
-                                                    }
+                                                    {formatIndian(selectedPeriod
+                                                        ? (selectedPeriod.matchingBonus || 0)
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0)
+                                                    )}
                                                 </p>
                                                 <p className="text-xs text-gray-500">Matching Bonus</p>
                                             </div>
                                             <div className="bg-white p-3 rounded-lg text-center border border-gray-100">
                                                 <p className="text-lg font-bold text-purple-600">
-                                                    ₹{selectedPeriod
-                                                        ? (selectedPeriod.leadershipBonus || 0).toLocaleString()
-                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0).toLocaleString()
-                                                    }
+                                                    {formatIndian(selectedPeriod
+                                                        ? (selectedPeriod.leadershipBonus || 0)
+                                                        : (analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0)
+                                                    )}
                                                 </p>
                                                 <p className="text-xs text-gray-500">Leadership Bonus</p>
                                             </div>
@@ -497,7 +552,7 @@ export default function Dashboard() {
                                             </svg>
                                             KYC Status
                                         </h3>
-                                        <div className="grid grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                             <div className="text-center p-3 bg-gray-50 rounded-xl">
                                                 <p className="text-xl font-bold text-gray-600">{analytics.kyc?.NOT_STARTED || 0}</p>
                                                 <p className="text-xs text-gray-500 mt-1">Not Started</p>
@@ -529,22 +584,22 @@ export default function Dashboard() {
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="p-4 bg-orange-50 rounded-xl">
                                             <p className="text-xs text-gray-500">Direct Bonus</p>
-                                            <p className="text-xl font-bold text-orange-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0).toLocaleString()}</p>
+                                            <p className="text-xl font-bold text-orange-600 mt-1">{formatIndian(analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.total || 0)}</p>
                                             <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'DIRECT_BONUS')?.count || 0} transactions</p>
                                         </div>
                                         <div className="p-4 bg-green-50 rounded-xl">
                                             <p className="text-xs text-gray-500">Matching Bonus</p>
-                                            <p className="text-xl font-bold text-green-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0).toLocaleString()}</p>
+                                            <p className="text-xl font-bold text-green-600 mt-1">{formatIndian(analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.total || 0)}</p>
                                             <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'MATCHING_BONUS')?.count || 0} transactions</p>
                                         </div>
                                         <div className="p-4 bg-purple-50 rounded-xl">
                                             <p className="text-xs text-gray-500">Leadership Bonus</p>
-                                            <p className="text-xl font-bold text-purple-600 mt-1">₹{(analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0).toLocaleString()}</p>
+                                            <p className="text-xl font-bold text-purple-600 mt-1">{formatIndian(analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0)}</p>
                                             <p className="text-xs text-gray-400">{analytics.financial?.bonusTotals?.find(b => b.type === 'LEADERSHIP_BONUS')?.count || 0} transactions</p>
                                         </div>
                                         <div className="p-4 bg-blue-50 rounded-xl">
                                             <p className="text-xs text-gray-500">Today's Bonuses</p>
-                                            <p className="text-xl font-bold text-blue-600 mt-1">₹{(analytics.financial?.todayBonuses || 0).toLocaleString()}</p>
+                                            <p className="text-xl font-bold text-blue-600 mt-1">{formatIndian(analytics.financial?.todayBonuses || 0)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -579,15 +634,15 @@ export default function Dashboard() {
                                     {/* Orders/Revenue */}
                                     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                                         <h3 className="font-semibold text-gray-900 mb-4">Orders & Revenue</h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-3">
                                             <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl text-white">
                                                 <p className="text-xs opacity-80">Total Revenue</p>
-                                                <p className="text-2xl font-bold mt-1">₹{(analytics.orders?.totalRevenue || 0).toLocaleString()}</p>
+                                                <p className="text-2xl font-bold mt-1">{formatIndian(analytics.orders?.totalRevenue || 0)}</p>
                                                 <p className="text-xs opacity-80 mt-1">{analytics.orders?.total || 0} orders</p>
                                             </div>
-                                            <div className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-3">
                                                 <div className="p-3 bg-gray-50 rounded-xl">
-                                                    <p className="text-lg font-bold text-gray-900">₹{(analytics.orders?.monthRevenue || 0).toLocaleString()}</p>
+                                                    <p className="text-lg font-bold text-gray-900">{formatIndian(analytics.orders?.monthRevenue || 0)}</p>
                                                     <p className="text-xs text-gray-500">This Month ({analytics.orders?.thisMonth || 0} orders)</p>
                                                 </div>
                                                 <div className="p-3 bg-gray-50 rounded-xl">
@@ -659,29 +714,29 @@ export default function Dashboard() {
                         {/* Network Tab */}
                         {tab === 'network' && (
                             <div className="space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-medium text-gray-900">Network Tree ({networkUsers.length} members)</h2>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">Network Tree ({networkUsers.length} members)</h2>
                                 </div>
 
                                 {/* Network Stats */}
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                                        <p className="text-3xl font-bold text-gray-900">{networkUsers.filter(u => u.hasPurchased).length}</p>
-                                        <p className="text-sm text-gray-500">Active (Purchased)</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm text-center">
+                                        <p className="text-2xl sm:text-3xl font-bold text-gray-900">{networkUsers.filter(u => u.hasPurchased).length}</p>
+                                        <p className="text-xs sm:text-sm text-gray-500">Active (Purchased)</p>
                                     </div>
-                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                                        <p className="text-3xl font-bold text-blue-600">{networkUsers.filter(u => u.position === 'LEFT').length}</p>
-                                        <p className="text-sm text-gray-500">Left Position</p>
+                                    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm text-center">
+                                        <p className="text-2xl sm:text-3xl font-bold text-blue-600">{networkUsers.filter(u => u.position === 'LEFT').length}</p>
+                                        <p className="text-xs sm:text-sm text-gray-500">Left Position</p>
                                     </div>
-                                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                                        <p className="text-3xl font-bold text-purple-600">{networkUsers.filter(u => u.position === 'RIGHT').length}</p>
-                                        <p className="text-sm text-gray-500">Right Position</p>
+                                    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm text-center">
+                                        <p className="text-2xl sm:text-3xl font-bold text-purple-600">{networkUsers.filter(u => u.position === 'RIGHT').length}</p>
+                                        <p className="text-xs sm:text-sm text-gray-500">Right Position</p>
                                     </div>
                                 </div>
 
                                 {/* Network Tree Visualization */}
-                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                                    <div className="mb-4 text-sm text-gray-500">
+                                <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm">
+                                    <div className="mb-4 text-xs sm:text-sm text-gray-500">
                                         Click nodes to view details. Expand/collapse with the arrow button.
                                     </div>
                                     {(() => {
@@ -729,17 +784,21 @@ export default function Dashboard() {
                                         }
 
                                         return (
-                                            <AdminTreeView
-                                                data={treeData}
-                                                onNodeClick={(node) => {
-                                                    // Find the full user object from networkUsers to get all details like walletBalance
-                                                    const fullNodeData = networkUsers.find(u => u.id === node.id) || node;
-                                                    // Ensure left/right counts are present if not in fullNodeData
-                                                    if (fullNodeData && !fullNodeData.leftMemberCount) fullNodeData.leftMemberCount = node.leftMemberCount;
-                                                    if (fullNodeData && !fullNodeData.rightMemberCount) fullNodeData.rightMemberCount = node.rightMemberCount;
-                                                    setSelectedNode(fullNodeData);
-                                                }}
-                                            />
+                                            <div className="overflow-x-auto">
+                                                <div className="min-w-[520px]">
+                                                    <AdminTreeView
+                                                        data={treeData}
+                                                        onNodeClick={(node) => {
+                                                            // Find the full user object from networkUsers to get all details like walletBalance
+                                                            const fullNodeData = networkUsers.find(u => u.id === node.id) || node;
+                                                            // Ensure left/right counts are present if not in fullNodeData
+                                                            if (fullNodeData && !fullNodeData.leftMemberCount) fullNodeData.leftMemberCount = node.leftMemberCount;
+                                                            if (fullNodeData && !fullNodeData.rightMemberCount) fullNodeData.rightMemberCount = node.rightMemberCount;
+                                                            setSelectedNode(fullNodeData);
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
                                         );
                                     })()}
                                 </div>
@@ -1020,25 +1079,25 @@ export default function Dashboard() {
                             <div className="space-y-6">
                                 {/* Pagination Info */}
                                 {usersPagination && (
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-gray-500">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Showing {(usersPage - 1) * 25 + 1} to {Math.min(usersPage * 25, usersPagination.total)} of {usersPagination.total} users
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => setUsersPage(p => Math.max(1, p - 1))}
                                                 disabled={!usersPagination.hasPrev}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
-                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                            <span className="px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                                                 Page {usersPage} of {usersPagination.totalPages}
                                             </span>
                                             <button
                                                 onClick={() => setUsersPage(p => p + 1)}
                                                 disabled={!usersPagination.hasNext}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>
@@ -1047,77 +1106,79 @@ export default function Dashboard() {
                                 )}
 
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left">User</th>
-                                                <th className="px-6 py-4 text-left">BV</th>
-                                                <th className="px-6 py-4 text-left">Status</th>
-                                                <th className="px-6 py-4 text-right">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {users.length > 0 ? users.map((user) => (
-                                                <tr key={user.id} className="hover:bg-gray-50/50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="text-gray-900 font-medium">{user.username}</div>
-                                                        <div className="text-gray-500 text-xs">{user.email}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-600">
-                                                        L: {user.leftBV} / R: {user.rightBV}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${user.isBlocked
-                                                            ? 'bg-red-50 text-red-700'
-                                                            : 'bg-emerald-50 text-emerald-700'
-                                                            }`}>
-                                                            {user.isBlocked ? 'Blocked' : 'Active'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <button
-                                                            onClick={() => toggleBlockUser(user.id, user.isBlocked)}
-                                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${user.isBlocked
-                                                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                                                : 'bg-red-50 text-red-700 hover:bg-red-100'
-                                                                }`}
-                                                        >
-                                                            {user.isBlocked ? 'Unblock' : 'Block'}
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs sm:text-sm min-w-[640px]">
+                                            <thead className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase text-gray-500 font-medium">
                                                 <tr>
-                                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                                                        No users found
-                                                    </td>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">User</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">BV</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Status</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-right">Actions</th>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {users.length > 0 ? users.map((user) => (
+                                                    <tr key={user.id} className="hover:bg-gray-50/50">
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                                            <div className="text-gray-900 font-medium text-sm sm:text-base">{user.username}</div>
+                                                            <div className="text-gray-500 text-[11px] sm:text-xs">{user.email}</div>
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600">
+                                                            L: {user.leftBV} / R: {user.rightBV}
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                                            <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${user.isBlocked
+                                                                ? 'bg-red-50 text-red-700'
+                                                                : 'bg-emerald-50 text-emerald-700'
+                                                                }`}>
+                                                                {user.isBlocked ? 'Blocked' : 'Active'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                                                            <button
+                                                                onClick={() => toggleBlockUser(user.id, user.isBlocked)}
+                                                                className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors ${user.isBlocked
+                                                                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                                    : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                                                    }`}
+                                                            >
+                                                                {user.isBlocked ? 'Unblock' : 'Block'}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                )) : (
+                                                    <tr>
+                                                        <td colSpan={4} className="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                                            No users found
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
                                 {/* Pagination Controls at Bottom */}
                                 {usersPagination && (
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-gray-500">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Showing {(usersPage - 1) * 25 + 1} to {Math.min(usersPage * 25, usersPagination.total)} of {usersPagination.total} users
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => setUsersPage(p => Math.max(1, p - 1))}
                                                 disabled={!usersPagination.hasPrev}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
-                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                            <span className="px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                                                 Page {usersPage} of {usersPagination.totalPages}
                                             </span>
                                             <button
                                                 onClick={() => setUsersPage(p => p + 1)}
                                                 disabled={!usersPagination.hasNext}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>
@@ -1132,21 +1193,21 @@ export default function Dashboard() {
                         {tab === 'positions' && (
                             <div className="space-y-6">
                                 {/* Header with count */}
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-medium text-gray-900">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">
                                         Position Changes
-                                        <span className="ml-2 px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                                        <span className="ml-2 px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs sm:text-sm font-medium">
                                             {positionsPagination?.total || positions.length}
                                         </span>
                                     </h2>
                                 </div>
 
                                 {/* Filters */}
-                                <div className="flex flex-wrap gap-4">
+                                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                                     <select
                                         value={positionFilter}
                                         onChange={(e) => { setPositionFilter(e.target.value); setPositionsPage(1); }}
-                                        className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                                     >
                                         <option value="all">All Positions</option>
                                         <option value="Associate Executive">Associate Executive</option>
@@ -1163,7 +1224,7 @@ export default function Dashboard() {
                                     <select
                                         value={rewardedFilter}
                                         onChange={(e) => { setRewardedFilter(e.target.value); setPositionsPage(1); }}
-                                        className="px-4 py-2 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                                     >
                                         <option value="all">All Status</option>
                                         <option value="pending">Pending Reward</option>
@@ -1173,25 +1234,25 @@ export default function Dashboard() {
 
                                 {/* Pagination Info */}
                                 {positionsPagination && (
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-gray-500">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Showing {(positionsPage - 1) * 25 + 1} to {Math.min(positionsPage * 25, positionsPagination.total)} of {positionsPagination.total} positions
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => setPositionsPage(p => Math.max(1, p - 1))}
                                                 disabled={!positionsPagination.hasPrev}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
-                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                            <span className="px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                                                 Page {positionsPage} of {positionsPagination.totalPages}
                                             </span>
                                             <button
                                                 onClick={() => setPositionsPage(p => p + 1)}
                                                 disabled={!positionsPagination.hasNext}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>
@@ -1201,83 +1262,85 @@ export default function Dashboard() {
 
                                 {/* Positions Table */}
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left">User</th>
-                                                <th className="px-6 py-4 text-left">From</th>
-                                                <th className="px-6 py-4 text-left">To</th>
-                                                <th className="px-6 py-4 text-left">Pairs</th>
-                                                <th className="px-6 py-4 text-left">Date</th>
-                                                <th className="px-6 py-4 text-center">Rewarded</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {positions.length > 0 ? positions.map((pos) => (
-                                                <tr key={pos.id} className="hover:bg-gray-50/50">
-                                                    <td className="px-6 py-4">
-                                                        <div className="text-gray-900 font-medium">{pos.user?.username}</div>
-                                                        <div className="text-gray-500 text-xs">{pos.user?.email}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-600">{pos.fromRank}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                                                            {pos.toRank}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-600 font-mono">{pos.pairsAtChange}</td>
-                                                    <td className="px-6 py-4 text-gray-500 text-xs">
-                                                        {new Date(pos.createdAt).toLocaleDateString()}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={pos.rewarded}
-                                                            onChange={async (e) => {
-                                                                try {
-                                                                    await api.patch(`/api/admin/positions/${pos.id}/reward`, { rewarded: e.target.checked });
-                                                                    toast.success(e.target.checked ? 'Marked as rewarded' : 'Unmarked');
-                                                                    fetchData();
-                                                                } catch (err) {
-                                                                    toast.error('Failed to update');
-                                                                }
-                                                            }}
-                                                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            )) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs sm:text-sm min-w-[720px]">
+                                            <thead className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase text-gray-500 font-medium">
                                                 <tr>
-                                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                        No position changes found
-                                                    </td>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">User</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">From</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">To</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Pairs</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Date</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center">Rewarded</th>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {positions.length > 0 ? positions.map((pos) => (
+                                                    <tr key={pos.id} className="hover:bg-gray-50/50">
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                                            <div className="text-gray-900 font-medium text-sm sm:text-base">{pos.user?.username}</div>
+                                                            <div className="text-gray-500 text-[11px] sm:text-xs">{pos.user?.email}</div>
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600">{pos.fromRank}</td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                                            <span className="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-indigo-50 text-indigo-700">
+                                                                {pos.toRank}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600 font-mono">{pos.pairsAtChange}</td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-500 text-[11px] sm:text-xs">
+                                                            {new Date(pos.createdAt).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={pos.rewarded}
+                                                                onChange={async (e) => {
+                                                                    try {
+                                                                        await api.patch(`/api/admin/positions/${pos.id}/reward`, { rewarded: e.target.checked });
+                                                                        toast.success(e.target.checked ? 'Marked as rewarded' : 'Unmarked');
+                                                                        fetchData();
+                                                                    } catch (err) {
+                                                                        toast.error('Failed to update');
+                                                                    }
+                                                                }}
+                                                                className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                )) : (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                                            No position changes found
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
                                 {/* Pagination Controls at Bottom */}
                                 {positionsPagination && (
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-gray-500">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Showing {(positionsPage - 1) * 25 + 1} to {Math.min(positionsPage * 25, positionsPagination.total)} of {positionsPagination.total} positions
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => setPositionsPage(p => Math.max(1, p - 1))}
                                                 disabled={!positionsPagination.hasPrev}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
-                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                            <span className="px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                                                 Page {positionsPage} of {positionsPagination.totalPages}
                                             </span>
                                             <button
                                                 onClick={() => setPositionsPage(p => p + 1)}
                                                 disabled={!positionsPagination.hasNext}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>
@@ -1290,10 +1353,10 @@ export default function Dashboard() {
                         {/* Withdrawals Tab */}
                         {tab === 'withdrawals' && (
                             <div className="space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-medium text-gray-900">Withdrawal Requests</h2>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                    <h2 className="text-base sm:text-lg font-medium text-gray-900">Withdrawal Requests</h2>
                                     {withdrawalsPagination && (
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Total: {withdrawalsPagination.total}
                                         </div>
                                     )}
@@ -1301,25 +1364,25 @@ export default function Dashboard() {
 
                                 {/* Pagination Info */}
                                 {withdrawalsPagination && (
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-gray-500">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Showing {(withdrawalsPage - 1) * 25 + 1} to {Math.min(withdrawalsPage * 25, withdrawalsPagination.total)} of {withdrawalsPagination.total} withdrawals
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => setWithdrawalsPage(p => Math.max(1, p - 1))}
                                                 disabled={!withdrawalsPagination.hasPrev}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
-                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                            <span className="px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                                                 Page {withdrawalsPage} of {withdrawalsPagination.totalPages}
                                             </span>
                                             <button
                                                 onClick={() => setWithdrawalsPage(p => p + 1)}
                                                 disabled={!withdrawalsPagination.hasNext}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>
@@ -1328,96 +1391,98 @@ export default function Dashboard() {
                                 )}
 
                                 <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-medium">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left">User</th>
-                                                <th className="px-6 py-4 text-left">Amount</th>
-                                                <th className="px-6 py-4 text-left">Bank Details</th>
-                                                <th className="px-6 py-4 text-left">Date</th>
-                                                <th className="px-6 py-4 text-left">Status</th>
-                                                <th className="px-6 py-4 text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {withdrawals.length > 0 ? withdrawals.map((w) => {
-                                                const details = w.bankDetails ? JSON.parse(w.bankDetails) : {};
-                                                return (
-                                                    <tr key={w.id} className="hover:bg-gray-50/50">
-                                                        <td className="px-6 py-4">
-                                                            <div className="text-gray-900 font-medium">{w.user?.username}</div>
-                                                            <div className="text-gray-500 text-xs">{w.user?.phone}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4 font-bold text-gray-900">₹{w.amount}</td>
-                                                        <td className="px-6 py-4 text-xs text-gray-600">
-                                                            <div>{details.name}</div>
-                                                            {details.vpa ? (
-                                                                <div className="font-mono text-indigo-600">{details.vpa} (UPI)</div>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="font-mono">{details.accountInfo?.bankAccount}</div>
-                                                                    <div className="font-mono">{details.accountInfo?.ifsc}</div>
-                                                                </>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-gray-500 text-xs">
-                                                            {new Date(w.createdAt).toLocaleDateString()}
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${w.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                                                                w.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    'bg-red-100 text-red-700'
-                                                                }`}>
-                                                                {w.status}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right">
-                                                            {w.status === 'PENDING' && (
-                                                                <button
-                                                                    onClick={() => approveWithdrawal(w.id)}
-                                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium"
-                                                                >
-                                                                    Approve
-                                                                </button>
-                                                            )}
-                                                            {w.status === 'APPROVED' && (
-                                                                <span className="text-xs text-green-600 font-medium">Processed</span>
-                                                            )}
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs sm:text-sm min-w-[760px]">
+                                            <thead className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase text-gray-500 font-medium">
+                                                <tr>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">User</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Amount</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Bank Details</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Date</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Status</th>
+                                                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {withdrawals.length > 0 ? withdrawals.map((w) => {
+                                                    const details = w.bankDetails ? JSON.parse(w.bankDetails) : {};
+                                                    return (
+                                                        <tr key={w.id} className="hover:bg-gray-50/50">
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                                                <div className="text-gray-900 font-medium text-sm sm:text-base">{w.user?.username}</div>
+                                                                <div className="text-gray-500 text-[11px] sm:text-xs">{w.user?.phone}</div>
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 font-bold text-gray-900">₹{w.amount}</td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-[11px] sm:text-xs text-gray-600">
+                                                                <div>{details.name}</div>
+                                                                {details.vpa ? (
+                                                                    <div className="font-mono text-indigo-600">{details.vpa} (UPI)</div>
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="font-mono">{details.accountInfo?.bankAccount}</div>
+                                                                        <div className="font-mono">{details.accountInfo?.ifsc}</div>
+                                                                    </>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-500 text-[11px] sm:text-xs">
+                                                                {new Date(w.createdAt).toLocaleDateString()}
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                                                <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${w.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                                    w.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                                        'bg-red-100 text-red-700'
+                                                                    }`}>
+                                                                    {w.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                                                                {w.status === 'PENDING' && (
+                                                                    <button
+                                                                        onClick={() => approveWithdrawal(w.id)}
+                                                                        className="px-3 py-2 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] sm:text-xs font-medium"
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                )}
+                                                                {w.status === 'APPROVED' && (
+                                                                    <span className="text-[11px] sm:text-xs text-green-600 font-medium">Processed</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }) : (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                                            No withdrawal requests found
                                                         </td>
                                                     </tr>
-                                                );
-                                            }) : (
-                                                <tr>
-                                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                        No withdrawal requests found
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
                                 {/* Pagination Controls at Bottom */}
                                 {withdrawalsPagination && (
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-sm text-gray-500">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-500">
                                             Showing {(withdrawalsPage - 1) * 25 + 1} to {Math.min(withdrawalsPage * 25, withdrawalsPagination.total)} of {withdrawalsPagination.total} withdrawals
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => setWithdrawalsPage(p => Math.max(1, p - 1))}
                                                 disabled={!withdrawalsPagination.hasPrev}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
-                                            <span className="px-4 py-2 text-sm font-medium text-gray-600">
+                                            <span className="px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium text-gray-600">
                                                 Page {withdrawalsPage} of {withdrawalsPagination.totalPages}
                                             </span>
                                             <button
                                                 onClick={() => setWithdrawalsPage(p => p + 1)}
                                                 disabled={!withdrawalsPagination.hasNext}
-                                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                                className="px-3 py-2 sm:px-4 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>

@@ -8,9 +8,9 @@ export default function DevDomInstrumentation() {
         const origRemoveChild = Node.prototype.removeChild
         const origAppendChild = Node.prototype.appendChild
 
-        Node.prototype.removeChild = function (child: Node) {
+        Node.prototype.removeChild = function <T extends Node>(this: Node, child: T): T {
             try {
-                return origRemoveChild.call(this, child)
+                return origRemoveChild.call(this, child) as T
             } catch (err) {
                 try {
                     // Log useful debugging info before rethrowing
@@ -25,9 +25,9 @@ export default function DevDomInstrumentation() {
             }
         }
 
-        Node.prototype.appendChild = function (child: Node) {
+        Node.prototype.appendChild = function <T extends Node>(this: Node, child: T): T {
             try {
-                return origAppendChild.call(this, child)
+                return origAppendChild.call(this, child) as T
             } catch (err) {
                 try {
                     // eslint-disable-next-line no-console

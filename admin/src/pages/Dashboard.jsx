@@ -95,6 +95,7 @@ export default function Dashboard() {
                 setWithdrawalsPagination(res.data.pagination || null);
             } else if (tab === 'analytics') {
                 const res = await api.get('/api/admin/analytics/stats');
+                console.log('ADMIN_ANALYTICS_PAYLOAD', res.data.stats);
                 setAnalytics(res.data.stats || null);
             } else if (tab === 'network') {
                 const res = await api.get('/api/admin/analytics/network');
@@ -182,6 +183,52 @@ export default function Dashboard() {
         }
     };
 
+    // Compute derived order/revenue fallbacks from trends when summary fields are missing
+    const _now = new Date();
+    const _todayStart = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate()).toISOString().split('T')[0];
+
+    const _parseDateKey = (d) => {
+        if (!d) return null;
+        if (typeof d === 'string' && d.includes('T')) return d.split('T')[0];
+        return String(d).split('T')[0];
+    };
+
+    const _dailyUsers = analytics?.trends?.dailyUsers || [];
+    const _dailyRevenue = analytics?.trends?.dailyRevenue || [];
+
+    const derivedTodayOrders = _dailyUsers.reduce((acc, item) => {
+        const dateKey = _parseDateKey(item.date);
+        if (dateKey === _todayStart) return acc + (Number(item.orders) || 0);
+        return acc;
+    }, 0);
+
+    // DEBUG: Log trend data to see what we are getting
+    console.log('Dashboard Analytics Debug:', {
+        dailyUsers: _dailyUsers,
+        todayStart: _todayStart,
+        derivedToday: derivedTodayOrders,
+        thisMonthRaw: analytics?.orders?.thisMonth
+    });
+
+    // Use last 30 days window instead of calendar month for 'This Month' totals
+    const _thirtyDaysAgo = new Date(_now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const derivedMonthOrders = _dailyUsers.reduce((acc, item) => {
+        const dateKey = _parseDateKey(item.date);
+        if (!dateKey) return acc;
+        const d = new Date(dateKey);
+        if (d >= _thirtyDaysAgo) return acc + (Number(item.orders) || 0);
+        return acc;
+    }, 0);
+
+    const derivedMonthRevenue = _dailyRevenue.reduce((acc, item) => {
+        const dateKey = _parseDateKey(item.date);
+        if (!dateKey) return acc;
+        const d = new Date(dateKey);
+        if (d >= _thirtyDaysAgo) return acc + (Number(item.total) || 0);
+        return acc;
+    }, 0);
+
     return (
         <div className="min-h-screen bg-gray-50/30">
             {/* Header */}
@@ -249,6 +296,8 @@ export default function Dashboard() {
                     </div>
                 </div>
             </header>
+
+
 
 
 
@@ -336,7 +385,7 @@ export default function Dashboard() {
                                                 <p className="text-xs text-blue-600 mt-1">Last 7 days</p>
                                             </div>
                                             <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
-                                                <p className="text-xs text-purple-700 font-medium mb-2">This Month</p>
+                                                <p className="text-xs text-purple-700 font-medium mb-2">Last 30 days</p>
                                                 <p className="text-2xl font-bold text-purple-600">{analytics.users?.thisMonth || 0}</p>
                                                 <p className="text-xs text-purple-600 mt-1">Last 30 days</p>
                                             </div>
@@ -642,11 +691,11 @@ export default function Dashboard() {
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="p-3 bg-gray-50 rounded-xl">
-                                                    <p className="text-lg font-bold text-gray-900">{formatIndian(analytics.orders?.monthRevenue || 0)}</p>
-                                                    <p className="text-xs text-gray-500">This Month ({analytics.orders?.thisMonth || 0} orders)</p>
+                                                    <p className="text-lg font-bold text-gray-900">{formatIndian(derivedMonthRevenue ?? 0)}</p>
+                                                    <p className="text-xs text-gray-500">This Month ({derivedMonthOrders ?? 0} orders)</p>
                                                 </div>
                                                 <div className="p-3 bg-gray-50 rounded-xl">
-                                                    <p className="text-lg font-bold text-gray-900">{analytics.orders?.today || 0}</p>
+                                                    <p className="text-lg font-bold text-gray-900">{analytics?.orders?.today ?? derivedTodayOrders ?? 0}</p>
                                                     <p className="text-xs text-gray-500">Orders Today</p>
                                                 </div>
                                             </div>

@@ -177,6 +177,15 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             ORDER BY date ASC
         `;
 
+        // Get daily purchases (transactions of type PURCHASE)
+        const dailyPurchases = await prisma.$queryRaw`
+            SELECT DATE("createdAt") as date, COUNT(*) as count
+            FROM "Transaction"
+            WHERE "createdAt" >= ${thirtyDaysAgo} AND type = 'PURCHASE'
+            GROUP BY DATE("createdAt")
+            ORDER BY date ASC
+        `;
+
         // Monthly user signups (last 12 months) with bonus stats
         const monthlyUsers = await prisma.$queryRaw`
             SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*) as count
@@ -201,6 +210,15 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*) as count
             FROM "Order"
             WHERE "createdAt" >= ${twelveMonthsAgo} AND status = 'PAID'
+            GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
+            ORDER BY month ASC
+        `;
+
+        // Get monthly purchases
+        const monthlyPurchases = await prisma.$queryRaw`
+            SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*) as count
+            FROM "Transaction"
+            WHERE "createdAt" >= ${twelveMonthsAgo} AND type = 'PURCHASE'
             GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
             ORDER BY month ASC
         `;
@@ -239,6 +257,35 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             GROUP BY DATE("createdAt")
             ORDER BY date ASC
         `;
+
+        // Daily purchase revenue (last 30 days)
+        const dailyPurchaseRevenue = await prisma.$queryRaw`
+            SELECT DATE("createdAt") as date, SUM(amount) as total
+            FROM "Transaction"
+            WHERE "createdAt" >= ${thirtyDaysAgo} AND type = 'PURCHASE'
+            GROUP BY DATE("createdAt")
+            ORDER BY date ASC
+        `;
+
+        // Dev-only debug: log key analytics arrays and computed totals to help diagnose missing time-series
+        if (process.env.NODE_ENV !== 'production') {
+            try {
+                // eslint-disable-next-line no-console
+                /* console.info('[ADMIN_ANALYTICS_DEBUG]', {
+                   totalOrdersAndPurchases,
+                   todayOrdersAndPurchases,
+                   monthOrdersAndPurchases,
+                   totalRevenue,
+                   monthRevenue,
+                   dailyUsersCount: (dailyUsers || []).length,
+                   dailyRevenueCount: (dailyRevenue || []).length,
+                   dailyOrdersCount: (dailyOrders || []).length,
+                   dailyPurchasesCount: (dailyPurchases || []).length
+               }); */
+            } catch (e) {
+                // ignore logging errors
+            }
+        }
 
         res.json({
             ok: true,
@@ -289,34 +336,60 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                 },
                 // Time Series
                 trends: {
-                    dailyUsers: dailyUsers.map(d => {
-                        const dateStr = d.date?.toISOString?.().split('T')[0] || d.date;
-                        const bonuses = dailyBonusStats.filter(b => (b.date?.toISOString?.().split('T')[0] || b.date) === dateStr);
-                        const orderData = dailyOrders.find(o => (o.date?.toISOString?.().split('T')[0] || o.date) === dateStr);
+                    dailyUsers: [...Array(30)].map((_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (29 - i));
+                        const dateStr = d.toISOString().split('T')[0];
+
+                        const getDateStr = (item) => {
+                            if (!item?.date) return '';
+                            return String(item.date instanceof Date ? item.date.toISOString() : item.date).split('T')[0];
+                        };
+
+                        const userEntry = dailyUsers.find(u => getDateStr(u) === dateStr);
+                        const bonuses = dailyBonusStats.filter(b => getDateStr(b) === dateStr);
+                        const orderData = dailyOrders.find(o => getDateStr(o) === dateStr);
+                        const purchaseData = dailyPurchases.find(p => getDateStr(p) === dateStr);
+
                         return {
                             date: dateStr,
-                            count: Number(d.count),
+                            count: Number(userEntry?.count || 0),
                             directBonus: Number(bonuses.find(b => b.type === 'DIRECT_BONUS')?.total || 0),
                             matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
                             leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
-                            orders: Number(orderData?.count || 0)
+                            orders: Number(orderData?.count || 0) + Number(purchaseData?.count || 0)
                         };
                     }),
                     monthlyUsers: monthlyUsers.map(m => {
                         const bonuses = monthlyBonusStats.filter(b => b.month === m.month);
                         const orderData = monthlyOrderStats.find(o => o.month === m.month);
+                        const purchaseData = monthlyPurchases.find(p => p.month === m.month);
                         return {
                             month: m.month,
                             count: Number(m.count),
                             directBonus: Number(bonuses.find(b => b.type === 'DIRECT_BONUS')?.total || 0),
                             matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
                             leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
-                            orders: Number(orderData?.count || 0)
+                            orders: Number(orderData?.count || 0) + Number(purchaseData?.count || 0)
                         };
                     }),
                     monthlyBonuses: monthlyBonuses.map(b => ({ month: b.month, type: b.type, total: Number(b.total) })),
                     monthlyWithdrawals: monthlyWithdrawals.map(w => ({ month: w.month, total: Number(w.total) })),
-                    dailyRevenue: dailyRevenue.map(d => ({ date: d.date, total: Number(d.total) }))
+                    dailyRevenue: [...Array(30)].map((_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (29 - i));
+                        const dateStr = d.toISOString().split('T')[0];
+
+                        const getDateStr = (item) => String(item.date instanceof Date ? item.date.toISOString() : item.date).split('T')[0];
+
+                        const orderRev = dailyRevenue.find(r => getDateStr(r) === dateStr);
+                        const purchaseRev = dailyPurchaseRevenue.find(r => getDateStr(r) === dateStr);
+
+                        return {
+                            date: dateStr,
+                            total: Number(orderRev?.total || 0) + Number(purchaseRev?.total || 0)
+                        };
+                    })
                 }
             }
         });

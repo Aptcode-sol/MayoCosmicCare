@@ -64,7 +64,7 @@ export default function DashboardSidebar({
             <aside
                 className={`
                     lg:hidden fixed left-0 top-0 h-full w-64 flex flex-col
-                    bg-white border-r border-gray-200 z-50
+                    bg-white border-r border-gray-200 z-[120]
                     transform transition-transform duration-300 ease-in-out
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}

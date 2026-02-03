@@ -60,8 +60,28 @@ export default function MatchingReport() {
     }, [router, currentPage])
 
     const handlePageChange = (page: number) => {
-        setCurrentPage(page)
+        const next = Math.max(1, page)
+        setCurrentPage(next)
         window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    const getDisplayedPages = (current: number, totalPages: number) => {
+        const maxButtons = 7
+        if (totalPages <= maxButtons) return Array.from({ length: totalPages }, (_, i) => i + 1)
+
+        const pages: (number | '...')[] = []
+        const left = Math.max(2, current - 2)
+        const right = Math.min(totalPages - 1, current + 2)
+
+        pages.push(1)
+        if (left > 2) pages.push('...')
+
+        for (let p = left; p <= right; p++) pages.push(p)
+
+        if (right < totalPages - 1) pages.push('...')
+        pages.push(totalPages)
+
+        return pages
     }
 
     const current = data?.current || {

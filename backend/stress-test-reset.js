@@ -23,12 +23,29 @@ async function reset() {
     if (users.length > 0) {
         const userIds = users.map(u => u.id);
 
-        // Delete related records first
+        // Delete related records first (order matters due to FKs)
         console.log('Deleting daily pair counters...');
         await prisma.dailyPairCounter.deleteMany({ where: { userId: { in: userIds } } });
 
+        console.log('Deleting daily leadership counters...');
+        await prisma.dailyLeadershipCounter.deleteMany({ where: { userId: { in: userIds } } });
+
         console.log('Deleting pair payout records...');
         await prisma.pairPayoutRecord.deleteMany({ where: { userId: { in: userIds } } });
+
+        console.log('Deleting rank change records...');
+        await prisma.rankChange.deleteMany({ where: { userId: { in: userIds } } });
+
+        console.log('Deleting order items...');
+        // OrderItem references Order -> delete items for orders belonging to these users
+        const ordersOfUsers = await prisma.order.findMany({ where: { userId: { in: userIds } }, select: { id: true } });
+        if (ordersOfUsers.length > 0) {
+            const orderIds = ordersOfUsers.map(o => o.id);
+            await prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+        }
+
+        console.log('Deleting orders...');
+        await prisma.order.deleteMany({ where: { userId: { in: userIds } } });
 
         console.log('Deleting transactions...');
         await prisma.transaction.deleteMany({ where: { userId: { in: userIds } } });
@@ -41,6 +58,9 @@ async function reset() {
 
         console.log('Deleting withdrawals...');
         await prisma.withdrawal.deleteMany({ where: { userId: { in: userIds } } });
+
+        console.log('Deleting audit logs for users...');
+        await prisma.auditLog.deleteMany({ where: { actorId: { in: userIds } } });
 
         console.log('Deleting users...');
         await prisma.user.deleteMany({ where: { id: { in: userIds } } });

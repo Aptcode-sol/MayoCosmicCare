@@ -27,6 +27,8 @@ interface IncentiveData {
         leadershipDailyCap: number
         todayMatchingBonus: number
         matchingDailyCap: number
+        todayPairs: number
+        dailyPairCap: number
     }
     history: Transaction[]
     pagination: {
@@ -111,7 +113,7 @@ export default function Incentives() {
         )
     }
 
-    const summary = data?.summary || { totalPaid: 0, directBonus: 0, matchingBonus: 0, leadershipBonus: 0, todayLeadershipBonus: 0, leadershipDailyCap: 5000, todayMatchingBonus: 0, matchingDailyCap: 7000 }
+    const summary = data?.summary || { totalPaid: 0, directBonus: 0, matchingBonus: 0, leadershipBonus: 0, todayLeadershipBonus: 0, leadershipDailyCap: 5000, todayMatchingBonus: 0, matchingDailyCap: 7000, todayPairs: 0, dailyPairCap: 10 }
     const history = data?.history || []
 
     return (
@@ -134,7 +136,7 @@ export default function Incentives() {
 
             {/* Payout Summary Cards */}
             <AnimateOnScroll animation="fade-up" delay={100}>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -180,6 +182,30 @@ export default function Incentives() {
                                 <div
                                     className="h-full bg-purple-500 rounded-full transition-all"
                                     style={{ width: `${Math.min(100, (summary.todayMatchingBonus / summary.matchingDailyCap) * 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h10M7 16h10" />
+                                </svg>
+                            </div>
+                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pairs Today</p>
+                        </div>
+                        <p className="text-2xl md:text-4xl font-light text-gray-900">{summary.todayPairs}</p>
+                        <div className="mt-2">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Today: {summary.todayPairs}</span>
+                                <span>Cap: {summary.dailyPairCap}</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-indigo-500 rounded-full transition-all"
+                                    style={{ width: `${Math.min(100, (summary.todayPairs / summary.dailyPairCap) * 100)}%` }}
                                 />
                             </div>
                         </div>

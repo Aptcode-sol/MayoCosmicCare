@@ -10,8 +10,8 @@ import { formatIndian } from '@/lib/formatIndian'
 
 interface MatchingData {
     current: {
-        left: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number }
-        right: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number }
+        left: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number; totalMembers: number; paidMembers: number; unpaidMembers: number; carryMembers: number }
+        right: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number; totalMembers: number; paidMembers: number; unpaidMembers: number; carryMembers: number }
     }
     history: Array<{
         id: string
@@ -85,10 +85,11 @@ export default function MatchingReport() {
     }
 
     const current = data?.current || {
-        left: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0 },
-        right: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0 }
+        left: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0 },
+        right: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0 }
     }
     const history = data?.history || []
+    const formatWithCount = (value: number, count: number) => `${formatIndian(value)} (${count})`
 
     return (
         <DashboardLayout user={user}>
@@ -149,9 +150,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-gray-900">Total BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">{formatIndian(current.left.totalBV)}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">{formatIndian(current.right.totalBV)}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">{formatIndian(current.left.totalBV + current.right.totalBV)}</td>
+                                            <td className="py-4 text-right font-medium text-indigo-600">{formatWithCount(current.left.totalBV, current.left.totalMembers)}</td>
+                                            <td className="py-4 text-right font-medium text-pink-600">{formatWithCount(current.right.totalBV, current.right.totalMembers)}</td>
+                                            <td className="py-4 text-right font-medium text-gray-900">{formatWithCount(current.left.totalBV + current.right.totalBV, current.left.totalMembers + current.right.totalMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-4">
@@ -164,9 +165,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-gray-900">Paid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">{formatIndian(current.left.paidBV)}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">{formatIndian(current.right.paidBV)}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">{formatIndian(current.left.paidBV + current.right.paidBV)}</td>
+                                            <td className="py-4 text-right font-medium text-indigo-600">{formatWithCount(current.left.paidBV, current.left.paidMembers)}</td>
+                                            <td className="py-4 text-right font-medium text-pink-600">{formatWithCount(current.right.paidBV, current.right.paidMembers)}</td>
+                                            <td className="py-4 text-right font-medium text-gray-900">{formatWithCount(current.left.paidBV + current.right.paidBV, current.left.paidMembers + current.right.paidMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors bg-green-50">
                                             <td className="py-4">
@@ -179,9 +180,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-green-800">Unpaid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-semibold text-green-600">{formatIndian(current.left.unpaidBV)}</td>
-                                            <td className="py-4 text-right font-semibold text-green-600">{formatIndian(current.right.unpaidBV)}</td>
-                                            <td className="py-4 text-right font-semibold text-green-700">{formatIndian(current.left.unpaidBV + current.right.unpaidBV)}</td>
+                                            <td className="py-4 text-right font-semibold text-green-600">{formatWithCount(current.left.unpaidBV, current.left.unpaidMembers)}</td>
+                                            <td className="py-4 text-right font-semibold text-green-600">{formatWithCount(current.right.unpaidBV, current.right.unpaidMembers)}</td>
+                                            <td className="py-4 text-right font-semibold text-green-700">{formatWithCount(current.left.unpaidBV + current.right.unpaidBV, current.left.unpaidMembers + current.right.unpaidMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-4">
@@ -194,9 +195,9 @@ export default function MatchingReport() {
                                                     <span className="font-medium text-gray-900">Carry Forward</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">{formatIndian(current.left.carryForward)}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">{formatIndian(current.right.carryForward)}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">{formatIndian(current.left.carryForward + current.right.carryForward)}</td>
+                                            <td className="py-4 text-right font-medium text-indigo-600">{formatWithCount(current.left.carryForward, current.left.carryMembers)}</td>
+                                            <td className="py-4 text-right font-medium text-pink-600">{formatWithCount(current.right.carryForward, current.right.carryMembers)}</td>
+                                            <td className="py-4 text-right font-medium text-gray-900">{formatWithCount(current.left.carryForward + current.right.carryForward, current.left.carryMembers + current.right.carryMembers)}</td>
                                         </tr>
                                     </tbody>
                                 </table>

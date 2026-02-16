@@ -122,10 +122,10 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
         create: { year: yearShort, count: 1 }
     });
 
-    // Format: m + YY + XXXX (base 36 padded)
+    // Format: M + YY + XXXX (base 36 padded)
     const seq = counterRecord.count.toString(36).toLowerCase();
     const padded = seq.padStart(4, '0');
-    const generatedUsername = `m${yearShort}${padded}`;
+    const generatedUsername = `M${yearShort}${padded}`;
 
     // Generate custom ID starting with 'mcc'
     const customId = 'mcc' + crypto.randomUUID().replace(/-/g, '');

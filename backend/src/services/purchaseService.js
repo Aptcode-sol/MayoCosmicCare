@@ -123,7 +123,7 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
         if (buyer && buyer.sponsorId) {
             if (isFirstPurchase) {
                 try {
-                    await creditDirectBonus(tx, buyer.sponsorId, product.bv);
+                    await creditDirectBonus(tx, buyer.sponsorId, product.bv, buyer.id);
                     console.log('[PURCHASE] Direct bonus credited to sponsor:', buyer.sponsorId);
                 } catch (err) {
                     const msg = String(err?.message || err).toLowerCase()

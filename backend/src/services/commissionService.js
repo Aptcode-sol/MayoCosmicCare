@@ -93,13 +93,24 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
         create: { userId: sponsorId, balance: actualBonus }
     });
 
+    let referralLabel = null;
+    if (referralId) {
+        const referral = await prismaClient.user.findUnique({
+            where: { id: referralId },
+            select: { name: true, username: true, email: true }
+        });
+        referralLabel = referral?.name || referral?.username || referral?.email || null;
+    }
+
     // Create transaction
     await prismaClient.transaction.create({
         data: {
             userId: sponsorId,
             type: 'LEADERSHIP_BONUS',
             amount: actualBonus,
-            detail: `Leadership bonus (${percent}% of referral earnings)`
+            detail: referralLabel
+                ? `Leadership bonus from ${referralLabel} (${percent}% of referral earnings)`
+                : `Leadership bonus (${percent}% of referral earnings)`
         }
     });
 
@@ -127,9 +138,22 @@ async function creditDirectBonus(prismaClient, sponsorId, bv, referralId = null)
     const bonusAmount = parseInt(process.env.DIRECT_BONUS_AMOUNT || '500', 10);
     const db = prismaClient || prisma;
 
+    let referralLabel = null;
+    if (referralId) {
+        const referral = await db.user.findUnique({
+            where: { id: referralId },
+            select: { name: true, username: true, email: true }
+        });
+        referralLabel = referral?.name || referral?.username || referral?.email || null;
+    }
+
+    const detail = referralLabel
+        ? `Direct bonus from ${referralLabel} (BV ${bv})`
+        : `Direct bonus for referral (BV ${bv})`;
+
     if (prismaClient) {
         await prismaClient.transaction.create({
-            data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail: `Direct bonus for referral (BV ${bv})` }
+            data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail }
         });
         await prismaClient.wallet.upsert({
             where: { userId: sponsorId },
@@ -141,7 +165,7 @@ async function creditDirectBonus(prismaClient, sponsorId, bv, referralId = null)
 
     await db.$transaction(async (tx) => {
         await tx.transaction.create({
-            data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail: `Direct bonus for referral (BV ${bv})` }
+            data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail }
         });
         await tx.wallet.upsert({
             where: { userId: sponsorId },

@@ -390,8 +390,19 @@ router.get('/matching', authenticate, async (req, res) => {
         const unpaidRightBV = Math.max(0, totalRightBV - paidRightBV);
 
         // Carry Forward = members waiting for opposite side to match
-        const carryLeftBV = (user.leftCarryCount || 0) * BV_PER_MEMBER;
-        const carryRightBV = (user.rightCarryCount || 0) * BV_PER_MEMBER;
+        const carryLeftFromCount = (user.leftCarryCount || 0) * BV_PER_MEMBER;
+        const carryRightFromCount = (user.rightCarryCount || 0) * BV_PER_MEMBER;
+        const carryLeftBV = Math.max(user.leftCarryBV || 0, carryLeftFromCount);
+        const carryRightBV = Math.max(user.rightCarryBV || 0, carryRightFromCount);
+
+        const totalLeftMembers = Math.max(user.leftMemberCount || 0, Math.round(totalLeftBV / BV_PER_MEMBER));
+        const totalRightMembers = Math.max(user.rightMemberCount || 0, Math.round(totalRightBV / BV_PER_MEMBER));
+        const paidLeftMembers = totalPayoutAgg._sum.leftConsumed || 0;
+        const paidRightMembers = totalPayoutAgg._sum.rightConsumed || 0;
+        const unpaidLeftMembers = Math.max(0, Math.round(unpaidLeftBV / BV_PER_MEMBER));
+        const unpaidRightMembers = Math.max(0, Math.round(unpaidRightBV / BV_PER_MEMBER));
+        const carryLeftMembers = Math.max(user.leftCarryCount || 0, Math.round(carryLeftBV / BV_PER_MEMBER));
+        const carryRightMembers = Math.max(user.rightCarryCount || 0, Math.round(carryRightBV / BV_PER_MEMBER));
 
         res.json({
             ok: true,
@@ -400,13 +411,21 @@ router.get('/matching', authenticate, async (req, res) => {
                     totalBV: totalLeftBV,
                     paidBV: paidLeftBV,
                     unpaidBV: unpaidLeftBV,
-                    carryForward: carryLeftBV
+                    carryForward: carryLeftBV,
+                    totalMembers: totalLeftMembers,
+                    paidMembers: paidLeftMembers,
+                    unpaidMembers: unpaidLeftMembers,
+                    carryMembers: carryLeftMembers
                 },
                 right: {
                     totalBV: totalRightBV,
                     paidBV: paidRightBV,
                     unpaidBV: unpaidRightBV,
-                    carryForward: carryRightBV
+                    carryForward: carryRightBV,
+                    totalMembers: totalRightMembers,
+                    paidMembers: paidRightMembers,
+                    unpaidMembers: unpaidRightMembers,
+                    carryMembers: carryRightMembers
                 }
             },
             todayPayout: todayPayout ? {

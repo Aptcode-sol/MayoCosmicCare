@@ -32,7 +32,7 @@ router.get('/admin/list', checkRole(['ADMIN']), async (req, res) => {
         const [withdrawals, total] = await Promise.all([
             prisma.withdrawal.findMany({
                 where,
-                include: { user: { select: { username: true, email: true, phone: true } } },
+                include: { user: { select: { username: true, name: true, email: true, phone: true } } },
                 orderBy: { createdAt: 'desc' },
                 skip,
                 take: limit

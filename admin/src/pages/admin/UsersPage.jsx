@@ -7,12 +7,28 @@ export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [usersPage, setUsersPage] = useState(1);
     const [usersPagination, setUsersPagination] = useState(null);
+    const [usersSearch, setUsersSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+
+    // Debounce search input to prevent focus loss
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(usersSearch);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [usersSearch]);
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/api/admin/users?page=${usersPage}&limit=25`);
+            const params = new URLSearchParams();
+            params.append('page', usersPage);
+            params.append('limit', '25');
+            if (debouncedSearch) params.append('search', debouncedSearch);
+            if (statusFilter !== 'all') params.append('status', statusFilter);
+            const res = await api.get(`/api/admin/users?${params.toString()}`);
             setUsers(res.data.users || []);
             setUsersPagination(res.data.pagination || null);
         } catch (err) {
@@ -24,7 +40,7 @@ export default function UsersPage() {
 
     useEffect(() => {
         fetchUsers();
-    }, [usersPage]);
+    }, [usersPage, debouncedSearch, statusFilter]);
 
     const toggleBlockUser = async (userId, currentStatus) => {
         try {
@@ -46,6 +62,37 @@ export default function UsersPage() {
 
     return (
         <div className="space-y-6">
+            {/* Search Bar */}
+            <div className="relative w-full">
+                <input
+                    value={usersSearch}
+                    onChange={(e) => { setUsersSearch(e.target.value); setUsersPage(1); }}
+                    placeholder="Search by name, username, email, phone, or ID"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                />
+                <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.1-4.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setUsersPage(1); }}
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="blocked">Blocked</option>
+                </select>
+                {usersPagination && (
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500 px-2">
+                        Total: <span className="ml-1 font-medium text-gray-900">{usersPagination.total}</span>
+                    </div>
+                )}
+            </div>
+
             {usersPagination && (
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <div className="text-xs sm:text-sm text-gray-500">
@@ -89,6 +136,7 @@ export default function UsersPage() {
                                 <tr key={user.id} className="hover:bg-gray-50/50">
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <div className="text-gray-900 font-medium text-sm sm:text-base">{user.username}</div>
+                                        {user.name && <div className="text-gray-700 text-xs sm:text-sm">{user.name}</div>}
                                         <div className="text-gray-500 text-[11px] sm:text-xs">{user.email}</div>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600">

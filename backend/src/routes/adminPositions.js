@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 router.get('/', authenticate, requireAdmin, async (req, res) => {
     try {
         const { rank, rewarded } = req.query;
+        const search = (req.query.search || '').trim();
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
         const skip = (page - 1) * limit;
@@ -22,13 +23,23 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
         } else if (rewarded === 'rewarded') {
             where.rewarded = true;
         }
+        if (search) {
+            where.user = {
+                OR: [
+                    { username: { contains: search, mode: 'insensitive' } },
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } },
+                    { id: { contains: search, mode: 'insensitive' } }
+                ]
+            };
+        }
 
         const [rankChanges, total] = await Promise.all([
             prisma.rankChange.findMany({
                 where,
                 include: {
                     user: {
-                        select: { id: true, username: true, email: true }
+                        select: { id: true, username: true, name: true, email: true }
                     }
                 },
                 orderBy: { createdAt: 'desc' },

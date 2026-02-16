@@ -7,12 +7,28 @@ export default function WithdrawalsPage() {
     const [withdrawals, setWithdrawals] = useState([]);
     const [withdrawalsPage, setWithdrawalsPage] = useState(1);
     const [withdrawalsPagination, setWithdrawalsPagination] = useState(null);
+    const [withdrawalsSearch, setWithdrawalsSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+
+    // Debounce search input to prevent focus loss
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(withdrawalsSearch);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [withdrawalsSearch]);
 
     const fetchWithdrawals = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/api/payouts/admin/list?page=${withdrawalsPage}&limit=25`);
+            const params = new URLSearchParams();
+            params.append('page', withdrawalsPage);
+            params.append('limit', '25');
+            if (debouncedSearch) params.append('search', debouncedSearch);
+            if (statusFilter !== 'all') params.append('status', statusFilter);
+            const res = await api.get(`/api/payouts/admin/list?${params.toString()}`);
             setWithdrawals(res.data.withdrawals || []);
             setWithdrawalsPagination(res.data.pagination || null);
         } catch (err) {
@@ -24,7 +40,7 @@ export default function WithdrawalsPage() {
 
     useEffect(() => {
         fetchWithdrawals();
-    }, [withdrawalsPage]);
+    }, [withdrawalsPage, debouncedSearch, statusFilter]);
 
     const approveWithdrawal = async (id) => {
         if (!confirm('Approve payout? Funds will be transferred immediately via Cashfree.')) return;
@@ -50,11 +66,34 @@ export default function WithdrawalsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                <h2 className="text-base sm:text-lg font-medium text-gray-900">Withdrawal Requests</h2>
+            {/* Search Bar */}
+            <div className="relative w-full">
+                <input
+                    value={withdrawalsSearch}
+                    onChange={(e) => { setWithdrawalsSearch(e.target.value); setWithdrawalsPage(1); }}
+                    placeholder="Search by user name, username, phone, or ID"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                />
+                <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.1-4.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setWithdrawalsPage(1); }}
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                >
+                    <option value="all">All Status</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
                 {withdrawalsPagination && (
-                    <div className="text-xs sm:text-sm text-gray-500">
-                        Total: {withdrawalsPagination.total}
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500 px-2">
+                        Total: <span className="ml-1 font-medium text-gray-900">{withdrawalsPagination.total}</span>
                     </div>
                 )}
             </div>
@@ -105,8 +144,8 @@ export default function WithdrawalsPage() {
                                 return (
                                     <tr key={w.id} className="hover:bg-gray-50/50">
                                         <td className="px-3 sm:px-6 py-3 sm:py-4">
-                                            <div className="text-gray-900 font-medium text-sm sm:text-base">{w.user?.username}</div>
-                                            <div className="text-gray-500 text-[11px] sm:text-xs">{w.user?.phone}</div>
+                                            <div className="text-gray-900 font-medium text-sm sm:text-base">{w.user?.name || w.user?.username}</div>
+                                            <div className="text-gray-500 text-[11px] sm:text-xs">{w.user?.username} · {w.user?.phone}</div>
                                         </td>
                                         <td className="px-3 sm:px-6 py-3 sm:py-4 font-bold text-gray-900">₹{w.amount}</td>
                                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-[11px] sm:text-xs text-gray-600">

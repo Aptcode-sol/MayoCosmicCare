@@ -10,13 +10,26 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
+        const search = (req.query.search || '').trim();
         const skip = (page - 1) * limit;
+
+        const where = search ? {
+            OR: [
+                { username: { contains: search, mode: 'insensitive' } },
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } },
+                { id: { contains: search, mode: 'insensitive' } }
+            ]
+        } : {};
 
         const [users, total] = await Promise.all([
             prisma.user.findMany({
+                where,
                 select: {
                     id: true,
                     username: true,
+                    name: true,
                     email: true,
                     phone: true,
                     sponsorId: true,
@@ -31,7 +44,7 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
                 skip,
                 take: limit
             }),
-            prisma.user.count()
+            prisma.user.count({ where })
         ]);
 
         const totalPages = Math.ceil(total / limit);

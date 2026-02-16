@@ -9,7 +9,17 @@ export default function PositionsPage() {
     const [positionsPagination, setPositionsPagination] = useState(null);
     const [positionFilter, setPositionFilter] = useState('all');
     const [rewardedFilter, setRewardedFilter] = useState('all');
+    const [positionsSearch, setPositionsSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [loading, setLoading] = useState(true);
+
+    // Debounce search input to prevent focus loss
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(positionsSearch);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [positionsSearch]);
 
     const fetchPositions = async () => {
         setLoading(true);
@@ -19,6 +29,7 @@ export default function PositionsPage() {
             params.append('limit', '25');
             if (positionFilter !== 'all') params.append('rank', positionFilter);
             if (rewardedFilter !== 'all') params.append('rewarded', rewardedFilter);
+            if (debouncedSearch) params.append('search', debouncedSearch);
             const res = await api.get(`/api/admin/positions?${params.toString()}`);
             setPositions(res.data.rankChanges || []);
             setPositionsPagination(res.data.pagination || null);
@@ -31,7 +42,7 @@ export default function PositionsPage() {
 
     useEffect(() => {
         fetchPositions();
-    }, [positionsPage, positionFilter, rewardedFilter]);
+    }, [positionsPage, positionFilter, rewardedFilter, debouncedSearch]);
 
     const toggleReward = async (id, rewarded) => {
         try {
@@ -53,15 +64,20 @@ export default function PositionsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                <h2 className="text-base sm:text-lg font-medium text-gray-900">
-                    Position Changes
-                    <span className="ml-2 px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs sm:text-sm font-medium">
-                        {positionsPagination?.total || positions.length}
-                    </span>
-                </h2>
+            {/* Search Bar */}
+            <div className="relative w-full">
+                <input
+                    value={positionsSearch}
+                    onChange={(e) => { setPositionsSearch(e.target.value); setPositionsPage(1); }}
+                    placeholder="Search by user name, username, email, or ID"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                />
+                <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.1-4.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
             </div>
 
+            {/* Filters */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                 <select
                     value={positionFilter}
@@ -89,6 +105,11 @@ export default function PositionsPage() {
                     <option value="pending">Pending Reward</option>
                     <option value="rewarded">Rewarded</option>
                 </select>
+                {positionsPagination && (
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500 px-2">
+                        Total: <span className="ml-1 font-medium text-gray-900">{positionsPagination.total}</span>
+                    </div>
+                )}
             </div>
 
             {positionsPagination && (
@@ -136,6 +157,7 @@ export default function PositionsPage() {
                                 <tr key={pos.id} className="hover:bg-gray-50/50">
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <div className="text-gray-900 font-medium text-sm sm:text-base">{pos.user?.username}</div>
+                                        {pos.user?.name && <div className="text-gray-700 text-xs sm:text-sm">{pos.user.name}</div>}
                                         <div className="text-gray-500 text-[11px] sm:text-xs">{pos.user?.email}</div>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600">{pos.fromRank}</td>

@@ -144,8 +144,9 @@ export default function WithdrawalsPage() {
                                 return (
                                     <tr key={w.id} className="hover:bg-gray-50/50">
                                         <td className="px-3 sm:px-6 py-3 sm:py-4">
-                                            <div className="text-gray-900 font-medium text-sm sm:text-base">{w.user?.name || w.user?.username}</div>
-                                            <div className="text-gray-500 text-[11px] sm:text-xs">{w.user?.username} · {w.user?.phone}</div>
+                                            <div className="text-gray-900 font-medium text-sm sm:text-base">{w.user?.username}</div>
+                                            {w.user?.name && <div className="text-gray-700 text-xs sm:text-sm">{w.user.name}</div>}
+                                            <div className="text-gray-500 text-[11px] sm:text-xs">{w.user?.phone}</div>
                                         </td>
                                         <td className="px-3 sm:px-6 py-3 sm:py-4 font-bold text-gray-900">₹{w.amount}</td>
                                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-[11px] sm:text-xs text-gray-600">

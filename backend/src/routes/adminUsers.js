@@ -11,17 +11,28 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
         const search = (req.query.search || '').trim();
+        const status = req.query.status; // 'active', 'blocked', or 'all'
         const skip = (page - 1) * limit;
 
-        const where = search ? {
-            OR: [
+        const where = {};
+
+        // Add search conditions
+        if (search) {
+            where.OR = [
                 { username: { contains: search, mode: 'insensitive' } },
                 { name: { contains: search, mode: 'insensitive' } },
                 { email: { contains: search, mode: 'insensitive' } },
                 { phone: { contains: search, mode: 'insensitive' } },
                 { id: { contains: search, mode: 'insensitive' } }
-            ]
-        } : {};
+            ];
+        }
+
+        // Add status filter
+        if (status === 'active') {
+            where.isBlocked = false;
+        } else if (status === 'blocked') {
+            where.isBlocked = true;
+        }
 
         const [users, total] = await Promise.all([
             prisma.user.findMany({

@@ -144,10 +144,10 @@ export default function Incentives() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
-                            <p className="text-sm font-medium text-emerald-100 uppercase tracking-wider">Total Payout</p>
+                            <p className="text-xs font-medium text-emerald-100 uppercase tracking-wider">Total Payout</p>
                         </div>
-                        <p className="text-2xl md:text-4xl font-light">{formatIndian(summary.totalPaid)}</p>
-                        <p className="text-sm text-emerald-200 mt-2">All time earnings</p>
+                        <p className="text-xl md:text-2xl font-light">{formatIndian(summary.totalPaid)}</p>
+                        <p className="text-xs text-emerald-200 mt-2">All time earnings</p>
                     </div>
 
                     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -157,10 +157,10 @@ export default function Incentives() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                             </div>
-                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Direct Bonus</p>
+                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Direct Bonus</p>
                         </div>
-                        <p className="text-2xl md:text-4xl font-light text-gray-900">{formatIndian(summary.directBonus)}</p>
-                        <p className="text-sm text-gray-500 mt-2">From direct referrals</p>
+                        <p className="text-xl md:text-2xl font-light text-gray-900">{formatIndian(summary.directBonus)}</p>
+                        <p className="text-xs text-gray-500 mt-2">From direct referrals</p>
                     </div>
 
                     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -170,9 +170,9 @@ export default function Incentives() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
-                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Matching Bonus</p>
+                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Matching Bonus</p>
                         </div>
-                        <p className="text-2xl md:text-4xl font-light text-gray-900">{formatIndian(summary.matchingBonus)}</p>
+                        <p className="text-xl md:text-2xl font-light text-gray-900">{formatIndian(summary.matchingBonus)}</p>
                         <div className="mt-2">
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
                                 <span>Today: {formatIndian(summary.todayMatchingBonus)}</span>
@@ -196,7 +196,7 @@ export default function Incentives() {
                             </div>
                             <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pairs Today</p>
                         </div>
-                        <p className="text-2xl md:text-4xl font-light text-gray-900">{summary.todayPairs}</p>
+                        <p className="text-xl md:text-2xl font-light text-gray-900">{summary.todayPairs}</p>
                         <div className="mt-2">
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
                                 <span>Today: {summary.todayPairs}</span>
@@ -218,9 +218,9 @@ export default function Incentives() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                                 </svg>
                             </div>
-                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Leadership Bonus</p>
+                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Leadership Bonus</p>
                         </div>
-                        <p className="text-2xl md:text-4xl font-light text-gray-900">{formatIndian(summary.leadershipBonus)}</p>
+                        <p className="text-xl md:text-2xl font-light text-gray-900">{formatIndian(summary.leadershipBonus)}</p>
                         <div className="mt-2">
                             <div className="flex justify-between text-xs text-gray-500 mb-1">
                                 <span>Today: ₹{summary.todayLeadershipBonus}</span>

@@ -67,7 +67,7 @@ router.get('/stats', authenticate, async (req, res) => {
             where: { userId },
             _sum: { leftConsumed: true, rightConsumed: true }
         });
-        const avgBVPerMember = 7000; // Standard mattress BV
+        const avgBVPerMember = parseInt(process.env.PAIR_UNIT_BV || '50', 10); // Standard mattress BV
         const leftPaidBV = (payoutAggregates._sum.leftConsumed || 0) * avgBVPerMember;
         const rightPaidBV = (payoutAggregates._sum.rightConsumed || 0) * avgBVPerMember;
 
@@ -375,7 +375,7 @@ router.get('/matching', authenticate, async (req, res) => {
         // - Unpaid BV: Remaining BV waiting for matching (Total - Paid)
         // - Carry Forward: Members that couldn't be matched (waiting for opposite side)
 
-        const BV_PER_MEMBER = parseInt(process.env.PRODUCT_BV || '7000', 10);
+        const BV_PER_MEMBER = parseInt(process.env.PAIR_UNIT_BV || '50', 10);
 
         // Total paid BV from all payouts
         const paidLeftBV = (totalPayoutAgg._sum.leftConsumed || 0) * BV_PER_MEMBER;

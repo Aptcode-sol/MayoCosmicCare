@@ -2,52 +2,36 @@ const prisma = require('../prismaClient');
 const crypto = require('crypto');
 
 /**
- * Calculate 2:1 / 1:2 matching for asymmetric binary plan.
+ * Calculate 1:1 tail binary matching.
+ * Pairs = min(left, right) - (left === right ? 1 : 0)
+ * Requires an extra "tail" member on one side for matching to work.
+ * Each pair consumes 1 from left + 1 from right = 2 members total.
  */
-function calculate2to1Matching(leftCount, rightCount) {
-    let left = leftCount;
-    let right = rightCount;
-    let twoOneMatches = 0;
-    let oneTwoMatches = 0;
+function calculate1to1TailMatching(leftCount, rightCount) {
+    const left = leftCount;
+    const right = rightCount;
 
-    while ((left >= 2 && right >= 1) || (left >= 1 && right >= 2)) {
-        const canDoTwoOne = left >= 2 && right >= 1;
-        const canDoOneTwo = left >= 1 && right >= 2;
-
-        if (canDoTwoOne && canDoOneTwo) {
-            if (left > right * 2) {
-                twoOneMatches++; left -= 2; right -= 1;
-            } else if (right > left * 2) {
-                oneTwoMatches++; left -= 1; right -= 2;
-            } else {
-                twoOneMatches++; left -= 2; right -= 1;
-            }
-        } else if (canDoTwoOne) {
-            twoOneMatches++; left -= 2; right -= 1;
-        } else if (canDoOneTwo) {
-            oneTwoMatches++; left -= 1; right -= 2;
-        } else {
-            break;
-        }
+    // Need at least 1 on each side, and a tail (extra) on one side
+    // If equal: pairs = count - 1 (no tail on either side for the last one)
+    // If unequal: pairs = min (the smaller side fully pairs, larger has tail)
+    let totalMatches = 0;
+    if (left > 0 && right > 0) {
+        totalMatches = left === right
+            ? Math.max(0, left - 1)
+            : Math.min(left, right);
     }
 
-    const totalMatches = twoOneMatches + oneTwoMatches;
-    let matchType = 'none';
-    if (twoOneMatches > 0 && oneTwoMatches > 0) matchType = 'mixed';
-    else if (twoOneMatches > 0) matchType = '2:1';
-    else if (oneTwoMatches > 0) matchType = '1:2';
-
-    // Calculate actual consumed from each side
-    // 2:1 match: 2 left + 1 right
-    // 1:2 match: 1 left + 2 right
-    const leftConsumed = (twoOneMatches * 2) + (oneTwoMatches * 1);
-    const rightConsumed = (twoOneMatches * 1) + (oneTwoMatches * 2);
+    const leftConsumed = totalMatches;
+    const rightConsumed = totalMatches;
+    const carryLeft = left - leftConsumed;
+    const carryRight = right - rightConsumed;
 
     return {
-        twoOneMatches, oneTwoMatches, totalMatches,
-        membersConsumed: totalMatches * 3,
+        totalMatches,
+        membersConsumed: totalMatches * 2,
         leftConsumed, rightConsumed,
-        carryLeft: left, carryRight: right, matchType
+        carryLeft, carryRight,
+        matchType: totalMatches > 0 ? '1:1' : 'none'
     };
 }
 
@@ -190,6 +174,13 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         const user = await tx.user.findUnique({ where: { id: userId } });
         if (!user) return null;
 
+        // Eligibility gate: user must have at least 2 direct referrals
+        const directReferralCount = await tx.user.count({ where: { sponsorId: userId } });
+        if (directReferralCount < 2) {
+            console.log(`[MATCHING] User ${userId} has ${directReferralCount} referrals (need 2). Skipping.`);
+            return null;
+        }
+
         const leftTotal = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const rightTotal = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
         if (leftTotal <= 0 || rightTotal <= 0) return null;
@@ -206,12 +197,16 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         const remaining = Math.max(0, cap - pairsToday);
         if (remaining <= 0) return null;
 
-        const result = calculate2to1Matching(leftTotal, rightTotal);
+        const result = calculate1to1TailMatching(leftTotal, rightTotal);
         if (result.totalMatches <= 0) return null;
 
         const matchesToPay = Math.min(result.totalMatches, remaining);
-        const finalResult = calculate2to1Matching(leftTotal, rightTotal);
-        const membersConsumed = matchesToPay * 3;
+        // Recalculate carry when capped
+        const actualLeftConsumed = matchesToPay;
+        const actualRightConsumed = matchesToPay;
+        const carryLeft = leftTotal - actualLeftConsumed;
+        const carryRight = rightTotal - actualRightConsumed;
+        const membersConsumed = matchesToPay * 2;
         const bonus = matchesToPay * bonusPerMatch;
 
         // Update user counts
@@ -219,7 +214,7 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
             where: { id: userId },
             data: {
                 leftMemberCount: 0, rightMemberCount: 0,
-                leftCarryCount: finalResult.carryLeft, rightCarryCount: finalResult.carryRight
+                leftCarryCount: carryLeft, rightCarryCount: carryRight
             }
         });
 
@@ -234,15 +229,15 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         const payout = await tx.pairPayoutRecord.create({
             data: {
                 userId, date: todayStart, pairs: matchesToPay, amount: bonus,
-                matchType: finalResult.matchType, membersConsumed,
-                leftConsumed: finalResult.leftConsumed,
-                rightConsumed: finalResult.rightConsumed
+                matchType: '1:1', membersConsumed,
+                leftConsumed: actualLeftConsumed,
+                rightConsumed: actualRightConsumed
             }
         });
 
         // Create transaction
         await tx.transaction.create({
-            data: { userId, type: 'MATCHING_BONUS', amount: bonus, detail: `Matching bonus: ${matchesToPay} pairs (${finalResult.matchType})` }
+            data: { userId, type: 'MATCHING_BONUS', amount: bonus, detail: `Matching bonus: ${matchesToPay} pairs (1:1)` }
         });
 
         // Update daily counter
@@ -323,4 +318,4 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
     return await db.$transaction(runMatching);
 }
 
-module.exports = { creditDirectBonus, processMatchingBonus, calculate2to1Matching, creditLeadershipBonus };
+module.exports = { creditDirectBonus, processMatchingBonus, calculate1to1TailMatching, creditLeadershipBonus };

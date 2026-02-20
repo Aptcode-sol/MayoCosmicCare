@@ -11,8 +11,10 @@
  * Report compares actual vs expected bonuses.
  */
 
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const BASE_URL = 'http://localhost:5000/api';
-const PRODUCT_ID = 'cmlhxf79u00031j62azbi93q0'; // Mattress product ID
+let PRODUCT_ID = null;
 
 // Bonus constants (from .env defaults)
 const DIRECT_BONUS = 2700;
@@ -194,6 +196,17 @@ async function runTest() {
     const startTime = Date.now();
 
     try {
+        // Step 0: Fetch product ID
+        const product = await prisma.product.findFirst({
+            where: { name: 'Standard Mattress' }
+        });
+
+        if (!product) {
+            throw new Error('Product "Standard Mattress" not found. Please run seed script first.');
+        }
+        PRODUCT_ID = product.id;
+        console.log(`✅ Fetched Product ID: ${PRODUCT_ID} (${product.name})\n`);
+
         // Step 1: Login as admin
         const adminToken = await loginAdmin();
         const admin = await getUser(adminToken);

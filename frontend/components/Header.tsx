@@ -56,7 +56,7 @@ export default function Header() {
                             />
                         </div>
                         <span className="text-xl font-semibold text-gray-900 tracking-tight group-hover:text-gray-600 transition-colors">
-                            Mayo Cosmic Care
+                            Mayo Cosmic Care Pvt Ltd
                         </span>
                     </Link>
 

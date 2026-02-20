@@ -36,6 +36,7 @@ const { router: sseRouter } = require('./routes/sse');
 const kycRouter = require('./routes/kyc');
 const paymentRouter = require('./routes/payment');
 const payoutsRouter = require('./routes/payouts');
+const receiptRouter = require('./routes/receipt');
 const { authenticate } = require('./middleware/authMiddleware');
 
 app.use('/api/auth', authRouter);
@@ -57,6 +58,7 @@ app.use('/api/sse', sseRouter);
 app.use('/api/kyc', kycRouter);
 app.use('/api/payment', authenticate, paymentRouter);
 app.use('/api/payouts', authenticate, payoutsRouter);
+app.use('/api/receipt', authenticate, receiptRouter);
 
 app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }));
 
@@ -66,6 +68,14 @@ try {
     console.log('Matching worker started');
 } catch (err) {
     console.warn('Matching worker not started (Redis may not be available):', err.message);
+}
+
+// Start receipt email worker (BullMQ) - requires Redis
+try {
+    require('./queues/workers/receiptEmailWorker');
+    console.log('Receipt email worker started');
+} catch (err) {
+    console.warn('Receipt email worker not started (Redis may not be available):', err.message);
 }
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

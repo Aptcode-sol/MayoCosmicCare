@@ -82,10 +82,41 @@ async function sendPayoutNotification(email, amount, type) {
     return { sent: true };
 }
 
+/**
+ * Send receipt email with HTML body and PDF attachment
+ * @param {string} email - Recipient email
+ * @param {string} receiptNo - Receipt number for subject line
+ * @param {string} htmlContent - Rendered HTML receipt
+ * @param {Buffer} pdfBuffer - PDF file buffer
+ */
+async function sendReceiptEmail(email, receiptNo, htmlContent, pdfBuffer) {
+    try {
+        const info = await transporter.sendMail({
+            from: `"Mayo Cosmic Care" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `Your Purchase Receipt - ${receiptNo}`,
+            html: htmlContent,
+            attachments: [
+                {
+                    filename: `Receipt_${receiptNo}.pdf`,
+                    content: pdfBuffer,
+                    contentType: 'application/pdf'
+                }
+            ]
+        });
+        console.log(`[EMAIL] Receipt sent to ${email}: ${info.messageId}`);
+        return { sent: true, messageId: info.messageId };
+    } catch (error) {
+        console.error(`[EMAIL] Error sending receipt to ${email}:`, error);
+        throw new Error('Failed to send receipt email');
+    }
+}
+
 module.exports = {
     sendOtpEmail,
     sendVerificationEmail,
     sendPasswordResetEmail,
     sendReferralNotification,
-    sendPayoutNotification
+    sendPayoutNotification,
+    sendReceiptEmail
 };

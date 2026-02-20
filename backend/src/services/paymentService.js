@@ -133,7 +133,7 @@ async function verifyOrder(orderId) {
     });
 
     if (!dbOrder) throw new Error('Order not found');
-    if (dbOrder.status === 'PAID') return { status: 'PAID', message: 'Already processed' };
+    if (dbOrder.status === 'PAID') return { status: 'PAID', message: 'Already processed', dbOrderId: dbOrder.id };
 
     try {
         const response = await axios.get(`${BASE_URL}/orders/${orderId}`, {
@@ -167,7 +167,18 @@ async function verifyOrder(orderId) {
                 await purchaseProduct(dbOrder.userId, item.productId, dbOrder.sponsorId);
             }
 
-            return { status: 'PAID', orderId };
+            // Auto-send receipt email after successful payment
+            try {
+                const { addReceiptEmailJob } = require('../queues/queue');
+                await addReceiptEmailJob(dbOrder.id);
+                console.log('[PAYMENT] Receipt email queued for order:', orderId);
+            } catch (receiptErr) {
+                // Don't fail the payment verification if receipt email fails
+                console.error('[PAYMENT] Receipt email enqueue failed:', receiptErr.message);
+            }
+
+            return { status: 'PAID', orderId, dbOrderId: dbOrder.id };
+
 
         } else if (cfOrder.order_status === 'EXPIRED' || cfOrder.order_status === 'TERMINATED') { // Adjust based on docs?
             await prisma.order.update({

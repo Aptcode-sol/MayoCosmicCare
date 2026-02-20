@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { Button } from '@/components/ui/Button';
 import { load } from '@cashfreepayments/cashfree-js';
-import { createOrder, verifyPayment } from '../lib/services/payment';
+import { createOrder, verifyPayment, downloadReceipt } from '../lib/services/payment';
 import { me } from '../lib/services/auth';
 import toast from 'react-hot-toast';
 import SponsorSelectModal from './SponsorSelectModal';
@@ -97,6 +97,18 @@ export default function CartDrawer() {
                             toast.success('Order Placed Successfully!');
                             clearCart();
                             setIsOpen(false);
+
+                            // Auto-download receipt PDF
+                            if (verifyRes.dbOrderId) {
+                                const downloadToast = toast.loading('Generating receipt...');
+                                try {
+                                    await downloadReceipt(verifyRes.dbOrderId);
+                                    toast.success('Receipt downloaded!', { id: downloadToast });
+                                } catch {
+                                    toast.dismiss(downloadToast);
+                                    toast('Receipt download failed. You can download it from your orders.', { icon: 'ℹ️' });
+                                }
+                            }
                         } else {
                             toast.error('Payment status: ' + verifyRes.status);
                         }

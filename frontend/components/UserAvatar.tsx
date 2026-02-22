@@ -36,7 +36,7 @@ export default function UserAvatar() {
                 className="flex items-center gap-2 hover:opacity-80 transition"
             >
                 {/* Gradient avatar matching sidebar style */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm border-2 border-white shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-900 to-gray-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-white shadow-sm">
                     {initials}
                 </div>
             </button>

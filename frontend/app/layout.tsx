@@ -4,6 +4,7 @@ import './globals.css'
 import ClientToaster from '../components/ClientToaster'
 import HeaderClient from '../components/HeaderClient'
 import Footer from '../components/Footer'
+import SmoothScroll from '../components/SmoothScroll'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -30,9 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ContextProviders>
           <ClientToaster />
           <HeaderClient />
-          <div className="flex-1">
-            {children}
-          </div>
+          <SmoothScroll>
+            <div className="flex-1">
+              {children}
+            </div>
+          </SmoothScroll>
           <Footer />
         </ContextProviders>
       </body>

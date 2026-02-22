@@ -36,12 +36,6 @@ export default function RankProgress({ currentRank, totalPairs }: { currentRank:
 
     return (
         <Card className={`shadow-lg border-0 relative overflow-hidden bg-gradient-to-br ${colors.from} ${colors.to} ${colors.text}`}>
-            {/* Background Pattern */}
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                </svg>
-            </div>
 
             <CardContent className="p-4 md:p-5 relative z-10">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

@@ -34,8 +34,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
             {/* Mobile Hamburger Button */}
             <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                style={{ top: 'var(--header-offset, 4rem)' }}
-                className="lg:hidden fixed left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                className="lg:hidden fixed left-2 top-4 z-[60] p-2 mr-2 rounded-xl bg-transparent hover:bg-gray-100 transition-colors"
                 aria-label="Open menu"
             >
                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">

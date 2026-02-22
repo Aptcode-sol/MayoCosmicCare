@@ -24,7 +24,23 @@ export default function Header() {
 
     useEffect(() => {
         const onScroll = () => {
-            // Scroll hiding disabled - header always visible
+            if (!tickingRef.current) {
+                window.requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY
+
+                    // Hide on scroll down, show on scroll up
+                    // Only hide if we've scrolled more than 100px from top
+                    if (currentScrollY > lastScrollYRef.current && currentScrollY > 100) {
+                        setIsHidden(true)
+                    } else if (currentScrollY < lastScrollYRef.current) {
+                        setIsHidden(false)
+                    }
+
+                    lastScrollYRef.current = currentScrollY
+                    tickingRef.current = false
+                })
+                tickingRef.current = true
+            }
         }
 
         window.addEventListener('scroll', onScroll, { passive: true })
@@ -43,10 +59,10 @@ export default function Header() {
     return (
         <>
             <header className={`fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-transform duration-300 ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}>
-                <nav className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="relative w-8 h-8">
+                <nav className="container mx-auto px-6 h-20 grid grid-cols-3 items-center">
+                    {/* Logo - Left */}
+                    <Link href="/" className={`flex items-center gap-2 group min-w-0 pr-4 ${isActive('/dashboard') ? 'pl-12 md:pl-0' : ''}`}>
+                        <div className="relative w-8 h-8 flex-shrink-0">
                             <Image
                                 src="/MCC2.png"
                                 alt="Mayo Cosmic Care Logo"
@@ -56,28 +72,23 @@ export default function Header() {
                             />
                         </div>
                         <span className="text-xl font-semibold text-gray-900 tracking-tight group-hover:text-gray-600 transition-colors">
-                            Mayo Cosmic Care Pvt Ltd
+                            <span className="hidden md:inline">Mayo Cosmic Care Pvt Ltd</span>
+                            <span className="md:hidden">MCC</span>
                         </span>
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center gap-10">
+                    {/* Center Nav Links - truly centered */}
+                    <div className="hidden md:flex items-center justify-center gap-10">
                         <Link href="/" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                             Home
                         </Link>
                         <Link href="/products" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                             Products
                         </Link>
-                        {isLoggedIn && (
-                            <>
-                                <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-                                    Dashboard
-                                </Link>
-                            </>
-                        )}
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    {/* Right - Cart + Auth */}
+                    <div className="flex items-center justify-end gap-4">
                         {/* Cart Button - Only show when logged in */}
                         {mounted && isLoggedIn && (
                             <button

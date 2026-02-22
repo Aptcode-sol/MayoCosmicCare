@@ -80,6 +80,7 @@ model Product {
   price              Int
   bv                 Int
   description        String?
+  keyFeatures        String?
   stock              Int      @default(0)
   imageUrl           String?
   // Bonus Configuration

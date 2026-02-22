@@ -58,10 +58,8 @@ export default function SponsorSelectModal({ isOpen, onClose, onSelect }: Sponso
         return () => { mounted = false }
     }, [debouncedQuery])
 
-    if (!isOpen) return null
-
-    // Create and manage a dedicated container for the portal so we don't rely on
-    // direct use of document.body across synchronous render/unmounts.
+    // Create and manage a dedicated container for the portal.
+    // Must be declared BEFORE any early returns to follow Rules of Hooks.
     useEffect(() => {
         if (!isOpen) return
         if (typeof document === 'undefined') return
@@ -69,7 +67,6 @@ export default function SponsorSelectModal({ isOpen, onClose, onSelect }: Sponso
         document.body.appendChild(el)
         setPortalContainer(el)
         return () => {
-            // Only remove if still connected to avoid NotFoundError
             try {
                 if (el.isConnected) document.body.removeChild(el)
             } catch (e) {
@@ -79,6 +76,7 @@ export default function SponsorSelectModal({ isOpen, onClose, onSelect }: Sponso
         }
     }, [isOpen])
 
+    if (!isOpen) return null
     if (!portalContainer) return null
 
     return createPortal(

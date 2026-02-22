@@ -12,6 +12,7 @@ interface Product {
     id: string
     name: string
     description: string
+    keyFeatures?: string
     price: number
     bv: number
     stock: number
@@ -82,26 +83,34 @@ export default function ProductDetail() {
 
     if (!product) return null
 
-    // Check if this is a mattress product
-    const isMattress = product.name.toLowerCase().includes('mattress') || product.name.toLowerCase().includes('magnetic')
+    // Check if this is a mattress product - no longer needed as all products share the dark theme
+    const isMattress = true // Forced to true to easily maintain the dark theme layout
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="container mx-auto px-6 py-24 md:py-32">
+        <div className={`min-h-screen transition-colors duration-700 bg-[#080808] text-white`}>
+            <div className="container mx-auto px-6 py-24 md:py-32 relative">
+                {/* Dramatic radial glow backdrop for Mattress */}
+                {isMattress && (
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-[120px]" />
+                        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-gray-500/10 rounded-full blur-[80px]" />
+                    </div>
+                )}
+
                 <AnimateOnScroll animation="fade-up">
                     <Button
                         variant="ghost"
-                        className="mb-8 hover:bg-gray-100 -ml-4"
+                        className={`mb-8 -ml-4 text-white/60 hover:text-white hover:bg-white/5`}
                         onClick={() => router.back()}
                     >
                         ← Back to Collection
                     </Button>
                 </AnimateOnScroll>
 
-                <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
+                <div className="grid md:grid-cols-2 gap-12 lg:gap-20 relative z-10">
                     {/* Image Section */}
                     <AnimateOnScroll animation="fade-up" delay={100}>
-                        <div className="bg-gray-50 rounded-2xl overflow-hidden aspect-square relative group">
+                        <div className={`rounded-2xl overflow-hidden aspect-square relative group border bg-white/5 border-white/10 shadow-2xl`}>
                             {product.imageUrl ? (
                                 <img
                                     src={product.imageUrl}
@@ -110,14 +119,14 @@ export default function ProductDetail() {
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                    <svg className="w-32 h-32 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className={`w-32 h-32 text-white/10`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
                             )}
                             {product.stock <= 5 && product.stock > 0 && (
-                                <div className="absolute top-6 right-6 bg-red-500 text-white text-xs font-bold px-3 py-1.5 uppercase tracking-wider rounded-full">
-                                    Low Stock: {product.stock} left
+                                <div className="absolute top-6 right-6 bg-red-500 text-white text-[10px] font-bold px-4 py-1.5 uppercase tracking-widest rounded-full shadow-lg">
+                                    Low Stock: {product.stock}
                                 </div>
                             )}
                         </div>
@@ -125,126 +134,104 @@ export default function ProductDetail() {
 
                     {/* Details Section */}
                     <AnimateOnScroll animation="fade-up" delay={200}>
-                        <div className="flex flex-col justify-center">
+                        <div className="flex flex-col justify-center h-full">
                             <div className="mb-8">
-                                <span className="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-2 block">Premium Wellness</span>
-                                <h1 className="text-3xl lg:text-5xl font-light text-gray-900 mb-4 tracking-tight">{product.name}</h1>
-                                <div className="flex items-center gap-4 mb-6">
-                                    <span className="text-3xl font-semibold text-gray-900">₹{product.price.toLocaleString()}</span>
-                                    <span className="text-sm font-medium bg-gray-100 text-gray-600 px-3 py-1 rounded-full">BV: {product.bv}</span>
+                                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 border bg-white/10 border-white/20`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse bg-white`} />
+                                    <span className={`text-[10px] font-bold uppercase tracking-[0.2em] text-white/70`}>Premium Wellness</span>
+                                </div>
+                                {/* Normal full title */}
+                                <h1 className={`text-4xl lg:text-6xl font-light mb-6 tracking-tight leading-tight text-white`}>
+                                    {product.name}
+                                </h1>
+                                <div className="flex items-center gap-6 mb-6">
+                                    <span className={`text-4xl font-semibold text-white`}>₹{product.price.toLocaleString()}</span>
+                                    <div className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 text-white/80`}>
+                                        {product.bv} BV
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="prose prose-gray max-w-none mb-10 text-gray-600 text-lg leading-relaxed">
-                                <p>{product.description}</p>
-                            </div>
-
-                            <div className="space-y-6 pt-8 border-t border-gray-100">
+                            {/* Description moved to bottom section intentionally to match landing page, but keeping a short snippet here if desired. For true sync, we remove it here. */}
+                            <div className={`space-y-8 pt-6 border-t border-white/10`}>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]"></div>
-                                    <span className="text-sm font-medium text-gray-700">In Stock: Ready to ship</span>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]"></div>
+                                    <span className={`text-sm font-medium text-white/70`}>Ready for Immediate Dispatch</span>
                                 </div>
 
-                                <Button
-                                    size="lg"
-                                    className="w-full md:w-auto min-w-[200px] h-14 text-lg bg-gray-900 hover:bg-gray-800"
-                                    onClick={handleAddToCart}
-                                    disabled={product.stock === 0}
-                                >
-                                    {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                                </Button>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <Button
+                                        size="lg"
+                                        className={`h-16 px-10 text-lg rounded-full shadow-xl transition-all duration-300 bg-white text-gray-900 hover:bg-gray-100 hover:scale-[1.02]`}
+                                        onClick={handleAddToCart}
+                                        disabled={product.stock === 0}
+                                    >
+                                        {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </AnimateOnScroll>
                 </div>
 
-                {/* Mattress Features Section - Only show for mattress products */}
-                {isMattress && (
-                    <>
-                        {/* Main Features Grid */}
-                        <AnimateOnScroll animation="fade-up" delay={100}>
-                            <div className="mt-24 pt-16 border-t border-gray-100">
-                                <h2 className="text-3xl font-light text-gray-900 mb-12 text-center">Key Features</h2>
-                                <div className="grid md:grid-cols-3 gap-8">
-                                    <div className="bg-gray-50 rounded-3xl p-8">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-6">
-                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                            </svg>
+                {/* Dynamic Features Section - Iconless like landing page */}
+                {product.keyFeatures && (
+                    <div className="mt-32 space-y-24">
+                        <AnimateOnScroll animation="fade-up">
+                            <h2 className={`text-4xl lg:text-7xl font-light text-center mb-20 tracking-tight text-white`}>
+                                Key Features
+                            </h2>
+                            <div className="flex flex-wrap justify-center gap-6">
+                                {product.keyFeatures.split('\n').filter(f => f.trim()).map((feature, i) => (
+                                    <div key={i} className={`group relative rounded-2xl border border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10 p-10 transition-all duration-500 overflow-hidden flex-1 min-w-[300px] max-w-sm`}>
+                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-2xl" />
+                                        <span className={`absolute top-4 right-6 text-7xl font-black text-white/5 select-none leading-none`}>
+                                            {(i + 1).toString().padStart(2, '0')}
+                                        </span>
+                                        <div className="relative z-10 w-full">
+                                            <h3 className={`text-2xl font-bold mb-4 group-hover:translate-x-1 transition-transform text-white`}>
+                                                {feature.split(':')[0]}
+                                            </h3>
+                                            <p className={`text-gray-400 text-base leading-relaxed`}>
+                                                {feature.includes(':') ? feature.split(':').slice(1).join(':').trim() : feature}
+                                            </p>
                                         </div>
-                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Blood Circulation</h3>
-                                        <p className="text-gray-500 leading-relaxed">
-                                            Enhances smooth blood flow from head to toe, naturally improving oxygen delivery to all 78 vital organs
-                                        </p>
                                     </div>
-
-                                    <div className="bg-gray-50 rounded-3xl p-8">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                            </svg>
-                                        </div>
-                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Energy Boost</h3>
-                                        <p className="text-gray-500 leading-relaxed">
-                                            Absorbs glucose & fatty acids, converting them into high energy while reducing fatigue and tiredness
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-gray-50 rounded-3xl p-8">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                            </svg>
-                                        </div>
-                                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Deep Sleep</h3>
-                                        <p className="text-gray-500 leading-relaxed">
-                                            Experience restorative deep sleep that helps your body heal, recover, and rejuvenate naturally
-                                        </p>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </AnimateOnScroll>
 
-                        {/* Health Benefits */}
+                        {/* Description Section — matching landing page */}
                         <AnimateOnScroll animation="fade-up" delay={200}>
-                            <div className="mt-16 bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-10 lg:p-16">
-                                <h3 className="text-2xl font-light text-white mb-10 text-center">
-                                    Comprehensive Health Benefits
-                                </h3>
-                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    {[
-                                        { icon: "💪", text: "Increases Strength & Resistance" },
-                                        { icon: "🩸", text: "Controls BP & Cholesterol" },
-                                        { icon: "🧠", text: "Improves Brain Health" },
-                                        { icon: "🦴", text: "Helps Joint & Bone Pain" },
-                                        { icon: "⚡", text: "Boosts Body Flexibility" },
-                                        { icon: "🛡️", text: "EMF Radiation Protection" },
-                                        { icon: "🌿", text: "Anti-Aging Benefits" },
-                                        { icon: "✨", text: "Complete Body Detox" },
-                                    ].map((benefit, i) => (
-                                        <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
-                                            <span className="text-2xl">{benefit.icon}</span>
-                                            <span className="text-white/90 text-sm font-medium">{benefit.text}</span>
-                                        </div>
-                                    ))}
+                            <div className={`relative rounded-3xl border border-white/10 bg-white/5 overflow-hidden p-10 lg:p-14 mb-20`}>
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                                <div className="text-center">
+                                    <h3 className={`text-3xl lg:text-4xl font-light tracking-tight mb-8 text-white`}>
+                                        Comprehensive <span className="font-semibold">Description</span>
+                                    </h3>
+                                    <p className={`text-xl max-w-4xl mx-auto leading-relaxed text-gray-400`}>
+                                        {product.description}
+                                    </p>
                                 </div>
                             </div>
                         </AnimateOnScroll>
 
                         {/* Trust Badges */}
-                        <AnimateOnScroll animation="fade-up" delay={300}>
-                            <div className="flex flex-wrap justify-center gap-6 mt-16">
-                                {['100% Natural', 'Scientifically Proven', 'Zero Side Effects', 'Drug-Free Therapy'].map((badge, i) => (
-                                    <div key={i} className="flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-full border border-gray-100">
-                                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        <span className="font-medium text-gray-700">{badge}</span>
+                        <AnimateOnScroll animation="fade-up" delay={200}>
+                            <div className="flex flex-wrap justify-center gap-6 pb-20">
+                                {['Fast Delivery', '100% Genuine', 'Secure Payment', '24/7 Support'].map((badge, i) => (
+                                    <div key={i} className={`flex items-center gap-3 px-8 py-4 bg-white/5 border-white/10 rounded-full border shadow-lg`}>
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <span className={`font-bold text-xs uppercase tracking-widest text-white/70`}>{badge}</span>
                                     </div>
                                 ))}
                             </div>
                         </AnimateOnScroll>
-                    </>
+                    </div>
                 )}
             </div>
         </div>

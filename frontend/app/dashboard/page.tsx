@@ -135,7 +135,7 @@ export default function Dashboard() {
                 <>
                     {/* Page Header */}
                     <div className="bg-white border-b border-gray-100">
-                        <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-8">
+                        <div className="px-2 sm:px-3 lg:px-6 py-8">
                             <AnimateOnScroll animation="fade-up">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>

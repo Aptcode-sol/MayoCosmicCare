@@ -1,9 +1,51 @@
+"use client"
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/Button"
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import AnimateOnScroll from '@/components/AnimateOnScroll'
+import { listPublic } from '../lib/services/products'
 
 export default function Home() {
+    const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
+    const [currentIndex, setCurrentIndex] = useState(0)
+
+    useEffect(() => {
+        async function fetchProducts() {
+            try {
+                const res = await listPublic()
+                const products = res?.products ?? res ?? []
+
+                // For now, let's treat products with keyFeatures or specific names as featured
+                const featured = products.filter((p: any) =>
+                    p.keyFeatures ||
+                    p.name.toLowerCase().includes('mattress') ||
+                    p.name.toLowerCase().includes('magnetic')
+                )
+
+                if (featured.length > 0) {
+                    setFeaturedProducts(featured)
+                }
+            } catch (err) {
+                console.error("Failed to fetch products for landing page:", err)
+            }
+        }
+        fetchProducts()
+    }, [])
+
+    // Auto-scroll logic
+    useEffect(() => {
+        if (featuredProducts.length <= 1) return
+
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % featuredProducts.length)
+        }, 5000) // Change every 5 seconds
+
+        return () => clearInterval(interval)
+    }, [featuredProducts])
+
+    const currentProduct = featuredProducts[currentIndex]
+
     return (
         <div className="bg-white">
             {/* Hero Section - Full Screen */}
@@ -35,189 +77,121 @@ export default function Home() {
                 </AnimateOnScroll>
             </section>
 
-            {/* Bio Magnetic Mattress Product Section */}
-            <section className="py-24 px-6 bg-gradient-to-b from-emerald-50 to-white">
-                <div className="max-w-7xl mx-auto">
-                    <AnimateOnScroll animation="fade-up">
-                        <div className="text-center mb-16">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 mb-6">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                <span className="text-sm font-medium text-emerald-700">Featured Product</span>
-                            </div>
-                            <h2 className="text-4xl lg:text-6xl font-light text-gray-900 mb-6 tracking-tight">
-                                Bio Magnetic <span className="font-semibold text-emerald-600">Mattress</span>
-                            </h2>
-                            <p className="text-xl text-gray-500 max-w-3xl mx-auto leading-relaxed">
-                                World&apos;s most advanced natural rare earth bio magnetic technology for improved blood circulation and oxygen levels
-                            </p>
-                        </div>
-                    </AnimateOnScroll>
-
-                    {/* Main Features Grid */}
-                    <div className="grid lg:grid-cols-3 gap-8 mb-16">
-                        <AnimateOnScroll animation="fade-up" delay={0}>
-                            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-                                <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-6">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Blood Circulation</h3>
-                                <p className="text-gray-500 leading-relaxed">
-                                    Enhances smooth blood flow from head to toe, naturally improving oxygen delivery to all 78 vital organs
-                                </p>
-                            </div>
-                        </AnimateOnScroll>
-
-                        <AnimateOnScroll animation="fade-up" delay={150}>
-                            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Energy Boost</h3>
-                                <p className="text-gray-500 leading-relaxed">
-                                    Absorbs glucose & fatty acids, converting them into high energy while reducing fatigue and tiredness
-                                </p>
-                            </div>
-                        </AnimateOnScroll>
-
-                        <AnimateOnScroll animation="fade-up" delay={300}>
-                            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Deep Sleep</h3>
-                                <p className="text-gray-500 leading-relaxed">
-                                    Experience restorative deep sleep that helps your body heal, recover, and rejuvenate naturally
-                                </p>
-                            </div>
-                        </AnimateOnScroll>
+            {/* Dynamic Featured Product Section */}
+            {currentProduct && (
+                <section className="relative py-32 px-6 overflow-hidden bg-[#080808] min-h-[90vh] flex items-center">
+                    {/* Dramatic radial glow backdrop */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-[120px]" />
+                        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gray-500/10 rounded-full blur-[80px]" />
+                        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gray-500/10 rounded-full blur-[80px]" />
                     </div>
 
-                    {/* Health Benefits */}
-                    <AnimateOnScroll animation="fade-up" delay={100}>
-                        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-10 lg:p-16">
-                            <h3 className="text-3xl font-light text-white mb-10 text-center">
-                                Comprehensive Health Benefits
-                            </h3>
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {[
-                                    { icon: "💪", text: "Increases Strength & Resistance" },
-                                    { icon: "🩸", text: "Controls BP & Cholesterol" },
-                                    { icon: "🧠", text: "Improves Brain Health" },
-                                    { icon: "🦴", text: "Helps Joint & Bone Pain" },
-                                    { icon: "⚡", text: "Boosts Body Flexibility" },
-                                    { icon: "🛡️", text: "EMF Radiation Protection" },
-                                    { icon: "🌿", text: "Anti-Aging Benefits" },
-                                    { icon: "✨", text: "Complete Body Detox" },
-                                ].map((benefit, i) => (
-                                    <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
-                                        <span className="text-2xl">{benefit.icon}</span>
-                                        <span className="text-white/90 text-sm font-medium">{benefit.text}</span>
+                    <div className="max-w-7xl mx-auto relative z-10 w-full">
+                        {/* Header */}
+                        <div className="text-center mb-32 relative h-[160px] flex flex-col items-center justify-center">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 mb-8 absolute top-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                <span className="text-xs font-semibold text-white/70 uppercase tracking-[0.2em]">Featured Selection</span>
+                            </div>
+
+                            {/* Title Container - We map all titles and absolute position them, fading in the active one */}
+                            <div className="relative w-full h-[180px] lg:h-[120px] mt-12">
+                                {featuredProducts.map((p, idx) => (
+                                    <h2
+                                        key={p.id}
+                                        className={`absolute inset-0 text-5xl lg:text-8xl font-light text-white tracking-tight leading-[1.05] transition-opacity duration-1000 ease-in-out ${idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                                    >
+                                        {p.name.split(' ').slice(0, -1).join(' ')}<br />
+                                        <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-300 to-gray-500">
+                                            {p.name.split(' ').slice(-1)}
+                                        </span>
+                                    </h2>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Feature Cards */}
+                        <div className="grid lg:grid-cols-3 gap-6 mb-20 relative">
+                            {/* Map exactly 3 slots. In each slot, crossfade the feature for the current product. */}
+                            {[0, 1, 2].map((cardIndex) => (
+                                <div key={cardIndex} className="group relative rounded-2xl border border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10 transition-all duration-500 overflow-hidden p-6 lg:p-10">
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-2xl" />
+                                    <span className="absolute top-4 right-6 text-7xl font-black text-white/5 select-none leading-none">{(cardIndex + 1).toString().padStart(2, '0')}</span>
+
+                                    <div className="relative z-10 w-full grid">
+                                        {featuredProducts.map((p, pIdx) => {
+                                            const feature = (p.keyFeatures || '').split('\n').filter((f: string) => f.trim())[cardIndex];
+                                            if (!feature) return null; // If a product has less than 3 features
+
+                                            return (
+                                                <div
+                                                    key={`${p.id}-feature-${cardIndex}`}
+                                                    className={`col-start-1 row-start-1 transition-opacity duration-1000 ease-in-out ${pIdx === currentIndex ? 'opacity-100 z-10 delay-150' : 'opacity-0 z-0 pointer-events-none'}`}
+                                                >
+                                                    <h3 className="text-xl lg:text-2xl font-bold text-white mb-2 lg:mb-4 group-hover:translate-x-1 transition-transform">{feature.split(':')[0]}</h3>
+                                                    <p className="text-gray-400 text-sm lg:text-base leading-relaxed line-clamp-3">{feature.includes(':') ? feature.split(':').slice(1).join(':').trim() : feature}</p>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Description Section — dark panel with glow border */}
+                        <div className="relative rounded-3xl border border-white/10 bg-white/5 p-10 lg:p-14 mb-20">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                            <div className="text-center relative flex flex-col items-center">
+                                <h3 className="text-3xl lg:text-4xl font-light text-white tracking-tight mb-8">
+                                    Comprehensive <span className="font-semibold">Description</span>
+                                </h3>
+                                {/* Mobile clamped, Desktop fully visible, Grid ensures consistent parent height without jumping */}
+                                <div className="relative w-full grid">
+                                    {featuredProducts.map((p, idx) => (
+                                        <p
+                                            key={`desc-${p.id}`}
+                                            className={`col-start-1 row-start-1 text-lg lg:text-xl text-gray-400 max-w-4xl mx-auto leading-relaxed line-clamp-4 lg:line-clamp-none transition-opacity duration-1000 ease-in-out ${idx === currentIndex ? 'opacity-100 z-10 delay-300' : 'opacity-0 z-0 pointer-events-none'}`}
+                                        >
+                                            {p.description}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Navigation dots and CTA */}
+                        <div className="flex flex-col items-center gap-8 relative z-20">
+                            {featuredProducts.length > 1 && (
+                                <div className="flex gap-2 mb-4">
+                                    {featuredProducts.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentIndex(i)}
+                                            className={`w-2 h-2 rounded-full transition-all duration-500 ${currentIndex === i ? 'bg-white w-8' : 'bg-white/20'}`}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            {/* Crossfading Buttons */}
+                            <div className="relative h-14 w-[300px] flex justify-center">
+                                {featuredProducts.map((p, idx) => (
+                                    <div
+                                        key={`btn-${p.id}`}
+                                        className={`absolute transition-opacity duration-1000 ease-in-out ${idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
+                                    >
+                                        <Button size="lg" className="h-14 px-12 text-base rounded-full bg-white text-gray-900 hover:bg-gray-100 font-semibold shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-all duration-300" asChild>
+                                            <Link href={`/products/${p.id}`}>Explore {p.name} →</Link>
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    </AnimateOnScroll>
-
-                    {/* Trust Badges */}
-                    <AnimateOnScroll animation="fade-up" delay={200}>
-                        <div className="flex flex-wrap justify-center gap-8 mt-16">
-                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
-                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                <span className="font-medium text-gray-700">100% Natural</span>
-                            </div>
-                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
-                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                <span className="font-medium text-gray-700">Scientifically Proven</span>
-                            </div>
-                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
-                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                <span className="font-medium text-gray-700">Zero Side Effects</span>
-                            </div>
-                            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-100">
-                                <svg className="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                <span className="font-medium text-gray-700">Drug-Free Therapy</span>
-                            </div>
-                        </div>
-                    </AnimateOnScroll>
-
-                    {/* CTA */}
-                    <AnimateOnScroll animation="fade-up" delay={300}>
-                        <div className="text-center mt-16">
-                            <Button size="lg" className="h-14 px-10 text-lg rounded-full bg-emerald-600 hover:bg-emerald-700" asChild>
-                                <Link href="/products">Explore Bio Energy Mattress</Link>
-                            </Button>
-                        </div>
-                    </AnimateOnScroll>
-                </div>
-            </section>
+                    </div>
+                </section>
+            )}
 
             {/* Stats Section - Full Screen */}
-            <section className="min-h-screen flex items-center justify-center bg-gray-950 px-6 py-24 sm:py-32 border-y border-gray-900">
-                <div className="max-w-7xl mx-auto w-full">
-                    <AnimateOnScroll animation="fade-up">
-                        <div className="text-center mb-24">
-                            <h2 className="text-3xl lg:text-5xl font-light text-white mb-6 tracking-tight">
-                                Trusted by Leading Partners
-                            </h2>
-                            <p className="text-gray-400 text-lg max-w-xl mx-auto">
-                                Join a rapidly growing community of wellness enthusiasts and entrepreneurs.
-                            </p>
-                        </div>
-                    </AnimateOnScroll>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        <AnimateOnScroll animation="fade-up" delay={0}>
-                            <Card className="border-0 shadow-none bg-transparent">
-                                <CardHeader className="text-center pb-2">
-                                    <CardTitle className="text-6xl lg:text-7xl font-light text-white mb-2">10K+</CardTitle>
-                                </CardHeader>
-                                <CardContent className="text-center">
-                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Active Partners</p>
-                                    <p className="mt-2 text-gray-500">Building their future</p>
-                                </CardContent>
-                            </Card>
-                        </AnimateOnScroll>
-
-                        <AnimateOnScroll animation="fade-up" delay={150}>
-                            <Card className="border-0 shadow-none bg-transparent md:border-x border-gray-800 rounded-none">
-                                <CardHeader className="text-center pb-2">
-                                    <CardTitle className="text-6xl lg:text-7xl font-light text-white mb-2">₹2M+</CardTitle>
-                                </CardHeader>
-                                <CardContent className="text-center">
-                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Commissions Paid</p>
-                                    <p className="mt-2 text-gray-500">To our qualified partners</p>
-                                </CardContent>
-                            </Card>
-                        </AnimateOnScroll>
-
-                        <AnimateOnScroll animation="fade-up" delay={300}>
-                            <Card className="border-0 shadow-none bg-transparent">
-                                <CardHeader className="text-center pb-2">
-                                    <CardTitle className="text-6xl lg:text-7xl font-light text-white mb-2">50+</CardTitle>
-                                </CardHeader>
-                                <CardContent className="text-center">
-                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Premium Products</p>
-                                    <p className="mt-2 text-gray-500">Curated for excellence</p>
-                                </CardContent>
-                            </Card>
-                        </AnimateOnScroll>
-                    </div>
-                </div>
-            </section>
 
             {/* Features Section - Full Screen */}
             <section className="min-h-screen flex items-center justify-center px-6 py-24">
@@ -279,25 +253,86 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* Stats Section - Full Screen */}
+            <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#080808] px-6 py-24 sm:py-32">
+                {/* Radial glow backdrop matching product section */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-white/5 rounded-full blur-[120px]" />
+                    <div className="absolute top-0 right-1/4 w-[350px] h-[350px] bg-gray-500/10 rounded-full blur-[80px]" />
+                    <div className="absolute bottom-0 left-1/4 w-[350px] h-[350px] bg-gray-500/10 rounded-full blur-[80px]" />
+                </div>
+                <div className="max-w-7xl mx-auto w-full relative z-10">
+                    <AnimateOnScroll animation="fade-up">
+                        <div className="text-center mb-24">
+                            <h2 className="text-3xl lg:text-5xl font-light text-white mb-6 tracking-tight">
+                                Trusted by Leading Partners
+                            </h2>
+                            <p className="text-gray-400 text-lg max-w-xl mx-auto">
+                                Join a rapidly growing community of wellness enthusiasts and entrepreneurs.
+                            </p>
+                        </div>
+                    </AnimateOnScroll>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        <AnimateOnScroll animation="fade-up" delay={0}>
+                            <Card className="border-0 shadow-none bg-transparent">
+                                <CardHeader className="text-center pb-2">
+                                    <CardTitle className="text-6xl lg:text-7xl font-light text-white mb-2">10K+</CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-center">
+                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Active Partners</p>
+                                    <p className="mt-2 text-gray-500">Building their future</p>
+                                </CardContent>
+                            </Card>
+                        </AnimateOnScroll>
+
+                        <AnimateOnScroll animation="fade-up" delay={150}>
+                            <Card className="border-0 shadow-none bg-transparent md:border-x border-white/10 rounded-none">
+                                <CardHeader className="text-center pb-2">
+                                    <CardTitle className="text-6xl lg:text-7xl font-light text-white mb-2">₹2M+</CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-center">
+                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Commissions Paid</p>
+                                    <p className="mt-2 text-gray-500">To our qualified partners</p>
+                                </CardContent>
+                            </Card>
+                        </AnimateOnScroll>
+
+                        <AnimateOnScroll animation="fade-up" delay={300}>
+                            <Card className="border-0 shadow-none bg-transparent">
+                                <CardHeader className="text-center pb-2">
+                                    <CardTitle className="text-6xl lg:text-7xl font-light text-white mb-2">50+</CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-center">
+                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Premium Products</p>
+                                    <p className="mt-2 text-gray-500">Curated for excellence</p>
+                                </CardContent>
+                            </Card>
+                        </AnimateOnScroll>
+                    </div>
+                </div>
+            </section>
+
+
             {/* CTA Section - Full Screen */}
-            <section className="min-h-screen flex items-center justify-center bg-gray-950 px-6 py-24">
+            <section className="min-h-screen flex items-center justify-center bg-white px-6 py-24">
                 <AnimateOnScroll animation="fade-up" className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-4xl lg:text-7xl font-light text-white mb-8 tracking-tight leading-tight">
+                    <h2 className="text-4xl lg:text-7xl font-light text-gray-900 mb-8 tracking-tight leading-tight">
                         Ready to Transform<br />Your Future?
                     </h2>
-                    <p className="text-xl text-gray-400 mb-12 max-w-xl mx-auto leading-relaxed">
+                    <p className="text-xl text-gray-500 mb-12 max-w-xl mx-auto leading-relaxed">
                         Join thousands of successful partners who have chosen Mayo Cosmic Care as their path to wellness and financial freedom.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                        <Button size="lg" className="h-16 px-10 text-lg rounded-full bg-white text-gray-900 hover:bg-gray-100" asChild>
+                        <Button size="lg" className="h-16 px-10 text-lg rounded-full bg-gray-900 text-white hover:bg-gray-800" asChild>
                             <Link href="/register">Get Started Now</Link>
                         </Button>
-                        <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-full bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white" asChild>
+                        <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-full bg-transparent text-gray-900 border-gray-200 hover:bg-gray-50" asChild>
                             <Link href="/products">View Products</Link>
                         </Button>
                     </div>
                 </AnimateOnScroll>
             </section>
-        </div>
+        </div >
     )
 }

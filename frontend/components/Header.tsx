@@ -64,7 +64,7 @@ export default function Header() {
                     <Link href="/" className={`flex items-center gap-2 group min-w-0 pr-4 ${isActive('/dashboard') ? 'pl-12 md:pl-0' : ''}`}>
                         <div className="relative w-8 h-8 flex-shrink-0">
                             <Image
-                                src="/MCC2.png"
+                                src="/MCC_Light.png"
                                 alt="Mayo Cosmic Care Logo"
                                 fill
                                 sizes="32px"

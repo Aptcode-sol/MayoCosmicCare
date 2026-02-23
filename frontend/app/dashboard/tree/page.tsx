@@ -89,6 +89,8 @@ export default function Tree() {
     const [zoom, setZoom] = useState(1)
     const lastPinchDistanceRef = useRef<number | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const mouseStartRef = useRef<{ x: number; y: number } | null>(null)
+    const isMouseDraggingRef = useRef(false)
 
     // Handle wheel zoom (Ctrl + Scroll)
     const handleWheel = (e: React.WheelEvent) => {
@@ -99,18 +101,62 @@ export default function Tree() {
         }
     }
 
-    // Setup native touch event listeners for both drag-to-pan and pinch-to-zoom
-    // Since touch-none blocks ALL native touch, we handle everything manually
-    const lastTouchRef = useRef<{ x: number; y: number } | null>(null)
-
+    // Mouse: click-drag to pan the workspace (grab → grabbing cursor)
     useEffect(() => {
         const container = containerRef.current
         if (!container) return
 
-        const handleTouchStart = (e: TouchEvent) => {
+        const handleMouseDown = (e: MouseEvent) => {
+            // Only pan with left mouse button on the container background
+            if (e.button !== 0) return
+            isMouseDraggingRef.current = true
+            mouseStartRef.current = { x: e.clientX, y: e.clientY }
+            container.style.cursor = 'grabbing'
+        }
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isMouseDraggingRef.current || !mouseStartRef.current) return
             e.preventDefault()
+            const dx = mouseStartRef.current.x - e.clientX
+            const dy = mouseStartRef.current.y - e.clientY
+            container.scrollLeft += dx
+            container.scrollTop += dy
+            mouseStartRef.current = { x: e.clientX, y: e.clientY }
+        }
+
+        const handleMouseUp = () => {
+            isMouseDraggingRef.current = false
+            mouseStartRef.current = null
+            container.style.cursor = 'grab'
+        }
+
+        container.addEventListener('mousedown', handleMouseDown)
+        window.addEventListener('mousemove', handleMouseMove)
+        window.addEventListener('mouseup', handleMouseUp)
+
+        return () => {
+            container.removeEventListener('mousedown', handleMouseDown)
+            window.removeEventListener('mousemove', handleMouseMove)
+            window.removeEventListener('mouseup', handleMouseUp)
+        }
+    }, [])
+
+    // Setup native touch event listeners for double-tap-drag-to-pan and pinch-to-zoom
+    // Since touch-none blocks ALL native touch, we handle everything manually
+    const lastTouchRef = useRef<{ x: number; y: number } | null>(null)
+    const lastTapTimeRef = useRef<number>(0)
+    const isDraggingRef = useRef<boolean>(false)
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+        const DOUBLE_TAP_DELAY = 300 // ms
+
+        const handleTouchStart = (e: TouchEvent) => {
             if (e.touches.length === 2) {
                 // Two-finger: start pinch zoom
+                e.preventDefault()
+                isDraggingRef.current = false
                 lastTouchRef.current = null
                 const distance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
@@ -118,19 +164,29 @@ export default function Tree() {
                 )
                 lastPinchDistanceRef.current = distance
             } else if (e.touches.length === 1) {
-                // Single-finger: start drag-to-pan
                 lastPinchDistanceRef.current = null
-                lastTouchRef.current = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY
+                const now = Date.now()
+                if (now - lastTapTimeRef.current < DOUBLE_TAP_DELAY) {
+                    // Double-tap detected — enter drag mode
+                    e.preventDefault()
+                    isDraggingRef.current = true
+                    lastTouchRef.current = {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY
+                    }
+                } else {
+                    // First tap — don't prevent default (allow node clicks)
+                    isDraggingRef.current = false
+                    lastTouchRef.current = null
                 }
+                lastTapTimeRef.current = now
             }
         }
 
         const handleTouchMove = (e: TouchEvent) => {
-            e.preventDefault()
             if (e.touches.length === 2 && lastPinchDistanceRef.current !== null) {
                 // Two-finger: pinch zoom
+                e.preventDefault()
                 const distance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -138,8 +194,9 @@ export default function Tree() {
                 const delta = (distance - lastPinchDistanceRef.current) * 0.005
                 setZoom(z => Math.max(0.3, Math.min(2, z + delta)))
                 lastPinchDistanceRef.current = distance
-            } else if (e.touches.length === 1 && lastTouchRef.current !== null) {
-                // Single-finger: drag-to-pan by scrolling the container
+            } else if (e.touches.length === 1 && isDraggingRef.current && lastTouchRef.current !== null) {
+                // Double-tap-drag: pan by scrolling the container
+                e.preventDefault()
                 const dx = lastTouchRef.current.x - e.touches[0].clientX
                 const dy = lastTouchRef.current.y - e.touches[0].clientY
                 container.scrollLeft += dx
@@ -154,6 +211,7 @@ export default function Tree() {
         const handleTouchEnd = () => {
             lastPinchDistanceRef.current = null
             lastTouchRef.current = null
+            isDraggingRef.current = false
         }
 
         // Prevent page-level pinch-zoom by blocking multi-touch on the document
@@ -339,7 +397,7 @@ export default function Tree() {
                             <div
                                 ref={containerRef}
                                 className="overflow-auto h-[600px] touch-none"
-                                style={{ cursor: 'grab' }}
+                                style={{ cursor: 'grab', userSelect: 'none' }}
                                 onWheel={handleWheel}
                             >
                                 {/* This wrapper ensures the scrollable area doesn't shrink when zooming out */}

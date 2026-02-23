@@ -6,7 +6,7 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto">
                 <div className="grid md:grid-cols-4 gap-12 lg:gap-24 mb-10">
                     <div className="col-span-1 md:col-span-1">
-                        <div className="text-xl font-medium text-gray-900 mb-6">Mayo Cosmic Care</div>
+                        <div className="text-xl font-medium text-gray-900 mb-6">Mayo Cosmic Care <br /> Pvt Ltd</div>
                         <p className="text-sm text-gray-500 leading-relaxed">
                             Empowering individuals through premium wellness products and a proven business model since 2025.
                         </p>
@@ -37,7 +37,7 @@ export default function Footer() {
                 </div>
                 <div className="border-t border-gray-100 pt-6 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-sm text-gray-400">
-                        © 2025 Mayo Cosmic Care. All rights reserved.
+                        © 2025 Mayo Cosmic Care Pvt Ltf. All rights reserved.
                     </p>
                     <div className="flex gap-6">
                         <a href="#" className="text-gray-400 hover:text-gray-900 transition">

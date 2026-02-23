@@ -67,10 +67,43 @@ export default function Products() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white pt-20">
-                <div className="text-center animate-pulse">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                    <p className="text-sm text-gray-500">Loading fine products...</p>
+            <div className="min-h-screen bg-gray-50/30 pt-32 pb-20">
+                <div className="container mx-auto px-6">
+                    {/* Header Skeleton */}
+                    <div className="text-center max-w-2xl mx-auto mb-20">
+                        <div className="h-4 bg-gray-200 rounded w-32 mx-auto mb-4 animate-pulse"></div>
+                        <div className="h-10 bg-gray-200 rounded w-64 mx-auto mb-6 animate-pulse"></div>
+                        <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    {/* Product Cards Skeleton Grid */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
+                                {/* Image Placeholder */}
+                                <div className="aspect-[4/5] bg-gray-200"></div>
+                                {/* Content */}
+                                <div className="p-6 space-y-3">
+                                    <div className="flex justify-between">
+                                        <div className="h-5 bg-gray-200 rounded w-2/3"></div>
+                                        <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="h-5 bg-gray-200 rounded-full w-14"></div>
+                                        <div className="h-5 bg-gray-200 rounded w-16"></div>
+                                    </div>
+                                    <div className="space-y-2 pt-1">
+                                        <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                        <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+                                    </div>
+                                    <div className="h-10 bg-gray-200 rounded-lg w-full mt-4"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         )

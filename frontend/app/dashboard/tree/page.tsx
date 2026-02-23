@@ -99,25 +99,38 @@ export default function Tree() {
         }
     }
 
-    // Setup native touch event listeners with { passive: false } to prevent browser zoom
+    // Setup native touch event listeners for both drag-to-pan and pinch-to-zoom
+    // Since touch-none blocks ALL native touch, we handle everything manually
+    const lastTouchRef = useRef<{ x: number; y: number } | null>(null)
+
     useEffect(() => {
         const container = containerRef.current
         if (!container) return
 
         const handleTouchStart = (e: TouchEvent) => {
+            e.preventDefault()
             if (e.touches.length === 2) {
-                e.preventDefault()
+                // Two-finger: start pinch zoom
+                lastTouchRef.current = null
                 const distance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 )
                 lastPinchDistanceRef.current = distance
+            } else if (e.touches.length === 1) {
+                // Single-finger: start drag-to-pan
+                lastPinchDistanceRef.current = null
+                lastTouchRef.current = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                }
             }
         }
 
         const handleTouchMove = (e: TouchEvent) => {
+            e.preventDefault()
             if (e.touches.length === 2 && lastPinchDistanceRef.current !== null) {
-                e.preventDefault()
+                // Two-finger: pinch zoom
                 const distance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -125,22 +138,42 @@ export default function Tree() {
                 const delta = (distance - lastPinchDistanceRef.current) * 0.005
                 setZoom(z => Math.max(0.3, Math.min(2, z + delta)))
                 lastPinchDistanceRef.current = distance
+            } else if (e.touches.length === 1 && lastTouchRef.current !== null) {
+                // Single-finger: drag-to-pan by scrolling the container
+                const dx = lastTouchRef.current.x - e.touches[0].clientX
+                const dy = lastTouchRef.current.y - e.touches[0].clientY
+                container.scrollLeft += dx
+                container.scrollTop += dy
+                lastTouchRef.current = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                }
             }
         }
 
         const handleTouchEnd = () => {
             lastPinchDistanceRef.current = null
+            lastTouchRef.current = null
+        }
+
+        // Prevent page-level pinch-zoom by blocking multi-touch on the document
+        const preventPageZoom = (e: TouchEvent) => {
+            if (e.touches.length >= 2) {
+                e.preventDefault()
+            }
         }
 
         // Add listeners with passive: false to allow preventDefault
         container.addEventListener('touchstart', handleTouchStart, { passive: false })
         container.addEventListener('touchmove', handleTouchMove, { passive: false })
         container.addEventListener('touchend', handleTouchEnd)
+        document.addEventListener('touchmove', preventPageZoom, { passive: false })
 
         return () => {
             container.removeEventListener('touchstart', handleTouchStart)
             container.removeEventListener('touchmove', handleTouchMove)
             container.removeEventListener('touchend', handleTouchEnd)
+            document.removeEventListener('touchmove', preventPageZoom)
         }
     }, [])
 
@@ -310,7 +343,7 @@ export default function Tree() {
                                 onWheel={handleWheel}
                             >
                                 {/* This wrapper ensures the scrollable area doesn't shrink when zooming out */}
-                                <div style={{ minWidth: '100%', minHeight: '600px', display: 'flex', justifyContent: 'center' }}>
+                                <div style={{ minWidth: '100%', minHeight: '900px', display: 'flex', justifyContent: 'center' }}>
                                     <div
                                         style={{
                                             transform: `scale(${zoom})`,

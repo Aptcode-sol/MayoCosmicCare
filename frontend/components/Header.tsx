@@ -72,7 +72,7 @@ export default function Header() {
                             />
                         </div>
                         <span className="text-xl font-semibold text-gray-900 tracking-tight group-hover:text-gray-600 transition-colors">
-                            <span className="hidden md:inline">Mayo Cosmic Care Pvt Ltd</span>
+                            <span className="hidden md:inline">Mayo Cosmic Care</span>
                             <span className="md:hidden">MCC</span>
                         </span>
                     </Link>
@@ -85,6 +85,11 @@ export default function Header() {
                         <Link href="/products" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                             Products
                         </Link>
+                        {mounted && isLoggedIn && (
+                            <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+                                Dashboard
+                            </Link>
+                        )}
                     </div>
 
                     {/* Right - Cart + Auth */}

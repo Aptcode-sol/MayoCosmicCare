@@ -34,6 +34,10 @@ interface DashboardSidebarProps {
     setIsExpanded: (expanded: boolean) => void
     isMobileMenuOpen?: boolean
     setIsMobileMenuOpen?: (open: boolean) => void
+    isHovering?: boolean
+    setIsHovering?: (hovering: boolean) => void
+    isPinned?: boolean
+    setIsPinned?: (pinned: boolean) => void
 }
 
 export default function DashboardSidebar({
@@ -41,7 +45,11 @@ export default function DashboardSidebar({
     isExpanded,
     setIsExpanded,
     isMobileMenuOpen = false,
-    setIsMobileMenuOpen
+    setIsMobileMenuOpen,
+    isHovering = false,
+    setIsHovering,
+    isPinned = false,
+    setIsPinned
 }: DashboardSidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
@@ -58,12 +66,30 @@ export default function DashboardSidebar({
         }
     }
 
+    // Handle mouse enter on desktop sidebar
+    const handleMouseEnter = () => {
+        if (setIsHovering) {
+            setIsHovering(true)
+        }
+        setIsExpanded(true)
+    }
+
+    // Handle mouse leave on desktop sidebar - only collapse if NOT pinned
+    const handleMouseLeave = () => {
+        if (setIsHovering) {
+            setIsHovering(false)
+        }
+        if (!isPinned) {
+            setIsExpanded(false)
+        }
+    }
+
     return (
         <>
             {/* Mobile Sidebar */}
             <aside
                 className={`
-                    lg:hidden fixed left-0 top-0 h-[100dvh] w-64 flex flex-col
+                    lg:hidden fixed left-0 top-0 h-full w-64 flex flex-col
                     bg-white border-r border-gray-200 z-[120]
                     transform transition-transform duration-300 ease-in-out
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -71,20 +97,27 @@ export default function DashboardSidebar({
             >
                 {/* Mobile Header with Close Button */}
                 <div className="h-20 flex items-center justify-between px-4 border-b border-gray-100">
-                    <span className="font-semibold text-gray-900">Menu</span>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            M
+                        </div>
+                        <span className="font-semibold text-gray-900 whitespace-nowrap">
+                            MCC Dashboard
+                        </span>
+                    </div>
                     <button
                         onClick={() => setIsMobileMenuOpen?.(false)}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         aria-label="Close menu"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
                 {/* Mobile Navigation */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-0">
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2">
                     {navItems.map((item) => {
                         const isActive = item.href === '/dashboard'
                             ? pathname === '/dashboard'
@@ -99,7 +132,7 @@ export default function DashboardSidebar({
                                     flex items-center gap-3 px-3 py-2.5 rounded-lg
                                     transition-all duration-200 ease-in-out
                                     ${isActive
-                                        ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-md'
+                                        ? 'bg-gradient-to-r from-violet-50 to-pink-50 text-violet-600'
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }
                                 `}
@@ -139,11 +172,11 @@ export default function DashboardSidebar({
                     transition-all duration-300 ease-in-out z-[200]
                     ${isExpanded ? 'w-64' : 'w-20'}
                 `}
-                onMouseEnter={() => setIsExpanded(true)}
-                onMouseLeave={() => setIsExpanded(false)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
             >
                 {/* Hamburger Header */}
-                <div className={`h-20 flex items-center border-b border-gray-100 transition-all duration-300 ${isExpanded ? 'gap-3 px-4' : 'justify-center px-2'}`}>
+                <div className="h-20 flex items-center border-b border-gray-100 transition-all duration-300" style={{ gap: '12px', paddingLeft: '12px', paddingRight: '12px' }}>
                     {/* Hamburger Icon */}
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
                         <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,15 +184,29 @@ export default function DashboardSidebar({
                         </svg>
                     </div>
                     {/* Menu Text - Fades with expand */}
-                    <span
-                        className={`
-                            font-semibold text-gray-900 whitespace-nowrap
-                            transition-all duration-300 ease-in-out
-                            ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}
-                        `}
-                    >
+                    <span className="font-semibold text-gray-900 whitespace-nowrap" style={{
+                        opacity: isExpanded ? 1 : 0,
+                        transition: 'opacity 0.2s ease',
+                        transitionDelay: isExpanded ? '0.1s' : '0s',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        pointerEvents: isExpanded ? 'auto' : 'none'
+                    }}>
                         Menu
                     </span>
+                    {/* Pin Button */}
+                    {isExpanded && (
+                        <button
+                            onClick={() => setIsPinned && setIsPinned(!isPinned)}
+                            className="ml-auto p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                            title={isPinned ? 'Unpin sidebar' : 'Pin sidebar'}
+                        >
+                            <svg className={`w-5 h-5 ${isPinned ? 'text-blue-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M5 5a2 2 0 012-2h6a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V5z" />
+                                <path d="M14 5h3a2 2 0 012 2v12a2 2 0 01-2 2h-3" opacity="0.5" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
 
                 {/* Navigation */}
@@ -170,26 +217,21 @@ export default function DashboardSidebar({
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`
-                                    flex items-center py-3 rounded-xl text-sm font-medium 
-                                    transition-colors duration-300 ease-in-out group relative
-                                    ${isExpanded ? 'gap-3 px-3' : 'justify-center px-2'}
-                                    ${isActive
-                                        ? 'bg-white text-black shadow-lg border border-gray-200'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                                    }
-                                `}
+                                className={`flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-colors duration-300 ease-in-out group relative ${isActive ? 'bg-white text-black shadow-lg border border-gray-200' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
+                                style={{ paddingLeft: '12px', paddingRight: '12px' }}
                                 title={item.label}
                             >
                                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     {icons[item.icon]}
                                 </svg>
-                                <span
-                                    className={`
-                                        whitespace-nowrap transition-all duration-300 ease-in-out
-                                        ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}
-                                    `}
-                                >
+                                <span style={{
+                                    opacity: isExpanded ? 1 : 0,
+                                    transition: 'opacity 0.2s ease',
+                                    transitionDelay: isExpanded ? '0.1s' : '0s',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    pointerEvents: isExpanded ? 'auto' : 'none'
+                                }}>
                                     {item.label}
                                 </span>
 
@@ -206,7 +248,7 @@ export default function DashboardSidebar({
 
                 {/* User Section */}
                 <div className="border-t border-gray-100 p-3">
-                    <div className={`flex items-center py-3 ${isExpanded ? 'gap-3 px-3' : 'justify-center px-2'}`}>
+                    <div className="flex items-center py-3" style={{ gap: '12px', paddingLeft: '12px', paddingRight: '12px' }}>
                         {/* Avatar with emerald gradient matching landing page */}
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-900 to-gray-600 flex items-center justify-center text-white font-medium text-xs shrink-0">
                             {(user?.name || user?.username || 'U').slice(0, 2).toUpperCase()}
@@ -227,7 +269,8 @@ export default function DashboardSidebar({
                     <button
                         onClick={handleLogout}
                         title="Logout"
-                        className={`w-full flex items-center py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors duration-300 ease-in-out group relative ${isExpanded ? 'gap-3 px-3' : 'justify-center px-2'}`}
+                        className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors duration-300 ease-in-out group relative`}
+                        style={{ paddingLeft: '12px', paddingRight: '12px' }}
                     >
                         <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             {icons.logout}

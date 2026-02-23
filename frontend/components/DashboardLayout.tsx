@@ -8,33 +8,47 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
-    // Initialize state - default false for SSR
-    const [isExpanded, setIsExpanded] = useState(false)
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const [mounted, setMounted] = useState(false)
-
-    // Load from localStorage after mount
-    useEffect(() => {
-        setMounted(true)
-        const saved = localStorage.getItem('sidebar_expanded')
-        if (saved === 'true') {
-            setIsExpanded(true)
+    // Initialize state from localStorage synchronously to prevent flash on navigation
+    const [isExpanded, setIsExpanded] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const pinned = localStorage.getItem('sidebar_pinned') === 'true'
+            const expanded = localStorage.getItem('sidebar_expanded') === 'true'
+            return pinned || expanded
         }
-    }, [])
+        return false
+    })
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [isHovering, setIsHovering] = useState(false)
+    const [isPinned, setIsPinned] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sidebar_pinned') === 'true'
+        }
+        return false
+    })
 
     // Persist state to localStorage
     useEffect(() => {
-        if (mounted) {
-            localStorage.setItem('sidebar_expanded', String(isExpanded))
-        }
-    }, [isExpanded, mounted])
+        localStorage.setItem('sidebar_expanded', String(isExpanded))
+        localStorage.setItem('sidebar_pinned', String(isPinned))
+    }, [isExpanded, isPinned])
+
+    // Wrap setIsExpanded to enforce pinned-always-expanded logic without cascading renders
+    const handleSetIsExpanded = (value: boolean | ((prev: boolean) => boolean)) => {
+        setIsExpanded(prev => {
+            const next = typeof value === 'function' ? value(prev) : value
+            // Don't allow collapsing when pinned
+            if (isPinned && !next) return true
+            return next
+        })
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 pt-12">
             {/* Mobile Hamburger Button */}
             <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden fixed left-2 top-4 z-[60] p-2 mr-2 rounded-xl bg-transparent hover:bg-gray-100 transition-colors"
+                style={{ top: 'var(--header-offset, 4rem)' }}
+                className="lg:hidden fixed left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
                 aria-label="Open menu"
             >
                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,9 +67,13 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
             <DashboardSidebar
                 user={user}
                 isExpanded={isExpanded}
-                setIsExpanded={setIsExpanded}
+                setIsExpanded={handleSetIsExpanded}
                 isMobileMenuOpen={isMobileMenuOpen}
                 setIsMobileMenuOpen={setIsMobileMenuOpen}
+                isHovering={isHovering}
+                setIsHovering={setIsHovering}
+                isPinned={isPinned}
+                setIsPinned={setIsPinned}
             />
 
             {/* Main Content */}

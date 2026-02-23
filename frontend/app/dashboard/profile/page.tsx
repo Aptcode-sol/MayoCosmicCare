@@ -260,10 +260,10 @@ export default function ProfilePage() {
                     <div className="lg:col-span-1 space-y-6">
                         {/* Profile Summary Card */}
                         <Card className="overflow-hidden">
-                            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 h-20"></div>
+                            <div className="bg-[#080808] h-20"></div>
                             <CardContent className="pt-0 -mt-10 text-center">
                                 <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center mx-auto mb-4 border-4 border-white">
-                                    <span className="text-2xl font-bold text-indigo-600">
+                                    <span className="text-2xl font-bold text-gray-700">
                                         {(user?.name || user?.username || 'U').slice(0, 2).toUpperCase()}
                                     </span>
                                 </div>

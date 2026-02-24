@@ -219,9 +219,51 @@ export default function OrderDetail() {
     if (loading) {
         return (
             <DashboardLayout user={user}>
-                <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-10 space-y-6">
-                    <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse" />
-                    <SkeletonCard className="h-80 bg-white rounded-2xl border border-gray-100" />
+                <div className="space-y-6">
+                    {/* Back link + title */}
+                    <div>
+                        <div className="h-4 bg-gray-100 rounded w-28 mb-4 animate-pulse" />
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-2">
+                                <div className="h-8 bg-gray-100 rounded-lg w-48 animate-pulse" />
+                                <div className="h-3 bg-gray-50 rounded w-56 animate-pulse" />
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="h-7 bg-gray-100 rounded-full w-16 animate-pulse" />
+                                <div className="h-10 bg-gray-200 rounded-xl w-36 animate-pulse" />
+                            </div>
+                        </div>
+                    </div>
+                    {/* Product card skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                        <div className="grid md:grid-cols-2 gap-0">
+                            {/* Image area */}
+                            <div className="bg-gray-100 aspect-square md:aspect-auto md:min-h-[360px] animate-pulse" />
+                            {/* Details area */}
+                            <div className="p-6 md:p-8 space-y-4">
+                                <div className="h-5 bg-gray-100 rounded-full w-32 animate-pulse" />
+                                <div className="h-7 bg-gray-100 rounded w-3/4 animate-pulse" />
+                                <div className="flex items-center gap-3">
+                                    <div className="h-6 bg-gray-100 rounded w-20 animate-pulse" />
+                                    <div className="h-5 bg-gray-50 rounded-full w-14 animate-pulse" />
+                                </div>
+                                <div className="h-3 bg-gray-50 rounded w-full animate-pulse" />
+                                <div className="h-3 bg-gray-50 rounded w-5/6 animate-pulse" />
+                                <div className="space-y-2 pt-2">
+                                    <div className="h-3 bg-gray-50 rounded w-20 animate-pulse" />
+                                    <div className="h-3 bg-gray-50 rounded w-40 animate-pulse" />
+                                    <div className="h-3 bg-gray-50 rounded w-32 animate-pulse" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Amount summary skeleton */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                        <div className="flex items-center justify-between">
+                            <div className="h-3 bg-gray-50 rounded w-20 animate-pulse" />
+                            <div className="h-6 bg-gray-100 rounded w-16 animate-pulse" />
+                        </div>
+                    </div>
                 </div>
             </DashboardLayout>
         )

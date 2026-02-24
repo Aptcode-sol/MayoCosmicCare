@@ -37,6 +37,7 @@ const kycRouter = require('./routes/kyc');
 const paymentRouter = require('./routes/payment');
 const payoutsRouter = require('./routes/payouts');
 const receiptRouter = require('./routes/receipt');
+const ordersRouter = require('./routes/orders');
 const { authenticate } = require('./middleware/authMiddleware');
 
 app.use('/api/auth', authRouter);
@@ -59,6 +60,7 @@ app.use('/api/kyc', kycRouter);
 app.use('/api/payment', authenticate, paymentRouter);
 app.use('/api/payouts', authenticate, payoutsRouter);
 app.use('/api/receipt', authenticate, receiptRouter);
+app.use('/api/orders', authenticate, ordersRouter);
 
 app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }));
 

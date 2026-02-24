@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-const { authenticateToken } = require('../middleware/auth');
+const prisma = require('../prismaClient');
 
 // Get User's Orders
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const userId = req.user.id;
         const orders = await prisma.order.findMany({
@@ -24,8 +22,59 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 });
 
+// Get purchase details from a transaction ID (resolves product info)
+// MUST be before /:id to avoid route collision
+router.get('/purchase/:txId', async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const txId = req.params.txId;
+
+        const tx = await prisma.transaction.findUnique({
+            where: { id: txId }
+        });
+
+        if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+        if (tx.userId !== userId) return res.status(403).json({ error: 'Unauthorized' });
+        if (tx.type !== 'PURCHASE') return res.status(400).json({ error: 'Not a purchase transaction' });
+
+        // Extract product name from detail string (e.g. "Purchase Standard Mattress")
+        let product = null;
+        if (tx.detail) {
+            const productName = tx.detail.replace(/^Purchase\s+/i, '').trim();
+            product = await prisma.product.findFirst({
+                where: { name: { equals: productName, mode: 'insensitive' } }
+            });
+        }
+
+        // Try to find a matching Order record (same user, same amount, close date)
+        let orderId = null;
+        const txDate = new Date(tx.createdAt);
+        const minDate = new Date(txDate.getTime() - 60000); // 1 min before
+        const maxDate = new Date(txDate.getTime() + 60000); // 1 min after
+        const matchingOrder = await prisma.order.findFirst({
+            where: {
+                userId,
+                totalAmount: tx.amount,
+                status: 'PAID',
+                createdAt: { gte: minDate, lte: maxDate }
+            },
+            select: { id: true }
+        });
+        if (matchingOrder) orderId = matchingOrder.id;
+
+        res.json({
+            transaction: tx,
+            product,
+            orderId
+        });
+    } catch (error) {
+        console.error('Get Purchase Detail Error:', error);
+        res.status(500).json({ error: 'Failed to fetch purchase details' });
+    }
+});
+
 // Get Single Order Detail
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
         const userId = req.user.id;
         const orderId = req.params.id;

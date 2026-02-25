@@ -359,11 +359,11 @@ export default function Dashboard() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <div className="font-semibold text-gray-900 text-sm md:text-base truncate">{tx.type.replace(/_/g, ' ')}</div>
-                                                            <div className="text-[11px] md:text-xs text-gray-500 truncate">{tx.detail || 'Transaction'}</div>
+                                                            <div className="text-[11px] md:text-xs text-gray-500 break-words max-w-[150px] md:max-w-none md:truncate">{(tx.detail || 'Transaction').replace(/\(1:1\)|\(25%.*?\)/g, '').trim() || 'Transaction'}</div>
                                                         </div>
                                                     </div>
-                                                    <div className={`font-semibold text-sm md:text-base shrink-0 ${tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? 'text-green-600' : 'text-gray-900'}`}>
-                                                        {tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? '+' : ''}₹{tx.amount}
+                                                    <div className={`font-semibold text-sm md:text-base shrink-0 ${tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? 'text-green-600' : tx.type === 'PURCHASE' ? 'text-red-600' : 'text-gray-900'}`}>
+                                                        {tx.type.includes('BONUS') || tx.type === 'ADMIN_CREDIT' ? '+' : tx.type === 'PURCHASE' ? '-' : ''}₹{Math.abs(tx.amount ?? 0)}
                                                     </div>
                                                 </div>
                                             ))}

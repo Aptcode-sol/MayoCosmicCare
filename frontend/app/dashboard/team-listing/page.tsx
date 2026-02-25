@@ -211,7 +211,7 @@ export default function TeamListing() {
                                                         </span>
                                                     </td>
                                                     <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">
-                                                        {new Date(member.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                        {String(new Date(member.createdAt).getDate()).padStart(2, '0')}/{String(new Date(member.createdAt).getMonth() + 1).padStart(2, '0')}/{String(new Date(member.createdAt).getFullYear()).slice(-2)}
                                                     </td>
                                                     <td className="px-3 md:px-6 py-3 md:py-4">
                                                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${member.status === 'Active'
@@ -224,10 +224,10 @@ export default function TeamListing() {
                                                         </span>
                                                     </td>
                                                     <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-900 text-right">
-                                                        {formatIndian(member.leftBV || 0)}
+                                                        {(member.leftBV || 0).toLocaleString('en-IN')}
                                                     </td>
                                                     <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-900 text-right">
-                                                        {formatIndian(member.rightBV || 0)}
+                                                        {(member.rightBV || 0).toLocaleString('en-IN')}
                                                     </td>
                                                 </tr>
                                             ))}

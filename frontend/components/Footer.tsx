@@ -37,7 +37,7 @@ export default function Footer() {
                 </div>
                 <div className="border-t border-gray-100 pt-6 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-sm text-gray-400">
-                        © 2025 Mayo Cosmic Care Pvt Ltf. All rights reserved.
+                        © 2025 Mayo Cosmic Care Pvt Ltd. All rights reserved.
                     </p>
                     <div className="flex gap-6">
                         <a href="#" className="text-gray-400 hover:text-gray-900 transition">

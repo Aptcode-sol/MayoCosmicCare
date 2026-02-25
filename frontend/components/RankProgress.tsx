@@ -42,7 +42,7 @@ export default function RankProgress({ currentRank, totalPairs }: { currentRank:
                     <div className="flex-1 w-full md:w-auto">
                         <p className={`${colors.label} text-xs font-semibold uppercase tracking-wider mb-1`}>Current Rank</p>
                         <h3 className="text-xl md:text-2xl font-bold mb-2">{currentRank || 'Rookie'}</h3>
-                        <div className={`inline-flex items-center gap-2 ${colors.badge} px-3 py-1 rounded-full text-xs backdrop-blur-sm border`}>
+                        <div className={`flex items-center gap-2 ${colors.badge} px-0 py-1 rounded-full text-xs backdrop-blur-sm border w-fit`}>
                             <span className={colors.label}>Total Pairs:</span>
                             <span className="font-semibold">{totalPairs}</span>
                         </div>

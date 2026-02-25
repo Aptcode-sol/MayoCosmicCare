@@ -182,24 +182,30 @@ export default function Transactions() {
                                         {transactions.map((tx) => (
                                             <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">
-                                                    {new Date(tx.createdAt).toLocaleDateString('en-IN', {
-                                                        day: '2-digit',
-                                                        month: 'short',
-                                                        year: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
+                                                    <span className="md:hidden flex flex-col">
+                                                        <span>{String(new Date(tx.createdAt).getDate()).padStart(2, '0')}/{String(new Date(tx.createdAt).getMonth() + 1).padStart(2, '0')}/{String(new Date(tx.createdAt).getFullYear()).slice(-2)}</span>
+                                                        <span className="text-[10px] text-gray-500">{String(new Date(tx.createdAt).getHours()).padStart(2, '0')}:{String(new Date(tx.createdAt).getMinutes()).padStart(2, '0')}</span>
+                                                    </span>
+                                                    <span className="hidden md:inline">
+                                                        {new Date(tx.createdAt).toLocaleDateString('en-IN', {
+                                                            day: '2-digit',
+                                                            month: 'short',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
                                                 </td>
                                                 <td className="px-3 md:px-6 py-3 md:py-4">
-                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${typeLabels[tx.type]?.color || 'bg-gray-100 text-gray-700'}`}>
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium text-center ${typeLabels[tx.type]?.color || 'bg-gray-100 text-gray-700'}`}>
                                                         {typeLabels[tx.type]?.label || tx.type}
                                                     </span>
                                                 </td>
                                                 <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600 max-w-xs truncate">
-                                                    {tx.detail || '-'}
+                                                    {(tx.detail || '-').replace(/\(1:1\)|\(25%.*?\)/g, '').trim() || '-'}
                                                 </td>
-                                                <td className={`px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-right ${tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                    {tx.amount >= 0 ? '+' : ''}{formatIndian(tx.amount)}
+                                                <td className={`px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-right ${tx.type === 'PURCHASE' ? 'text-red-600' : tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                    {tx.type === 'PURCHASE' ? '-' : tx.amount >= 0 ? '+' : ''}{formatIndian(Math.abs(tx.amount))}
                                                 </td>
                                             </tr>
                                         ))}

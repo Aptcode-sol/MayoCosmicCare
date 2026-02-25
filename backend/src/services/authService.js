@@ -123,7 +123,7 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
     });
 
     // Format: M + YY + XXXX (base 36 padded)
-    const seq = counterRecord.count.toString(36).toLowerCase();
+    const seq = counterRecord.count.toString(36).toUpperCase();
     const padded = seq.padStart(4, '0');
     const generatedUsername = `M${yearShort}${padded}`;
 

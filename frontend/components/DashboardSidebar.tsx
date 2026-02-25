@@ -93,19 +93,17 @@ export default function DashboardSidebar({
                 className={`
                     lg:hidden fixed left-0 top-0 h-full w-64 flex flex-col
                     bg-white border-r border-gray-200 z-[120]
-                    transform transition-transform duration-300 ease-in-out
+                    transform transition-transform duration-300 ease-in-out overflow-hidden
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
                 {/* Mobile Header with Close Button */}
-                <div className="h-20 flex items-center justify-between px-4 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                            M
-                        </div>
-                        <span className="font-semibold text-gray-900 whitespace-nowrap">
-                            MCC Dashboard
-                        </span>
+                <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <span className="font-medium text-gray-900">Menu</span>
                     </div>
                     <button
                         onClick={() => setIsMobileMenuOpen?.(false)}
@@ -119,7 +117,7 @@ export default function DashboardSidebar({
                 </div>
 
                 {/* Mobile Navigation */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2">
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2 overflow-x-hidden" onWheel={(e) => { e.currentTarget.scrollTop += e.deltaY }}>
                     {navItems.map((item) => {
                         const isActive = item.href === '/dashboard'
                             ? pathname === '/dashboard'

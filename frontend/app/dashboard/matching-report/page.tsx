@@ -89,7 +89,14 @@ export default function MatchingReport() {
         right: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0 }
     }
     const history = data?.history || []
-    const formatWithCount = (value: number, count: number) => `${formatIndian(value)} (${count})`
+
+    const formatNumberShort = (num: number): string => {
+        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm'
+        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+        return num.toString()
+    }
+
+    const formatWithCount = (value: number, count: number) => `${formatNumberShort(value)} (${formatNumberShort(count)})`
 
     return (
         <DashboardLayout user={user}>
@@ -132,72 +139,72 @@ export default function MatchingReport() {
                                 <table className="w-full min-w-[600px]">
                                     <thead>
                                         <tr className="border-b border-gray-100">
-                                            <th className="text-left pb-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Metric</th>
-                                            <th className="text-right pb-4 text-sm font-medium text-indigo-600 uppercase tracking-wider">Left BV</th>
-                                            <th className="text-right pb-4 text-sm font-medium text-pink-600 uppercase tracking-wider">Right BV</th>
-                                            <th className="text-right pb-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                            <th className="text-left pb-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Metric</th>
+                                            <th className="text-right pb-4 text-xs md:text-sm font-medium text-indigo-600 uppercase tracking-wider">Left BV</th>
+                                            <th className="text-right pb-4 text-xs md:text-sm font-medium text-pink-600 uppercase tracking-wider">Right BV</th>
+                                            <th className="text-right pb-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         <tr className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <td className="py-3 md:py-4">
+                                                <div className="flex items-center gap-2 md:gap-3">
+                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                         </svg>
                                                     </div>
-                                                    <span className="font-medium text-gray-900">Total BV</span>
+                                                    <span className="text-xs md:text-sm font-medium text-gray-900">Total BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">{formatWithCount(current.left.totalBV, current.left.totalMembers)}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">{formatWithCount(current.right.totalBV, current.right.totalMembers)}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">{formatWithCount(current.left.totalBV + current.right.totalBV, current.left.totalMembers + current.right.totalMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.totalBV, current.left.totalMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.totalBV, current.right.totalMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.totalBV + current.right.totalBV, current.left.totalMembers + current.right.totalMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <td className="py-3 md:py-4">
+                                                <div className="flex items-center gap-2 md:gap-3">
+                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                                         </svg>
                                                     </div>
-                                                    <span className="font-medium text-gray-900">Paid BV</span>
+                                                    <span className="text-xs md:text-sm font-medium text-gray-900">Paid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">{formatWithCount(current.left.paidBV, current.left.paidMembers)}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">{formatWithCount(current.right.paidBV, current.right.paidMembers)}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">{formatWithCount(current.left.paidBV + current.right.paidBV, current.left.paidMembers + current.right.paidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.paidBV, current.left.paidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.paidBV, current.right.paidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.paidBV + current.right.paidBV, current.left.paidMembers + current.right.paidMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors bg-green-50">
-                                            <td className="py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <td className="py-3 md:py-4">
+                                                <div className="flex items-center gap-2 md:gap-3">
+                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                         </svg>
                                                     </div>
-                                                    <span className="font-medium text-green-800">Unpaid BV</span>
+                                                    <span className="text-xs md:text-sm font-medium text-green-800">Unpaid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-semibold text-green-600">{formatWithCount(current.left.unpaidBV, current.left.unpaidMembers)}</td>
-                                            <td className="py-4 text-right font-semibold text-green-600">{formatWithCount(current.right.unpaidBV, current.right.unpaidMembers)}</td>
-                                            <td className="py-4 text-right font-semibold text-green-700">{formatWithCount(current.left.unpaidBV + current.right.unpaidBV, current.left.unpaidMembers + current.right.unpaidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-600">{formatWithCount(current.left.unpaidBV, current.left.unpaidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-600">{formatWithCount(current.right.unpaidBV, current.right.unpaidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-700">{formatWithCount(current.left.unpaidBV + current.right.unpaidBV, current.left.unpaidMembers + current.right.unpaidMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <td className="py-3 md:py-4">
+                                                <div className="flex items-center gap-2 md:gap-3">
+                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                                         </svg>
                                                     </div>
-                                                    <span className="font-medium text-gray-900">Carry Forward</span>
+                                                    <span className="text-xs md:text-sm font-medium text-gray-900">Carry Forward</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 text-right font-medium text-indigo-600">{formatWithCount(current.left.carryForward, current.left.carryMembers)}</td>
-                                            <td className="py-4 text-right font-medium text-pink-600">{formatWithCount(current.right.carryForward, current.right.carryMembers)}</td>
-                                            <td className="py-4 text-right font-medium text-gray-900">{formatWithCount(current.left.carryForward + current.right.carryForward, current.left.carryMembers + current.right.carryMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.carryForward, current.left.carryMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.carryForward, current.right.carryMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.carryForward + current.right.carryForward, current.left.carryMembers + current.right.carryMembers)}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -217,19 +224,19 @@ export default function MatchingReport() {
                                     <table className="w-full">
                                         <thead>
                                             <tr className="bg-gray-50 border-b border-gray-100">
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Detail</th>
-                                                <th className="text-right px-6 py-4 text-sm font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                                <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Detail</th>
+                                                <th className="text-right px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {history.map((row) => (
                                                 <tr key={row.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                                        {new Date(row.createdAt).toLocaleDateString()}
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">
+                                                        {String(new Date(row.createdAt).getDate()).padStart(2, '0')}/{String(new Date(row.createdAt).getMonth() + 1).padStart(2, '0')}/{String(new Date(row.createdAt).getFullYear()).slice(-2)}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-600">{row.detail || 'Matching bonus'}</td>
-                                                    <td className="px-6 py-4 text-sm font-medium text-emerald-600 text-right">
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-600">{(row.detail || 'Matching bonus').replace(/\(1:1\)/g, '').trim() || 'Matching bonus'}</td>
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-emerald-600 text-right">
                                                         +₹{row.amount.toLocaleString()}
                                                     </td>
                                                 </tr>

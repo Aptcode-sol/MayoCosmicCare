@@ -37,15 +37,15 @@ async function main() {
 
     await prisma.product.create({
         data: {
-            name: 'Bio Magnetic Mattress Pad Pro',
-            price: 15900,
-            bv: 60,
+            name: 'Bio Magnetic Mattress',
+            price: 15000,
+            bv: 50,
             stock: 500,
             description: 'Experience the pinnacle of restorative sleep with our advanced Bio Magnetic Mattress Pad. Engineered using rare-earth neodymium magnets strategically placed to align with your body\'s natural energy pathways. This premium pad utilizes pulsed magnetic field therapy to enhance blood circulation, oxygen delivery, and cellular repair while you sleep. The breathable, hypoallergenic upper layer ensures maximum comfort while the underlying magnetic matrix works tirelessly to reduce inflammation, alleviate joint pain, and protect your body from harmful environmental EMF radiation. Wake up feeling truly rejuvenated.',
             keyFeatures: 'Deep Restorative Sleep: Clinically designed to increase REM sleep cycles and natural melatonin production\nAdvanced Pain Relief: Strategically placed rare-earth magnets target pressure points to alleviate chronic joint and muscle pain\nEMF Shielding: Creates a protective magnetic barrier against harmful electromagnetic frequencies from household devices\nEnhanced Circulation: Micro-magnetic fields naturally stimulate blood flow and optimize cellular oxygen delivery',
-            imageUrl: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-            directBonus: 3000,
-            matchingBonus: 2000,
+            imageUrl: 'https://images-cdn.ubuy.co.in/693b25a5b13707a9f007546b-magnetic-mattress-pad-twin-1-thick.jpg',
+            directBonus: 2700,
+            matchingBonus: 1800,
             dailyCap: 40000,
             taxPercent: 5.0,
             adminChargePercent: 5.0

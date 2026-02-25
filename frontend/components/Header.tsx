@@ -73,7 +73,7 @@ export default function Header() {
                         </div>
                         <span className="text-xl font-semibold text-gray-900 tracking-tight group-hover:text-gray-600 transition-colors">
                             <span className="hidden md:inline">Mayo Cosmic Care</span>
-                            <span className="md:hidden text-sm">Mayo Cosmic</span>
+                            <span className="md:hidden text-md whitespace-nowrap">Mayo Cosmic Care</span>
                         </span>
                     </Link>
 

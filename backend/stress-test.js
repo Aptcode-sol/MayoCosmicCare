@@ -198,7 +198,7 @@ async function runTest() {
     try {
         // Step 0: Fetch product ID
         const product = await prisma.product.findFirst({
-            where: { name: 'Standard Mattress' }
+            where: { name: 'Bio Magnetic Mattress Pad Pro' }
         });
 
         if (!product) {

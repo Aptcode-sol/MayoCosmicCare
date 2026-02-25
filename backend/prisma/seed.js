@@ -53,24 +53,6 @@ async function main() {
     });
     console.log('✓ Bio Magnetic Mattress Pad Pro created');
 
-    await prisma.product.create({
-        data: {
-            name: 'Quantum Alkaline Water Ionizer',
-            price: 24500,
-            bv: 100,
-            stock: 150,
-            description: 'Transform your tap water into a powerful antioxidant with the Quantum Alkaline Water Ionizer. Utilizing Japanese platinum-titanium electrolysis plates, this state-of-the-art system creates micro-clustered, hydrogen-rich alkaline water that your body can absorb up to 6 times faster than regular water. Featuring a sophisticated 9-stage filtration process including activated carbon and nano-copper infusion, it strips away 99.99% of heavy metals, chlorine, and pathogens while retaining essential health-boosting minerals. Drink your way to better health, improved metabolic balance, and supreme hydration.',
-            keyFeatures: 'Hydrogen Enrichment: Injects active molecular hydrogen to act as a potent antioxidant against cellular aging\nNano-Copper Filtration: 9-stage advanced filtration removes 99.99% of toxins while naturally infusing anti-bacterial copper ions\nMicro-Clustered Hydration: Breaks water molecules into smaller clusters for 6x faster cellular absorption and hydration\nSmart pH Control: Intuitive touch panel allows precise control of alkaline and acidic levels for drinking, cooking, or sanitizing',
-            imageUrl: 'https://images.unsplash.com/photo-1579065560489-189a1b415e98?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-            directBonus: 5000,
-            matchingBonus: 3500,
-            dailyCap: 50000,
-            taxPercent: 5.0,
-            adminChargePercent: 5.0
-        }
-    });
-    console.log('✓ Quantum Alkaline Water Ionizer created');
-
     console.log('\nSeed completed successfully!');
 }
 

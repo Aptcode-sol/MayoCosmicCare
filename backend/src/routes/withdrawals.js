@@ -14,6 +14,11 @@ router.post('/', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Invalid amount' });
         }
 
+        const today = new Date().getDay();
+        if (today !== 1) {
+            return res.status(400).json({ error: 'Withdrawals are only allowed on Mondays' });
+        }
+
         const wallet = await prisma.wallet.findUnique({ where: { userId } });
         if (!wallet || wallet.balance < amount) {
             return res.status(400).json({ error: 'Insufficient balance' });

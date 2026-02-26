@@ -69,6 +69,42 @@ router.post('/approve/:id', checkRole(['ADMIN']), async (req, res) => {
     }
 });
 
+// POST /api/payouts/approve-bulk (Admin only)
+router.post('/approve-bulk', checkRole(['ADMIN']), async (req, res) => {
+    try {
+        const { ids, allPending } = req.body;
+        let withdrawalIds = [];
+
+        if (allPending) {
+            const pending = await prisma.withdrawal.findMany({
+                where: { status: 'PENDING' },
+                select: { id: true }
+            });
+            withdrawalIds = pending.map(p => p.id);
+        } else if (ids && Array.isArray(ids)) {
+            withdrawalIds = ids;
+        } else {
+            return res.status(400).json({ error: 'Provide ids array or allPending flag' });
+        }
+
+        const results = { successful: 0, failed: 0, errors: [] };
+
+        for (const id of withdrawalIds) {
+            try {
+                await payoutService.executePayout(id);
+                results.successful++;
+            } catch (err) {
+                results.failed++;
+                results.errors.push({ id, message: err.message });
+            }
+        }
+
+        res.json({ message: `Processed ${withdrawalIds.length} payouts. Successful: ${results.successful}, Failed: ${results.failed}`, results });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST /api/payouts/status/:id (User/Admin) - Manual Status Check
 router.post('/status/:id', async (req, res) => {
     try {

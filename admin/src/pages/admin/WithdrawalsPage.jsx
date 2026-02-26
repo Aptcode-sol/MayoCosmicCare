@@ -11,6 +11,8 @@ export default function WithdrawalsPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
     // Debounce search input to prevent focus loss
     useEffect(() => {
@@ -40,6 +42,7 @@ export default function WithdrawalsPage() {
 
     useEffect(() => {
         fetchWithdrawals();
+        setSelectedIds([]);
     }, [withdrawalsPage, debouncedSearch, statusFilter]);
 
     const approveWithdrawal = async (id) => {
@@ -53,6 +56,40 @@ export default function WithdrawalsPage() {
         } catch (err) {
             toast.dismiss();
             toast.error(err.response?.data?.error || 'Approval failed');
+        }
+    };
+
+    const approveBulk = async (allPending = false) => {
+        const payload = allPending ? { allPending: true } : { ids: selectedIds };
+        const msg = allPending ? 'Approve ALL pending payouts?' : `Approve ${selectedIds.length} selected payouts?`;
+
+        if (!confirm(msg + ' Funds will be transferred immediately via Cashfree.')) return;
+
+        setIsProcessingBulk(true);
+        const toastId = toast.loading('Processing bulk payouts...');
+
+        try {
+            const res = await api.post('/api/payouts/approve-bulk', payload);
+            toast.success(res.data.message || 'Bulk execution completed', { id: toastId });
+            setSelectedIds([]);
+            fetchWithdrawals();
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Bulk approval failed', { id: toastId });
+        } finally {
+            setIsProcessingBulk(false);
+        }
+    };
+
+    const toggleSelection = (id) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const toggleAll = () => {
+        const pendingOnPage = withdrawals.filter(w => w.status === 'PENDING').map(w => w.id);
+        if (selectedIds.length === pendingOnPage.length && pendingOnPage.length > 0) {
+            setSelectedIds([]); // deselect all
+        } else {
+            setSelectedIds(pendingOnPage); // select all pending on current page
         }
     };
 
@@ -91,8 +128,31 @@ export default function WithdrawalsPage() {
                     <option value="APPROVED">Approved</option>
                     <option value="REJECTED">Rejected</option>
                 </select>
+
+                <div className="flex gap-2">
+                    {selectedIds.length > 0 && (
+                        <button
+                            onClick={() => approveBulk(false)}
+                            disabled={isProcessingBulk}
+                            className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+                        >
+                            Approve Selected ({selectedIds.length})
+                        </button>
+                    )}
+
+                    {statusFilter === 'PENDING' && withdrawalsPagination?.total > 0 && (
+                        <button
+                            onClick={() => approveBulk(true)}
+                            disabled={isProcessingBulk}
+                            className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl text-sm font-medium disabled:opacity-50"
+                        >
+                            Approve All Pending ({withdrawalsPagination.total})
+                        </button>
+                    )}
+                </div>
+
                 {withdrawalsPagination && (
-                    <div className="flex items-center text-xs sm:text-sm text-gray-500 px-2">
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500 px-2 ml-auto">
                         Total: <span className="ml-1 font-medium text-gray-900">{withdrawalsPagination.total}</span>
                     </div>
                 )}
@@ -130,7 +190,16 @@ export default function WithdrawalsPage() {
                     <table className="w-full text-xs sm:text-sm min-w-[760px]">
                         <thead className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase text-gray-500 font-medium">
                             <tr>
-                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">User</th>
+                                <th className="px-3 sm:px-4 py-3 sm:py-4 text-left w-10">
+                                    <input
+                                        type="checkbox"
+                                        onChange={toggleAll}
+                                        checked={withdrawals.filter(w => w.status === 'PENDING').length > 0 && selectedIds.length === withdrawals.filter(w => w.status === 'PENDING').length}
+                                        disabled={withdrawals.filter(w => w.status === 'PENDING').length === 0}
+                                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                    />
+                                </th>
+                                <th className="px-3 sm:px-4 py-3 sm:py-4 text-left">User</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Amount</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Bank Details</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Date</th>
@@ -142,8 +211,18 @@ export default function WithdrawalsPage() {
                             {withdrawals.length > 0 ? withdrawals.map((w) => {
                                 const details = w.bankDetails ? JSON.parse(w.bankDetails) : {};
                                 return (
-                                    <tr key={w.id} className="hover:bg-gray-50/50">
-                                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                    <tr key={w.id} className={`hover:bg-gray-50/50 ${selectedIds.includes(w.id) ? 'bg-indigo-50/30' : ''}`}>
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4">
+                                            {w.status === 'PENDING' && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(w.id)}
+                                                    onChange={() => toggleSelection(w.id)}
+                                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="px-3 sm:px-4 py-3 sm:py-4">
                                             <div className="text-gray-900 font-medium text-sm sm:text-base">{w.user?.username}</div>
                                             {w.user?.name && <div className="text-gray-700 text-xs sm:text-sm">{w.user.name}</div>}
                                             <div className="text-gray-500 text-[11px] sm:text-xs">{w.user?.phone}</div>

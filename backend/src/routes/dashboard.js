@@ -394,10 +394,9 @@ router.get('/matching', authenticate, async (req, res) => {
         // Matchable pairs = min of both sides (how many could theoretically be matched)
         const matchablePairs = Math.min(totalLeftMembers, totalRightMembers);
 
-        // Unpaid members = members that are matched but not yet paid due to daily cap
-        // These are: matchable - paid (waiting in queue for payout)
-        const unpaidLeftMembers = Math.max(0, matchablePairs - paidLeftMembers);
-        const unpaidRightMembers = Math.max(0, matchablePairs - paidRightMembers);
+        // Unpaid members = Total minus Paid
+        const unpaidLeftMembers = Math.max(0, totalLeftMembers - paidLeftMembers);
+        const unpaidRightMembers = Math.max(0, totalRightMembers - paidRightMembers);
 
         // Carry Forward = members that CANNOT be matched because opposite leg is too small
         // Left carry = excess left members (left > right)

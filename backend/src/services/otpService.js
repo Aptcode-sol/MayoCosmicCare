@@ -5,8 +5,7 @@ let otpStore = [];
  * Generate a 6-digit numeric OTP
  */
 function generateOtp() {
-    // return Math.floor(100000 + Math.random() * 900000).toString();
-    return "123456";
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 /**
@@ -32,7 +31,6 @@ function storeOtp(email, otp) {
  */
 function verifyOtp(email, otpInput) {
     const entryIndex = otpStore.findIndex(e => e.email === email);
-    if (process.env.environment == "dev" && otpInput == '000000') return true;
 
     if (entryIndex === -1) {
         // console.log(`[OTP Verify] No OTP found for ${email}`);

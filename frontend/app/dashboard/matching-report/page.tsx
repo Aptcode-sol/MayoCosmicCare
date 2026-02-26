@@ -164,32 +164,32 @@ export default function MatchingReport() {
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-3 md:py-4">
                                                 <div className="flex items-center gap-2 md:gap-3">
-                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                                         </svg>
                                                     </div>
                                                     <span className="text-xs md:text-sm font-medium text-gray-900">Paid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.paidBV, current.left.paidMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.paidBV, current.right.paidMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.paidBV + current.right.paidBV, current.left.paidMembers + current.right.paidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-600">{formatWithCount(current.left.paidBV, current.left.paidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-600">{formatWithCount(current.right.paidBV, current.right.paidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-700">{formatWithCount(current.left.paidBV + current.right.paidBV, current.left.paidMembers + current.right.paidMembers)}</td>
                                         </tr>
-                                        <tr className="hover:bg-gray-50 transition-colors bg-green-50">
+                                        <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-3 md:py-4">
                                                 <div className="flex items-center gap-2 md:gap-3">
-                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <div className="w-6 md:w-8 h-6 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <svg className="w-3 md:w-4 h-3 md:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                         </svg>
                                                     </div>
-                                                    <span className="text-xs md:text-sm font-medium text-green-800">Unpaid BV</span>
+                                                    <span className="text-xs md:text-sm font-medium text-gray-900">Unpaid BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-600">{formatWithCount(current.left.unpaidBV, current.left.unpaidMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-600">{formatWithCount(current.right.unpaidBV, current.right.unpaidMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-green-700">{formatWithCount(current.left.unpaidBV + current.right.unpaidBV, current.left.unpaidMembers + current.right.unpaidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-indigo-600">{formatWithCount(current.left.unpaidBV, current.left.unpaidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-pink-600">{formatWithCount(current.right.unpaidBV, current.right.unpaidMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-gray-900">{formatWithCount(current.left.unpaidBV + current.right.unpaidBV, current.left.unpaidMembers + current.right.unpaidMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-3 md:py-4">

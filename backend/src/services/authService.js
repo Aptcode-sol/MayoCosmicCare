@@ -302,7 +302,7 @@ async function sendOtp(email) {
 
     const otp = generateOtp();
     storeOtp(email, otp);
-    // await sendOtpEmail(email, otp);  
+    await sendOtpEmail(email, otp);
 
     return { message: 'OTP sent successfully' };
 }
@@ -314,7 +314,7 @@ async function sendForgotPasswordOtp(email) {
 
     const otp = generateOtp();
     storeOtp(`forgot:${email}`, otp); // Prefix to differentiate from registration OTP
-    // await sendOtpEmail(email, otp);
+    await sendOtpEmail(email, otp);
 
     // console.log(`[FORGOT-PWD] OTP for ${email}: ${otp}`);
     return { message: 'OTP sent to your email' };
@@ -345,7 +345,7 @@ async function sendEmailChangeOtp(userId, newEmail) {
 
     const otp = generateOtp();
     storeOtp(`emailchange:${userId}:${newEmail}`, otp);
-    // await sendOtpEmail(newEmail, otp);
+    await sendOtpEmail(newEmail, otp);
 
     // console.log(`[EMAIL-CHANGE] OTP for ${newEmail}: ${otp}`);
     return { message: 'OTP sent to new email' };

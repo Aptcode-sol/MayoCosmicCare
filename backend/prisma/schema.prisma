@@ -22,7 +22,7 @@ model User {
   parent           User?    @relation("TreePlacement", fields: [parentId], references: [id])
   children         User[]   @relation("TreePlacement")
   role             Role     @default(USER)
-  kycStatus        String   @default("VERIFIED") // NOT_STARTED, IN_PROGRESS, VERIFIED, FAILED
+  kycStatus        String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, VERIFIED, FAILED
   kycRefId         String?
   pan              String?
   aadhaar          String?

@@ -55,6 +55,14 @@ if (REDIS_ENABLED) {
 
 // Only exit process if not running as a PM2 cluster worker
 process.on('SIGINT', async () => {
+    console.error('[SIGINT] Received in matchingWorker.js', {
+        pid: process.pid,
+        pm_id: process.env.pm_id,
+        NODE_APP_INSTANCE: process.env.NODE_APP_INSTANCE,
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        env: process.env
+    });
     if (worker) {
         console.log('Shutting down matching worker...');
         await worker.close();

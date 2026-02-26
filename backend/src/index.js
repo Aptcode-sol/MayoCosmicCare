@@ -1,3 +1,11 @@
+console.log('[BOOT] index.js starting', {
+    pid: process.pid,
+    pm_id: process.env.pm_id,
+    NODE_APP_INSTANCE: process.env.NODE_APP_INSTANCE,
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    env: process.env
+});
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');

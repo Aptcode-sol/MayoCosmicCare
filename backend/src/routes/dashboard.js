@@ -31,6 +31,8 @@ router.get('/stats', authenticate, async (req, res) => {
                 rightBV: true,
                 leftCarryBV: true,
                 rightCarryBV: true,
+                leftMemberCount: true,
+                rightMemberCount: true,
                 leftCarryCount: true,
                 rightCarryCount: true,
                 rank: true,
@@ -46,11 +48,9 @@ router.get('/stats', authenticate, async (req, res) => {
             }
         });
 
-        // Calculate total team (placement tree)
-        const leftChild = user.children.find(c => c.position === 'LEFT');
-        const rightChild = user.children.find(c => c.position === 'RIGHT');
-        const leftMembers = leftChild ? 1 + await countDescendants(leftChild.id) : 0;
-        const rightMembers = rightChild ? 1 + await countDescendants(rightChild.id) : 0;
+        // Calculate total team (base members WITHOUT carry) - use member counts
+        const leftMembers = user.leftMemberCount || 0;
+        const rightMembers = user.rightMemberCount || 0;
 
         // Calculate direct referrals by position
         const directLeft = user.referrals.filter(r => r.position === 'LEFT').length;
@@ -82,7 +82,9 @@ router.get('/stats', authenticate, async (req, res) => {
                     activeLeft: leftMembers,
                     activeRight: rightMembers,
                     leftPaidBV,
-                    rightPaidBV
+                    rightPaidBV,
+                    leftCarryMembers: user.leftCarryCount || 0,
+                    rightCarryMembers: user.rightCarryCount || 0
                 },
                 user: {
                     rank: user.rank,
@@ -395,14 +397,25 @@ router.get('/matching', authenticate, async (req, res) => {
         const carryLeftBV = Math.max(user.leftCarryBV || 0, carryLeftFromCount);
         const carryRightBV = Math.max(user.rightCarryBV || 0, carryRightFromCount);
 
-        const totalLeftMembers = Math.max(user.leftMemberCount || 0, Math.round(totalLeftBV / BV_PER_MEMBER));
-        const totalRightMembers = Math.max(user.rightMemberCount || 0, Math.round(totalRightBV / BV_PER_MEMBER));
-        const paidLeftMembers = totalPayoutAgg._sum.leftConsumed || 0;
-        const paidRightMembers = totalPayoutAgg._sum.rightConsumed || 0;
-        const unpaidLeftMembers = Math.max(0, Math.round(unpaidLeftBV / BV_PER_MEMBER));
-        const unpaidRightMembers = Math.max(0, Math.round(unpaidRightBV / BV_PER_MEMBER));
-        const carryLeftMembers = Math.max(user.leftCarryCount || 0, Math.round(carryLeftBV / BV_PER_MEMBER));
-        const carryRightMembers = Math.max(user.rightCarryCount || 0, Math.round(carryRightBV / BV_PER_MEMBER));
+        // Carry members (explicitly in carry state)
+        const carryLeftMembers = user.leftCarryCount || 0;
+        const carryRightMembers = user.rightCarryCount || 0;
+
+        // Unprocessed members (from DB, since matching resets them)
+        const unprocessedLeftMembers = user.leftMemberCount || 0;
+        const unprocessedRightMembers = user.rightMemberCount || 0;
+
+        // Paid members from payouts (already consumed)
+        const paidLeftMembers = (totalPayoutAgg._sum.leftConsumed || 0);
+        const paidRightMembers = (totalPayoutAgg._sum.rightConsumed || 0);
+
+        // Calculate total members (Paid + Carry + Unprocessed)
+        const totalLeftMembers = paidLeftMembers + carryLeftMembers + unprocessedLeftMembers;
+        const totalRightMembers = paidRightMembers + carryRightMembers + unprocessedRightMembers;
+
+        // Unpaid members = Carry + Unprocessed
+        const unpaidLeftMembers = carryLeftMembers + unprocessedLeftMembers;
+        const unpaidRightMembers = carryRightMembers + unprocessedRightMembers;
 
         res.json({
             ok: true,

@@ -90,8 +90,8 @@ export default function Dashboard() {
         return () => { clearTimeout(t); clearInterval(interval) }
     }, [loadDashboard])
 
-    const leftMembers = (user?.leftMemberCount || 0) + (user?.leftCarryCount || 0)
-    const rightMembers = (user?.rightMemberCount || 0) + (user?.rightCarryCount || 0)
+    const leftMembers = user?.leftMemberCount || 0
+    const rightMembers = user?.rightMemberCount || 0
     const totalMembers = leftMembers + rightMembers
 
     return (

@@ -38,6 +38,8 @@ async function buildBinaryTree(userId, depth = 6) {
         }
       },
       wallet: { select: { balance: true } },
+      leftCarryCount: true,
+      rightCarryCount: true,
       // Get children (users whose parentId is this user)
       children: {
         select: {
@@ -59,8 +61,8 @@ async function buildBinaryTree(userId, depth = 6) {
   const rightSubtree = rightChildData ? await buildBinaryTree(rightChildData.id, depth - 1) : null;
 
   // Calculate member counts dynamically from actual tree structure
-  const leftMemberCount = leftChildData ? 1 + await countDescendants(leftChildData.id) : 0;
-  const rightMemberCount = rightChildData ? 1 + await countDescendants(rightChildData.id) : 0;
+  const leftMemberCount = (leftChildData ? 1 + await countDescendants(leftChildData.id) : 0);
+  const rightMemberCount = (rightChildData ? 1 + await countDescendants(rightChildData.id) : 0);
 
   return {
     id: user.id,

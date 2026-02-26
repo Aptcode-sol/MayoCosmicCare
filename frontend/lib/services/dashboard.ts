@@ -10,6 +10,8 @@ export interface TeamStats {
         activeRight: number
         leftPaidBV: number
         rightPaidBV: number
+        leftCarryMembers: number
+        rightCarryMembers: number
     }
     directTeam: {
         total: number

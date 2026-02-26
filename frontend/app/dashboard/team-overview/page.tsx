@@ -93,7 +93,10 @@ export default function TeamOverview() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Total Count</p>
-                                            <p className="text-2xl font-light text-gray-900">{stats?.directTeam.left || 0}</p>
+                                            <p className="text-2xl font-light text-gray-900">{stats?.totalTeam.leftMembers || 0}</p>
+                                            {(stats?.totalTeam.leftCarryMembers || 0) > 0 && (
+                                                <p className="text-xs text-gray-400 mt-1">Carry Forward: {stats?.totalTeam.leftCarryMembers || 0}</p>
+                                            )}
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Active</p>
@@ -111,7 +114,10 @@ export default function TeamOverview() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Total Count</p>
-                                            <p className="text-2xl font-light text-gray-900">{stats?.directTeam.right || 0}</p>
+                                            <p className="text-2xl font-light text-gray-900">{stats?.totalTeam.rightMembers || 0}</p>
+                                            {(stats?.totalTeam.rightCarryMembers || 0) > 0 && (
+                                                <p className="text-xs text-gray-400 mt-1">Carry Forward: {stats?.totalTeam.rightCarryMembers || 0}</p>
+                                            )}
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Active</p>
@@ -145,7 +151,10 @@ export default function TeamOverview() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Total Count</p>
-                                            <p className="text-2xl font-light text-gray-900">{stats?.totalTeam.leftMembers || 0}</p>
+                                            <p className="text-2xl font-light text-gray-900">{(stats?.totalTeam.leftMembers || 0) + (stats?.totalTeam.leftCarryMembers || 0)}</p>
+                                            {(stats?.totalTeam.leftCarryMembers || 0) > 0 && (
+                                                <p className="text-xs text-gray-400 mt-1">Active: {stats?.totalTeam.leftMembers || 0} + Carry: {stats?.totalTeam.leftCarryMembers || 0}</p>
+                                            )}
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Active</p>
@@ -176,7 +185,10 @@ export default function TeamOverview() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Total Count</p>
-                                            <p className="text-2xl font-light text-gray-900">{stats?.totalTeam.rightMembers || 0}</p>
+                                            <p className="text-2xl font-light text-gray-900">{(stats?.totalTeam.rightMembers || 0) + (stats?.totalTeam.rightCarryMembers || 0)}</p>
+                                            {(stats?.totalTeam.rightCarryMembers || 0) > 0 && (
+                                                <p className="text-xs text-gray-400 mt-1">Active: {stats?.totalTeam.rightMembers || 0} + Carry: {stats?.totalTeam.rightCarryMembers || 0}</p>
+                                            )}
                                         </div>
                                         <div className="bg-white rounded-xl p-4">
                                             <p className="text-sm text-gray-500">Active</p>

@@ -93,6 +93,17 @@ export default function NetworkPage() {
                                 }
                             });
 
+                            const calcCounts = (node) => {
+                                if (!node) return 0;
+                                const leftCount = calcCounts(node.left);
+                                const rightCount = calcCounts(node.right);
+                                node.leftMemberCount = node.left ? 1 + leftCount : 0;
+                                node.rightMemberCount = node.right ? 1 + rightCount : 0;
+                                return node.leftMemberCount + node.rightMemberCount;
+                            };
+
+                            if (root) calcCounts(root);
+
                             return root;
                         };
 

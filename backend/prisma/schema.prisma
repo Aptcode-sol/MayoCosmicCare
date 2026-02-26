@@ -26,7 +26,7 @@ model User {
   kycRefId         String?
   pan              String?
   aadhaar          String?
-  isEmailVerified  Boolean  @default(true)
+  isEmailVerified  Boolean  @default(false)
   emailVerifyToken String?
   resetToken       String?
   resetTokenExpiry DateTime?

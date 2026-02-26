@@ -52,12 +52,17 @@ if (REDIS_ENABLED) {
 }
 
 // Graceful shutdown
+
+// Only exit process if not running as a PM2 cluster worker
 process.on('SIGINT', async () => {
     if (worker) {
         console.log('Shutting down matching worker...');
         await worker.close();
     }
-    process.exit(0);
+    // Only exit if not a PM2 cluster worker
+    if (!process.env.NODE_APP_INSTANCE && !process.env.pm_id) {
+        process.exit(0);
+    }
 });
 
 module.exports = worker;

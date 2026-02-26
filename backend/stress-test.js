@@ -76,7 +76,7 @@ async function getUser(token) {
 }
 
 async function registerUser(name, email, password, sponsorId, leg, otp) {
-    console.log(`📝 Registering: ${name} (sponsor: ${sponsorId?.substring(0, 8)}... leg: ${leg})`);
+    // console.log(`📝 Registering: ${name} (sponsor: ${sponsorId?.substring(0, 8)}... leg: ${leg})`);
     const result = await httpRequest('/auth/register', 'POST', {
         name,
         email,
@@ -86,7 +86,7 @@ async function registerUser(name, email, password, sponsorId, leg, otp) {
         otp
     });
     report.usersCreated++;
-    console.log(`✅ Registered ${name} (ID: ${result.id})`);
+    // console.log(`✅ Registered ${name} (ID: ${result.id})`);
     return result;
 }
 
@@ -96,7 +96,7 @@ async function loginUser(email, password) {
 }
 
 async function purchaseProduct(token, name) {
-    console.log(`🛒 ${name} purchasing...`);
+    // console.log(`🛒 ${name} purchasing...`);
     await httpRequest(`/products/${PRODUCT_ID}/purchase`, 'POST', null, token);
     report.purchasesMade++;
     console.log(`✅ ${name} purchase complete`);

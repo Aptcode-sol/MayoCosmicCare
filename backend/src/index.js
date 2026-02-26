@@ -12,9 +12,12 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const { info, error } = require('./logger');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const CASHFREE_ENV = process.env.CASHFREE_ENV || 'SANDBOX';
+
 
 app.use(helmet());
 app.use(cors());
@@ -85,6 +88,7 @@ app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }
 // Start matching worker (BullMQ) - requires Redis
 try {
     require('./queues/workers/matchingWorker');
+    console.log(CASHFREE_ENV, "in the EC2")
     console.log('Matching worker started');
 } catch (err) {
     console.warn('Matching worker not started (Redis may not be available):', err.message);

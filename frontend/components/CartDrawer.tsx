@@ -86,7 +86,7 @@ export default function CartDrawer() {
 
             cashfree.checkout(checkoutOptions).then(async (result: any) => {
                 if (result.error) {
-                    // console.log("User closed popup or error", result.error);
+                    console.log("User closed popup or error", result.error);
                     toast.error("Payment cancelled or failed");
                 }
                 if (result.paymentDetails) {

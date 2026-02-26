@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const paymentService = require('../services/paymentService');
-
+const { info, error } = require('../logger');
 // POST /api/payment/create-order
 router.post('/create-order', async (req, res) => {
     try {
+        const CASHFREE_ENV = process.env.CASHFREE_ENV || 'SANDBOX';
+        info(CASHFREE_ENV, "in the EC2")
         const userId = req.user.id; // Provided by authMiddleware
         const { items, sponsorId } = req.body; // items: [{productId, quantity, price}]
 

@@ -21,6 +21,16 @@ app.use(cors());
 app.use(cookieParser());
 app.use(express.json({ limit: '10kb' }));
 
+// Request logging middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`[${req.method}] ${req.path} - ${res.statusCode} - ${duration}ms`);
+    });
+    next();
+});
+
 // Rate limiting - disabled for stress testing
 // const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 // app.use(limiter);

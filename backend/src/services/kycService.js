@@ -46,7 +46,7 @@ async function initKyc(userId) {
         const response = await axios.post(`${BASE_URL}/digilocker`, payload, {
             headers: await getHeaders()
         });
-        // console.log("called", response.data);
+        console.log("called", response.data);
         // Response should contain the URL
         // API response structure: { link: "...", verification_id: "..." } usually
         // Adjust check to handle response.data.link or response.data.url
@@ -91,7 +91,7 @@ async function checkStatus(userId) {
         });
 
         const data = statusRes.data;
-        // console.log('[KYC] Digilocker Full Status Response:', JSON.stringify(data, null, 2));
+        console.log('[KYC] Digilocker Full Status Response:', JSON.stringify(data, null, 2));
         // Possible statuses: PENDING, AUTHENTICATED, EXPIRED, CONSENT_DENIED
         // Note: Actual API response field might vary, adjusting based on typical Cashfree structure
         // Usually it returns { status: "AUTHENTICATED", ... }
@@ -100,7 +100,7 @@ async function checkStatus(userId) {
 
         if (data.status === 'AUTHENTICATED' || data.status === 'SUCCESS') {
             newStatus = 'VERIFIED';
-            // console.log('[KYC] User Authenticated. Details:', data.user_details);
+            console.log('[KYC] User Authenticated. Details:', data.user_details);
 
             // Fetch Documents
             let pan = user.pan;
@@ -114,7 +114,7 @@ async function checkStatus(userId) {
                     params: { verification_id: user.kycRefId }
                 });
                 if (docRes.data) {
-                    // console.log('[KYC] Aadhaar Doc Full Data:', JSON.stringify(docRes.data, null, 2));
+                    console.log('[KYC] Aadhaar Doc Full Data:', JSON.stringify(docRes.data, null, 2));
                     // Adjust based on actual response structure
                     const attrs = docRes.data.mapped_attributes || docRes.data;
                     aadhaar = attrs.uid || attrs.aadhaar_number || aadhaar;
@@ -131,7 +131,7 @@ async function checkStatus(userId) {
                     params: { verification_id: user.kycRefId }
                 });
                 if (docRes.data) {
-                    // console.log('[KYC] PAN Doc Full Data:', JSON.stringify(docRes.data, null, 2));
+                    console.log('[KYC] PAN Doc Full Data:', JSON.stringify(docRes.data, null, 2));
                     const attrs = docRes.data.mapped_attributes || docRes.data;
                     pan = attrs.pan_number || attrs.pan || pan;
                     panName = attrs.name_pan_card;
@@ -145,7 +145,7 @@ async function checkStatus(userId) {
                 const registeredName = user.name.trim().replace(/\s+/g, ' ').toLowerCase();
                 const nameOnPan = panName.trim().replace(/\s+/g, ' ').toLowerCase();
 
-                // console.log(`[KYC] Name Match Check: Registered='${registeredName}' vs PAN='${nameOnPan}'`);
+                console.log(`[KYC] Name Match Check: Registered='${registeredName}' vs PAN='${nameOnPan}'`);
 
                 if (registeredName !== nameOnPan) {
                     await prisma.user.update({

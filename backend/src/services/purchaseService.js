@@ -7,7 +7,7 @@ const { placeNewUser } = require('./placementService');
  * Process purchase: reduce stock, create transaction, update BV up the uplines
  */
 async function purchaseProduct(userId, productId, newSponsorId = null, leg = null) {
-    // console.log('[PURCHASE-SERVICE] Starting purchase:', { userId, productId });
+    console.log('[PURCHASE-SERVICE] Starting purchase:', { userId, productId });
 
     // 1. Pre-purchase: Handle missing sponsor / Placement
     // We must ensure the user has a sponsor and is placed in the tree BEFORE processing the purchase BV.
@@ -16,7 +16,7 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
 
     // If user is not the first admin and has no sponsor/placement
     const isFirstAdmin = userToCheck.role === 'ADMIN' && (await prisma.user.count()) === 1;
-    // console.log('[PURCHASE] isFirstAdmin:', isFirstAdmin, 'User:', userToCheck.username, 'SponsorId:', userToCheck.sponsorId);
+    console.log('[PURCHASE] isFirstAdmin:', isFirstAdmin, 'User:', userToCheck.username, 'SponsorId:', userToCheck.sponsorId);
 
     if (!isFirstAdmin && userToCheck.kycStatus !== 'VERIFIED') {
         throw new Error('KYC Verification is required to purchase products. Please complete KYC in your profile.');
@@ -27,7 +27,7 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
 
         // If no sponsor on record, one MUST be provided now
         if (!sponsorIdToUse) {
-            // console.log('[PURCHASE] Missing sponsor. Provided newSponsorId:', newSponsorId);
+            console.log('[PURCHASE] Missing sponsor. Provided newSponsorId:', newSponsorId);
             if (!newSponsorId) {
                 throw new Error('Sponsor is required for your first purchase to place you in the network.');
             }
@@ -74,12 +74,12 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
             // Override leg if placementLeg was derived from the code
             if (placementLeg) leg = placementLeg;
 
-            // console.log('[PURCHASE] Assigned new sponsor:', sponsorIdToUse, 'to user:', userId, 'Leg:', leg);
+            console.log('[PURCHASE] Assigned new sponsor:', sponsorIdToUse, 'to user:', userId, 'Leg:', leg);
         }
 
         // Place in tree if not yet placed
         if (!userToCheck.parentId && sponsorIdToUse) {
-            // console.log('[PURCHASE] Placing user in tree under sponsor:', sponsorIdToUse);
+            console.log('[PURCHASE] Placing user in tree under sponsor:', sponsorIdToUse);
             await placeNewUser(userId, sponsorIdToUse, leg);
         }
     }
@@ -89,10 +89,10 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
     const sponsorsToQueue = [];
 
     const runTx = async (tx) => {
-        // console.log('[PURCHASE-SERVICE] Inside transaction, decrementing stock...');
+        console.log('[PURCHASE-SERVICE] Inside transaction, decrementing stock...');
         // Atomically decrement stock if available
         const upd = await tx.product.updateMany({ where: { id: productId, stock: { gt: 0 } }, data: { stock: { decrement: 1 } } });
-        // console.log('[PURCHASE-SERVICE] Stock update result:', upd);
+        console.log('[PURCHASE-SERVICE] Stock update result:', upd);
         if (!upd || upd.count === 0) throw new Error('Out of stock');
 
         const product = await tx.product.findUnique({ where: { id: productId } });
@@ -108,23 +108,23 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
             where: { userId, type: 'PURCHASE' }
         });
         const isFirstPurchase = purchaseCount === 1;
-        // console.log('[PURCHASE] User:', userId, 'isFirstPurchase:', isFirstPurchase, 'count:', purchaseCount);
+        console.log('[PURCHASE] User:', userId, 'isFirstPurchase:', isFirstPurchase, 'count:', purchaseCount);
 
         if (isFirstPurchase || !buyer.hasPurchased) {
             // Mark user as having purchased (enables referral ability)
-            // console.log('[PURCHASE] Marking user as hasPurchased=true');
+            console.log('[PURCHASE] Marking user as hasPurchased=true');
             await tx.user.update({ where: { id: userId }, data: { hasPurchased: true } });
         }
 
         // Credit direct bonus to sponsor ONLY on buyer's FIRST purchase
         // const buyer = await tx.user.findUnique({ where: { id: userId } }); // Already fetched
-        // console.log('[PURCHASE] Refetched buyer:', buyer.id, 'Sponsor:', buyer.sponsorId, 'hasPurchased:', buyer.hasPurchased);
+        console.log('[PURCHASE] Refetched buyer:', buyer.id, 'Sponsor:', buyer.sponsorId, 'hasPurchased:', buyer.hasPurchased);
         let deferredDirectBonus = null;
         if (buyer && buyer.sponsorId) {
             if (isFirstPurchase) {
                 try {
                     await creditDirectBonus(tx, buyer.sponsorId, product.bv, buyer.id);
-                    // console.log('[PURCHASE] Direct bonus credited to sponsor:', buyer.sponsorId);
+                    console.log('[PURCHASE] Direct bonus credited to sponsor:', buyer.sponsorId);
                 } catch (err) {
                     const msg = String(err?.message || err).toLowerCase()
                     if (msg.includes('transaction') || msg.includes('unable to start a transaction') || msg.includes('transaction not found')) {
@@ -134,7 +134,7 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
                     try { const { error } = require('../logger'); error('direct-bonus-deferred', { err: err.message }); } catch (e) { }
                 }
             } else {
-                // console.log('[PURCHASE] Skipping direct bonus - not first purchase');
+                console.log('[PURCHASE] Skipping direct bonus - not first purchase');
             }
         }
 

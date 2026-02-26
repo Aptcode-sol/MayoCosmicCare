@@ -246,4 +246,3 @@ model UserCounter {
   year  Int @id
   count Int @default(0)
 }
-

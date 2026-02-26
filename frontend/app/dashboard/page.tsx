@@ -202,7 +202,6 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                         <div className="text-lg md:text-2xl font-bold text-gray-900">{leftMembers}</div>
-                                        <div className="text-xs text-gray-400 mt-1">Carry: {user?.leftCarryCount || 0}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>
@@ -219,7 +218,6 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                         <div className="text-lg md:text-2xl font-bold text-gray-900">{rightMembers}</div>
-                                        <div className="text-xs text-gray-400 mt-1">Carry: {user?.rightCarryCount || 0}</div>
                                     </CardContent>
                                 </Card>
                             </AnimateOnScroll>

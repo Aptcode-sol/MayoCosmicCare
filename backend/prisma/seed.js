@@ -51,7 +51,7 @@ async function main() {
             adminChargePercent: 5.0
         }
     });
-    console.log('✓ Bio Magnetic Mattress Pad Pro created');
+    console.log('✓ Bio Magnetic Mattress created');
 
     console.log('\nSeed completed successfully!');
 }

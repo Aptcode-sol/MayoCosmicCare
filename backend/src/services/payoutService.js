@@ -6,9 +6,11 @@ const CLIENT_SECRET = process.env.CASHFREE_PAYOUT_CLIENT_SECRET;
 const ENV = process.env.CASHFREE_ENV === 'PROD' ? 'PROD' : 'TEST';
 
 // Correct Payouts V2 Hosts
-const BASE_URL = ENV === 'PROD'
-    ? 'https://payout-api.cashfree.com'
-    : 'https://payout-gamma.cashfree.com';
+// const BASE_URL = ENV === 'PROD'
+//     ? 'https://payout-api.cashfree.com'
+//     : 'https://payout-gamma.cashfree.com';
+
+const BASE_URL = 'https://payout-api.cashfree.com';
 
 async function getHeaders() {
     return {

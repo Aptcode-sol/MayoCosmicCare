@@ -28,7 +28,8 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
         if (!otp) {
             throw new Error('OTP is required');
         }
-        if (!verifyOtp(email, otp)) {
+        const isValid = await verifyOtp(email, otp);
+        if (!isValid) {
             throw new Error('Invalid or expired OTP');
         }
     }
@@ -301,7 +302,7 @@ async function sendOtp(email) {
     if (user) throw new Error('Email already registered');
 
     const otp = generateOtp();
-    storeOtp(email, otp);
+    await storeOtp(email, otp);
     await sendOtpEmail(email, otp);
 
     return { message: 'OTP sent successfully' };
@@ -313,7 +314,7 @@ async function sendForgotPasswordOtp(email) {
     if (!user) throw new Error('No account found with this email');
 
     const otp = generateOtp();
-    storeOtp(`forgot:${email}`, otp); // Prefix to differentiate from registration OTP
+    await storeOtp(`forgot:${email}`, otp); // Prefix to differentiate from registration OTP
     await sendOtpEmail(email, otp);
 
     // console.log(`[FORGOT-PWD] OTP for ${email}: ${otp}`);
@@ -322,7 +323,7 @@ async function sendForgotPasswordOtp(email) {
 
 // Verify Forgot Password OTP and reset password
 async function resetPasswordWithOtp(email, otp, newPassword) {
-    const valid = verifyOtp(`forgot:${email}`, otp);
+    const valid = await verifyOtp(`forgot:${email}`, otp);
     if (!valid) throw new Error('Invalid or expired OTP');
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -344,7 +345,7 @@ async function sendEmailChangeOtp(userId, newEmail) {
     if (existing) throw new Error('This email is already registered');
 
     const otp = generateOtp();
-    storeOtp(`emailchange:${userId}:${newEmail}`, otp);
+    await storeOtp(`emailchange:${userId}:${newEmail}`, otp);
     await sendOtpEmail(newEmail, otp);
 
     // console.log(`[EMAIL-CHANGE] OTP for ${newEmail}: ${otp}`);
@@ -353,7 +354,7 @@ async function sendEmailChangeOtp(userId, newEmail) {
 
 // Verify Email Change OTP and update email
 async function verifyEmailChange(userId, newEmail, otp) {
-    const valid = verifyOtp(`emailchange:${userId}:${newEmail}`, otp);
+    const valid = await verifyOtp(`emailchange:${userId}:${newEmail}`, otp);
     if (!valid) throw new Error('Invalid or expired OTP');
 
     // Double-check email not taken
@@ -369,7 +370,7 @@ async function verifyEmailChange(userId, newEmail, otp) {
 }
 
 async function verifyOtpCode(email, otp) {
-    const valid = peekOtp(email, otp);
+    const valid = await peekOtp(email, otp);
     if (!valid) throw new Error('Invalid or expired OTP');
 
     return { message: 'OTP verified' };

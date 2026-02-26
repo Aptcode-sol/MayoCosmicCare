@@ -1,5 +1,4 @@
-// In-memory OTP store using an Array as requested
-let otpStore = [];
+const prisma = require('../prismaClient');
 
 /**
  * Generate a 6-digit numeric OTP
@@ -13,58 +12,58 @@ function generateOtp() {
  * @param {string} email 
  * @param {string} otp 
  */
-function storeOtp(email, otp) {
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+async function storeOtp(email, otp) {
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    // Remove any existing OTPs for this email to keep array clean
-    otpStore = otpStore.filter(entry => entry.email !== email);
+    // Remove any existing OTPs for this email to keep table clean
+    await prisma.otpStore.deleteMany({
+        where: { email }
+    });
 
-    otpStore.push({ email, otp, expiresAt });
-    // console.log(`[OTP Store] OTP stored for ${email}. Total in store: ${otpStore.length}`);
+    await prisma.otpStore.create({
+        data: { email, otp, expiresAt }
+    });
 }
 
 /**
  * Verify OTP for an email
  * @param {string} email 
  * @param {string} otpInput 
- * @returns {boolean} true if valid, false otherwise
+ * @returns {Promise<boolean>}
  */
-function verifyOtp(email, otpInput) {
-    const entryIndex = otpStore.findIndex(e => e.email === email);
+async function verifyOtp(email, otpInput) {
+    const entry = await prisma.otpStore.findFirst({
+        where: { email }
+    });
 
-    if (entryIndex === -1) {
-        // console.log(`[OTP Verify] No OTP found for ${email}`);
+    if (!entry) {
         return false;
     }
 
-    const entry = otpStore[entryIndex];
-
     // Check expiration
-    if (Date.now() > entry.expiresAt) {
-        // console.log(`[OTP Verify] OTP expired for ${email}`);
-        otpStore.splice(entryIndex, 1);
+    if (new Date() > entry.expiresAt) {
+        await prisma.otpStore.delete({ where: { id: entry.id } });
         return false;
     }
 
     // Check validity
     if (entry.otp === otpInput) {
-        // console.log(`[OTP Verify] OTP matches for ${email}`);
-        // Remove after successful use
-        otpStore.splice(entryIndex, 1);
+        await prisma.otpStore.delete({ where: { id: entry.id } });
         return true;
     }
 
-    // console.log(`[OTP Verify] Incorrect OTP for ${email}`);
     return false;
 }
 
 /**
  * Check if OTP is valid without removing it (for UI validation)
  */
-function peekOtp(email, otpInput) {
-    const entry = otpStore.find(e => e.email === email);
+async function peekOtp(email, otpInput) {
+    const entry = await prisma.otpStore.findFirst({
+        where: { email }
+    });
     if (!entry) return false;
-    if (Date.now() > entry.expiresAt) return false;
+    if (new Date() > entry.expiresAt) return false;
     return entry.otp === otpInput;
 }
 

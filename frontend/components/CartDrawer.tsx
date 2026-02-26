@@ -71,7 +71,7 @@ export default function CartDrawer() {
             let cashfree: any = null
             try {
                 if (typeof window === 'undefined') throw new Error('window is undefined')
-                cashfree = await load({ mode: "sandbox" }) // Change to production in prod
+                cashfree = await load({ mode: "production" }) // Change to production in prod
             } catch (err) {
                 console.error('Cashfree load error', err)
                 toast.error('Payment service unavailable')

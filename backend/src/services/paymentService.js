@@ -6,9 +6,10 @@ const CASHFREE_CLIENT_ID = process.env.CASHFREE_CLIENT_ID;
 const CASHFREE_CLIENT_SECRET = process.env.CASHFREE_CLIENT_SECRET;
 const CASHFREE_ENV = process.env.CASHFREE_ENV || 'SANDBOX';
 console.log(CASHFREE_ENV, "in the EC2")
-const BASE_URL = CASHFREE_ENV === 'PROD'
-    ? 'https://api.cashfree.com/pg'
-    : 'https://sandbox.cashfree.com/pg';
+// const BASE_URL = CASHFREE_ENV === 'PROD'
+//     ? 'https://api.cashfree.com/pg'
+//     : 'https://sandbox.cashfree.com/pg';
+const BASE_URL = 'https://api.cashfree.com/pg';
 
 const API_VERSION = '2023-08-01'; // As per docs
 

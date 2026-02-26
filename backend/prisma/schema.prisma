@@ -22,17 +22,17 @@ model User {
   parent           User?    @relation("TreePlacement", fields: [parentId], references: [id])
   children         User[]   @relation("TreePlacement")
   role             Role     @default(USER)
-  kycStatus        String   @default("VERIFIED") // NOT_STARTED, IN_PROGRESS, VERIFIED, FAILED
+  kycStatus        String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, VERIFIED, FAILED
   kycRefId         String?
   pan              String?
   aadhaar          String?
-  isEmailVerified  Boolean  @default(true)
+  isEmailVerified  Boolean  @default(false)
   emailVerifyToken String?
   resetToken       String?
   resetTokenExpiry DateTime?
   isBlocked        Boolean  @default(false)
   fraudFlag        Boolean  @default(false)
-  hasPurchased     Boolean  @default(true)  // Must purchase before referring
+  hasPurchased     Boolean  @default(false)  // Must purchase before referring
   rank             String   @default("Rookie")
   totalPairs       Int      @default(0)
   createdAt        DateTime @default(now())

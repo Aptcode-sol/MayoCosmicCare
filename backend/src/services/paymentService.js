@@ -8,10 +8,10 @@ const CASHFREE_ENV = process.env.CASHFREE_ENV || 'SANDBOX';
 
 
 info(CASHFREE_ENV, "in the EC2")
-// const BASE_URL = CASHFREE_ENV === 'PROD'
-//     ? 'https://api.cashfree.com/pg'
-//     : 'https://sandbox.cashfree.com/pg';
-const BASE_URL = 'https://api.cashfree.com/pg';
+const BASE_URL = CASHFREE_ENV === 'PROD'
+    ? 'https://api.cashfree.com/pg'
+    : 'https://sandbox.cashfree.com/pg';
+
 
 info(BASE_URL, "in the EC2")
 

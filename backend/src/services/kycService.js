@@ -4,11 +4,11 @@ const crypto = require('crypto');
 
 const CASHFREE_CLIENT_ID = process.env.CASHFREE_CLIENT_ID;
 const CASHFREE_CLIENT_SECRET = process.env.CASHFREE_CLIENT_SECRET;
-// const BASE_URL = process.env.CASHFREE_ENV === 'PROD'
-//     ? 'https://api.cashfree.com/verification'
-//     : 'https://sandbox.cashfree.com/verification';
+const BASE_URL = process.env.CASHFREE_ENV === 'PROD'
+    ? 'https://api.cashfree.com/verification'
+    : 'https://sandbox.cashfree.com/verification';
 
-const BASE_URL = 'https://api.cashfree.com/verification';
+
 
 async function getHeaders() {
     return {

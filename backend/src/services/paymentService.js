@@ -106,6 +106,8 @@ async function createOrder(userId, items, sponsorId = null) {
 
         const { payment_session_id } = response.data;
 
+        info("Payment session id", payment_session_id);
+
         await prisma.order.update({
             where: { id: dbOrder.id },
             data: { paymentSessionId: payment_session_id }

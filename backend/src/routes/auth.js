@@ -227,16 +227,26 @@ router.get('/me', authenticate, async (req, res) => {
 
         if (!userRec) return res.status(404).json({ ok: false, error: 'User not found' })
 
-        // Helper function to count all descendants
-        async function countDescendants(userId) {
-            if (!userId) return 0;
-            const children = await prisma.user.findMany({
-                where: { parentId: userId },
-                select: { id: true }
-            });
-            let count = children.length;
-            for (const child of children) {
-                count += await countDescendants(child.id);
+        // Preload minimal tree topology for fast memory counting (instead of recursive DB queries)
+        const allUsers = await prisma.user.findMany({ select: { id: true, parentId: true } });
+        const userMap = new Map();
+        for (const u of allUsers) {
+            if (u.parentId) {
+                let childrenList = userMap.get(u.parentId);
+                if (!childrenList) {
+                    childrenList = [];
+                    userMap.set(u.parentId, childrenList);
+                }
+                childrenList.push(u.id);
+            }
+        }
+
+        // Helper function to count descendants entirely in memory
+        function countDescendantsMemory(nodeId) {
+            let count = 0;
+            const childrenIds = userMap.get(nodeId) || [];
+            for (const childId of childrenIds) {
+                count += 1 + countDescendantsMemory(childId);
             }
             return count;
         }
@@ -245,9 +255,9 @@ router.get('/me', authenticate, async (req, res) => {
         const leftChild = userRec.children.find(c => c.position === 'LEFT');
         const rightChild = userRec.children.find(c => c.position === 'RIGHT');
 
-        // Calculate member counts dynamically
-        const leftMemberCount = leftChild ? 1 + await countDescendants(leftChild.id) : 0;
-        const rightMemberCount = rightChild ? 1 + await countDescendants(rightChild.id) : 0;
+        // Calculate member counts dynamically via memory
+        const leftMemberCount = leftChild ? 1 + countDescendantsMemory(leftChild.id) : 0;
+        const rightMemberCount = rightChild ? 1 + countDescendantsMemory(rightChild.id) : 0;
 
         // Build response without children field (keep sponsor)
         const { children, ...userData } = userRec;

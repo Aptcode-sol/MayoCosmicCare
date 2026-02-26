@@ -4,79 +4,107 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { authenticate } = require('../middleware/authMiddleware');
 
-// Count all descendants in a subtree
-async function countDescendants(userId) {
-  if (!userId) return 0;
+function attachChildrenAndCount(node, userMap, depth) {
+  if (depth <= 0 || !node) return null;
 
-  const children = await prisma.user.findMany({
-    where: { parentId: userId },
-    select: { id: true }
-  });
+  node.left = null;
+  node.right = null;
+  node.leftMemberCount = 0;
+  node.rightMemberCount = 0;
 
-  let count = children.length;
+  const children = userMap.get(node.id) || [];
+
+  const leftChildData = children.find(c => c.position === 'LEFT');
+  const rightChildData = children.find(c => c.position === 'RIGHT');
+
+  if (leftChildData) {
+    node.left = attachChildrenAndCount(leftChildData, userMap, depth - 1);
+    // Left member count = 1 (the child) + their descendants
+    node.leftMemberCount = 1 + (node.left ? (node.left.leftMemberCount + node.left.rightMemberCount) : countAllDescendants(leftChildData, userMap));
+  }
+
+  if (rightChildData) {
+    node.right = attachChildrenAndCount(rightChildData, userMap, depth - 1);
+    // Right member count = 1 (the child) + their descendants
+    node.rightMemberCount = 1 + (node.right ? (node.right.leftMemberCount + node.right.rightMemberCount) : countAllDescendants(rightChildData, userMap));
+  }
+
+  return {
+    id: node.id,
+    username: node.username,
+    name: node.name,
+    referredBy: node.referredBy,
+    position: node.position,
+    leftMemberCount: node.leftMemberCount,
+    rightMemberCount: node.rightMemberCount,
+    walletBalance: node.walletBalance,
+    createdAt: node.createdAt,
+    left: node.left,
+    right: node.right
+  };
+}
+
+// Helper to count physical descendants when they are beyond the requested build depth
+function countAllDescendants(node, userMap) {
+  let count = 0;
+  const children = userMap.get(node.id) || [];
   for (const child of children) {
-    count += await countDescendants(child.id);
+    count += 1 + countAllDescendants(child, userMap);
   }
   return count;
 }
 
 // Build binary tree structure from user
 async function buildBinaryTree(userId, depth = 6) {
-  if (depth <= 0 || !userId) return null;
+  if (!userId) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  // 1. Fetch ALL users needed for tree building in one fast query
+  // Since we only have ~1000 users, fetching all select fields is virtually instant vs 1000 slow recursive queries
+  const allUsers = await prisma.user.findMany({
     select: {
       id: true,
       username: true,
       name: true,
       position: true,
       createdAt: true,
-      sponsor: {
-        select: {
-          username: true
-        }
-      },
-      wallet: { select: { balance: true } },
-      leftCarryCount: true,
-      rightCarryCount: true,
-      // Get children (users whose parentId is this user)
-      children: {
-        select: {
-          id: true,
-          position: true
-        }
-      }
+      parentId: true,
+      sponsor: { select: { username: true } },
+      wallet: { select: { balance: true } }
     }
   });
 
-  if (!user) return null;
+  // 2. Map all users by parentId for O(1) child lookups
+  const userMap = new Map();
+  let rootNode = null;
 
-  // Find left and right children from the children array
-  const leftChildData = user.children.find(c => c.position === 'LEFT');
-  const rightChildData = user.children.find(c => c.position === 'RIGHT');
+  for (const user of allUsers) {
+    const formattedUser = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      referredBy: user.sponsor?.username || '—',
+      position: user.position || 'ROOT',
+      parentId: user.parentId,
+      walletBalance: user.wallet?.balance || 0,
+      createdAt: user.createdAt
+    };
 
-  // Recursively build left and right subtrees
-  const leftSubtree = leftChildData ? await buildBinaryTree(leftChildData.id, depth - 1) : null;
-  const rightSubtree = rightChildData ? await buildBinaryTree(rightChildData.id, depth - 1) : null;
+    if (user.id === userId) {
+      rootNode = formattedUser;
+    }
 
-  // Calculate member counts dynamically from actual tree structure
-  const leftMemberCount = (leftChildData ? 1 + await countDescendants(leftChildData.id) : 0);
-  const rightMemberCount = (rightChildData ? 1 + await countDescendants(rightChildData.id) : 0);
+    if (user.parentId) {
+      if (!userMap.has(user.parentId)) {
+        userMap.set(user.parentId, []);
+      }
+      userMap.get(user.parentId).push(formattedUser);
+    }
+  }
 
-  return {
-    id: user.id,
-    username: user.username,
-    name: user.name,
-    referredBy: user.sponsor?.username || '—',
-    position: user.position || 'ROOT',
-    leftMemberCount,
-    rightMemberCount,
-    walletBalance: user.wallet?.balance || 0,
-    createdAt: user.createdAt,
-    left: leftSubtree,
-    right: rightSubtree
-  };
+  if (!rootNode) return null;
+
+  // 3. Build tree and counts recursively purely in memory
+  return attachChildrenAndCount(rootNode, userMap, depth);
 }
 
 router.get('/me', authenticate, async (req, res) => {

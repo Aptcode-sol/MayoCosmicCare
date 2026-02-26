@@ -25,14 +25,39 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
 
         // ===== USER METRICS =====
-        const totalUsers = await prisma.user.count();
-        const todayUsers = await prisma.user.count({ where: { createdAt: { gte: startOfToday } } });
-        const weekUsers = await prisma.user.count({ where: { createdAt: { gte: startOfWeek } } });
-        const monthUsers = await prisma.user.count({ where: { createdAt: { gte: startOfMonth } } });
+        const [
+            totalUsers,
+            todayUsers,
+            weekUsers,
+            monthUsers,
+            activeUsers,
+            pendingUsers,
+            totalOrders,
+            totalPurchases,
+            totalProducts,
+            lowStockProducts
+        ] = await Promise.all([
+                prisma.user.count(),
+                prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
+                prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
+                prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
+                prisma.user.count({ where: { hasPurchased: true } }),
+                prisma.user.count({ where: { hasPurchased: false } }),
+                prisma.order.count({ where: { status: 'PAID' } }),
+                prisma.transaction.count({ where: { type: 'PURCHASE' } }),
+                prisma.product.count(),
+                prisma.product.count({ where: { stock: { lt: 10 } } })
+        ]);
+
+
+        // totalUsers fetched in Promise.all
+        // todayUsers fetched in Promise.all
+        // weekUsers fetched in Promise.all
+        // monthUsers fetched in Promise.all
 
         // Active users (users with purchases)
-        const activeUsers = await prisma.user.count({ where: { hasPurchased: true } });
-        const pendingUsers = await prisma.user.count({ where: { hasPurchased: false } });
+        // activeUsers fetched in Promise.all
+        // pendingUsers fetched in Promise.all
 
         // ===== POSITION DISTRIBUTION =====
         const positionCounts = await prisma.user.groupBy({
@@ -104,8 +129,8 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
 
         // ===== ORDER/PURCHASE METRICS =====
         // Count both Order records (from payment gateway) and PURCHASE transactions (direct API)
-        const totalOrders = await prisma.order.count({ where: { status: 'PAID' } });
-        const totalPurchases = await prisma.transaction.count({ where: { type: 'PURCHASE' } });
+        // totalOrders fetched in Promise.all
+        // totalPurchases fetched in Promise.all
         const totalOrdersAndPurchases = totalOrders + totalPurchases;
 
         const todayOrders = await prisma.order.count({
@@ -146,8 +171,8 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         const monthRevenue = (monthOrderRevenue._sum.totalAmount || 0) + (monthPurchaseRevenue._sum.amount || 0);
 
         // ===== PRODUCT METRICS =====
-        const totalProducts = await prisma.product.count();
-        const lowStockProducts = await prisma.product.count({ where: { stock: { lt: 10 } } });
+        // totalProducts fetched in Promise.all
+        // lowStockProducts fetched in Promise.all
 
         // Daily new users (last 30 days) with bonus stats
         const dailyUsers = await prisma.$queryRaw`

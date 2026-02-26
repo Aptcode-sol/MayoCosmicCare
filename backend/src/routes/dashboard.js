@@ -9,20 +9,6 @@ router.get('/stats', authenticate, async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Helper function to count all descendants in a subtree
-        async function countDescendants(parentId) {
-            if (!parentId) return 0;
-            const children = await prisma.user.findMany({
-                where: { parentId },
-                select: { id: true }
-            });
-            let count = children.length;
-            for (const child of children) {
-                count += await countDescendants(child.id);
-            }
-            return count;
-        }
-
         // Get user with children (placement tree) and referrals (sponsor tree)
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -212,32 +198,40 @@ router.get('/team', authenticate, async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
-        // Helper to get all descendants in the placement tree
-        async function getAllDescendantIds(parentId) {
-            const children = await prisma.user.findMany({
-                where: { parentId },
-                select: { id: true, position: true }
-            });
+        // Preload minimal tree topology for fast memory counting
+        const allUsers = await prisma.user.findMany({ select: { id: true, parentId: true, position: true } });
+        const userMap = new Map();
+        for (const u of allUsers) {
+            if (u.parentId) {
+                let childrenList = userMap.get(u.parentId);
+                if (!childrenList) {
+                    childrenList = [];
+                    userMap.set(u.parentId, childrenList);
+                }
+                childrenList.push(u);
+            }
+        }
+
+        // Helper to get all descendants in the placement tree using memory map
+        function getAllDescendantIdsMemory(parentId) {
+            const children = userMap.get(parentId) || [];
             let ids = [];
             for (const child of children) {
                 ids.push({ id: child.id, position: child.position });
-                const descendants = await getAllDescendantIds(child.id);
+                const descendants = getAllDescendantIdsMemory(child.id);
                 ids = ids.concat(descendants);
             }
             return ids;
         }
 
         // Get immediate children to determine left/right subtree roots
-        const immediateChildren = await prisma.user.findMany({
-            where: { parentId: userId },
-            select: { id: true, position: true }
-        });
+        const immediateChildren = userMap.get(userId) || [];
 
         // Collect all descendant IDs with their position relative to root
         let allDescendants = [];
         for (const child of immediateChildren) {
             allDescendants.push({ id: child.id, rootPosition: child.position });
-            const descendants = await getAllDescendantIds(child.id);
+            const descendants = getAllDescendantIdsMemory(child.id);
             allDescendants = allDescendants.concat(descendants.map(d => ({ id: d.id, rootPosition: child.position })));
         }
 

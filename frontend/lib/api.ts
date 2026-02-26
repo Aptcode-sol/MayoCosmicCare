@@ -24,6 +24,31 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// In-flight GET request deduplicator
+const pendingRequests = new Map<string, Promise<any>>();
+const originalGet = api.get;
+
+// @ts-ignore
+api.get = function (url: string, config?: AxiosRequestConfig) {
+    // Only deduplicate GET requests
+    const key = url + JSON.stringify(config?.params || {});
+
+    if (pendingRequests.has(key)) {
+        return pendingRequests.get(key);
+    }
+
+    const promise = originalGet.call(this, url, config)
+        .finally(() => {
+            // Keep in cache for a brief moment to catch slightly delayed StrictMode overlapping renders
+            setTimeout(() => {
+                pendingRequests.delete(key);
+            }, 300);
+        });
+
+    pendingRequests.set(key, promise);
+    return promise;
+};
+
 // Centralized error normalization helper
 export function parseApiError(err: unknown) {
     if (axios.isAxiosError(err)) {

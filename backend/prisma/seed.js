@@ -25,9 +25,9 @@ async function main() {
 
         // Create admin wallet
         await prisma.wallet.create({ data: { userId: admin.id } });
-        console.log('✓ Admin user created: admin@gmail.com (password: Admin@2)');
+        console.log(`✓ Admin user created: admin@gmail.com (password: Admin@2), ID: ${admin.id}`);
     } else {
-        console.log('✓ Admin user already exists (admin@gmail.com)');
+        console.log(`✓ Admin user already exists (admin@gmail.com), ID: ${admin.id}`);
     }
 
     // Clean slate for products

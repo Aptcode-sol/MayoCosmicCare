@@ -52,10 +52,11 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
     const bonusAmount = Math.floor((referralEarning * percent) / 100);
     if (bonusAmount <= 0) return null;
 
-    // Check daily limit
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    // Check daily limit (Strictly IST based)
+    const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
+    const nowIst = new Date(nowStr);
+    const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
+    const todayEnd = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate() + 1);
 
     let counter = await prismaClient.dailyLeadershipCounter.findFirst({
         where: { userId: sponsorId, date: { gte: todayStart, lt: todayEnd } }
@@ -185,10 +186,11 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         const rightTotal = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
         if (leftTotal <= 0 || rightTotal <= 0) return null;
 
-        // Use start and end of today for date comparison
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        // Use start and end of today for date comparison (Strictly IST based)
+        const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
+        const nowIst = new Date(nowStr);
+        const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
+        const todayEnd = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate() + 1);
 
         let counter = await tx.dailyPairCounter.findFirst({
             where: { userId, date: { gte: todayStart, lt: todayEnd } }

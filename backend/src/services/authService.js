@@ -5,7 +5,7 @@ const prisma = require('../prismaClient');
 const { placeNewUser } = require('./placementService');
 const { generateOtp, storeOtp, verifyOtp, peekOtp } = require('./otpService');
 const { sendOtpEmail } = require('./emailService');
-
+const { info, error } = require('../logger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const crypto = require('crypto');
@@ -183,6 +183,7 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
 
 async function login({ email: identifier, password, isAdminLogin = false }) {
     // console.log('[LOGIN] Attempting login for:', identifier, 'isAdminLogin:', isAdminLogin);
+    console.log(`[LOGIN] Attempting login for: ${identifier}, isAdminLogin: ${isAdminLogin}`);
     const user = await prisma.user.findFirst({
         where: {
             OR: [

@@ -129,9 +129,10 @@ router.get('/incentives', authenticate, async (req, res) => {
         totalPaid = directBonus + matchingBonus + leadershipBonus;
 
         // Get today's counters
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
+        const nowIst = new Date(nowStr);
+        const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
+        const todayEnd = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate() + 1);
 
         const [todayLeadership, todayMatching] = await Promise.all([
             prisma.dailyLeadershipCounter.findFirst({
@@ -343,9 +344,10 @@ router.get('/matching', authenticate, async (req, res) => {
         });
 
         // Get today's payout record if any
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
+        const nowIst = new Date(nowStr);
+        const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
+        const todayEnd = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate() + 1);
 
         const todayPayout = await prisma.pairPayoutRecord.findFirst({
             where: { userId, date: { gte: todayStart, lt: todayEnd } },

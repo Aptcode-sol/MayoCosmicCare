@@ -31,3 +31,5 @@ node stress-test.js
 
 # Open prisma studio
 npx prisma studio
+
+pm2 start npm --name frontend -- run start

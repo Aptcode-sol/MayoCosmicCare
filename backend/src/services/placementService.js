@@ -135,7 +135,7 @@ async function placeAtTail(userId, sponsorId, leg) {
                 });
                 // Propagate member count up the tree from placement point
                 await propagateMemberCount(tx, current.id, position);
-                console.log(`[PLACEMENT] User ${userId} placed under ${current.id} at ${position} (tail of ${leg} leg)`);
+                // console.log(`[PLACEMENT] User ${userId} placed under ${current.id} at ${position} (tail of ${leg} leg)`);
                 return { placedUnder: current.id, position };
             }
             current = child;

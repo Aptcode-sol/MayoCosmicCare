@@ -14,7 +14,7 @@ if (REDIS_ENABLED) {
 
         const worker = new Worker('receipt-email', async (job) => {
             const { orderId } = job.data;
-            console.log(`[RECEIPT-WORKER] Processing receipt email for order: ${orderId}`);
+            // // console.log(`[RECEIPT-WORKER] Processing receipt email for order: ${orderId}`);
 
             try {
                 const { getOrderDataForReceipt, renderReceiptHtml, generateReceiptPdf } = require('../../services/receiptService');
@@ -46,7 +46,7 @@ if (REDIS_ENABLED) {
                     pdfBuffer
                 );
 
-                console.log(`[RECEIPT-WORKER] Receipt email sent for order: ${orderId}`);
+                // // console.log(`[RECEIPT-WORKER] Receipt email sent for order: ${orderId}`);
                 return { success: true, orderId };
             } catch (err) {
                 console.error(`[RECEIPT-WORKER] Failed for order ${orderId}:`, err.message);
@@ -62,17 +62,17 @@ if (REDIS_ENABLED) {
         });
 
         worker.on('completed', (job) => {
-            console.log(`[RECEIPT-WORKER] Job ${job.id} completed for order: ${job.data.orderId}`);
+            // console.log(`[RECEIPT-WORKER] Job ${job.id} completed for order: ${job.data.orderId}`);
         });
 
         worker.on('failed', (job, err) => {
             console.error(`[RECEIPT-WORKER] Job ${job?.id} failed:`, err.message);
         });
 
-        console.log('[RECEIPT-WORKER] Receipt email worker started');
+        // console.log('[RECEIPT-WORKER] Receipt email worker started');
     } catch (err) {
         console.warn('[RECEIPT-WORKER] Could not start receipt worker:', err.message);
     }
 } else {
-    console.log('[RECEIPT-WORKER] Redis not enabled, receipt email worker not started');
+    // console.log('[RECEIPT-WORKER] Redis not enabled, receipt email worker not started');
 }

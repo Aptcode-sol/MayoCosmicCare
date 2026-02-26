@@ -21,7 +21,7 @@ function storeOtp(email, otp) {
     otpStore = otpStore.filter(entry => entry.email !== email);
 
     otpStore.push({ email, otp, expiresAt });
-    console.log(`[OTP Store] OTP stored for ${email}. Total in store: ${otpStore.length}`);
+    // console.log(`[OTP Store] OTP stored for ${email}. Total in store: ${otpStore.length}`);
 }
 
 /**
@@ -35,7 +35,7 @@ function verifyOtp(email, otpInput) {
     if (process.env.environment == "dev" && otpInput == '000000') return true;
 
     if (entryIndex === -1) {
-        console.log(`[OTP Verify] No OTP found for ${email}`);
+        // console.log(`[OTP Verify] No OTP found for ${email}`);
         return false;
     }
 
@@ -43,20 +43,20 @@ function verifyOtp(email, otpInput) {
 
     // Check expiration
     if (Date.now() > entry.expiresAt) {
-        console.log(`[OTP Verify] OTP expired for ${email}`);
+        // console.log(`[OTP Verify] OTP expired for ${email}`);
         otpStore.splice(entryIndex, 1);
         return false;
     }
 
     // Check validity
     if (entry.otp === otpInput) {
-        console.log(`[OTP Verify] OTP matches for ${email}`);
+        // console.log(`[OTP Verify] OTP matches for ${email}`);
         // Remove after successful use
         otpStore.splice(entryIndex, 1);
         return true;
     }
 
-    console.log(`[OTP Verify] Incorrect OTP for ${email}`);
+    // console.log(`[OTP Verify] Incorrect OTP for ${email}`);
     return false;
 }
 

@@ -15,7 +15,7 @@ const prisma = require('../prismaClient');
 router.post('/send-otp', async (req, res) => {
     try {
         const { email } = req.body;
-        console.log('[SEND-OTP] Request for:', email);
+        // console.log('[SEND-OTP] Request for:', email);
         if (!email) return res.status(400).json({ ok: false, error: 'Email is required' });
 
         const result = await sendOtp(email);
@@ -95,11 +95,11 @@ router.post('/email-change/verify', authenticate, async (req, res) => {
 
 router.post('/register', async (req, res) => {
     try {
-        console.log('[REGISTER] Request body:', JSON.stringify(req.body, null, 2));
+        // console.log('[REGISTER] Request body:', JSON.stringify(req.body, null, 2));
         const parsed = registerSchema.parse(req.body);
-        console.log('[REGISTER] Parsed data:', JSON.stringify(parsed, null, 2));
+        // console.log('[REGISTER] Parsed data:', JSON.stringify(parsed, null, 2));
         const result = await register(parsed);
-        console.log('[REGISTER] Success:', result.id);
+        // console.log('[REGISTER] Success:', result.id);
         // result may include emailVerifyToken in dev for simulation
         res.json({ ok: true, ...result });
     } catch (err) {
@@ -298,7 +298,7 @@ router.post('/update-profile', authenticate, async (req, res) => {
         const { updateProfileSchema } = require('../validators/authValidators');
         const { updateProfile } = require('../services/authService');
 
-        console.log('[PROFILE_UPDATE] Request:', req.body);
+        // console.log('[PROFILE_UPDATE] Request:', req.body);
         const parsed = updateProfileSchema.parse(req.body);
         const result = await updateProfile(req.user.id, parsed);
         res.json({ ok: true, ...result });

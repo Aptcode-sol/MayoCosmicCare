@@ -86,11 +86,11 @@ export default function CartDrawer() {
 
             cashfree.checkout(checkoutOptions).then(async (result: any) => {
                 if (result.error) {
-                    console.log("User closed popup or error", result.error);
+                    // console.log("User closed popup or error", result.error);
                     toast.error("Payment cancelled or failed");
                 }
                 if (result.paymentDetails) {
-                    console.log("Payment Completed");
+                    // console.log("Payment Completed");
                     try {
                         const verifyRes = await verifyPayment(order_id);
                         if (verifyRes.status === 'PAID') {

@@ -7,7 +7,7 @@ async function main() {
     for (const u of users) {
         await matchingQueue.add('matching-for-' + u.id, { userId: u.id });
     }
-    console.log('Enqueued matching jobs for', users.length, 'users');
+    // console.log('Enqueued matching jobs for', users.length, 'users');
 }
 
 main().catch(e => console.error(e));

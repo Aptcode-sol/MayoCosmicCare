@@ -145,7 +145,7 @@ async function verifyOrder(orderId) {
         if (cfOrder.order_status === 'PAID') {
 
             // Fulfill the order
-            console.log('[PAYMENT] Order PAID. Fulfilling...');
+            // console.log('[PAYMENT] Order PAID. Fulfilling...');
 
             // Update status PAID
             await prisma.order.update({
@@ -171,7 +171,7 @@ async function verifyOrder(orderId) {
             try {
                 const { addReceiptEmailJob } = require('../queues/queue');
                 await addReceiptEmailJob(dbOrder.id);
-                console.log('[PAYMENT] Receipt email queued for order:', orderId);
+                // console.log('[PAYMENT] Receipt email queued for order:', orderId);
             } catch (receiptErr) {
                 // Don't fail the payment verification if receipt email fails
                 console.error('[PAYMENT] Receipt email enqueue failed:', receiptErr.message);

@@ -64,7 +64,7 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
             searchIdentifier = sponsorId.slice(0, -1);
         }
 
-        console.log(`[AUTH] Sponsor Resolution. Input: ${sponsorId}. IsDigit: ${isDigit}. Stripped: ${searchIdentifier}. CalcLeg: ${placementLeg}`);
+        // console.log(`[AUTH] Sponsor Resolution. Input: ${sponsorId}. IsDigit: ${isDigit}. Stripped: ${searchIdentifier}. CalcLeg: ${placementLeg}`);
 
         // Find sponsor using the stripped identifier
         // try id first
@@ -78,11 +78,11 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
             sponsor = await prisma.user.findFirst({ where: { username: searchIdentifier } }).catch(() => null);
         }
 
-        console.log(`[AUTH] Found via stripped? ${!!sponsor ? sponsor.id : 'No'}`);
+        // console.log(`[AUTH] Found via stripped? ${!!sponsor ? sponsor.id : 'No'}`);
 
         // If not found with stripped ID, try the original ID (maybe the digit was part of the username/ID)
         if (!sponsor && isDigit) {
-            console.log('[AUTH] Falling back to original ID search...');
+            // console.log('[AUTH] Falling back to original ID search...');
             let originalSponsor = await prisma.user.findUnique({ where: { id: sponsorId } });
             if (!originalSponsor) {
                 originalSponsor = await prisma.user.findUnique({ where: { email: sponsorId } }).catch(() => null);
@@ -94,7 +94,7 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
             if (originalSponsor) {
                 sponsor = originalSponsor;
                 placementLeg = null; // The digit was part of the ID, so we ignore it for placement
-                console.log(`[AUTH] Found via original ID: ${sponsor.id}. Placement Leg reset to null.`);
+                // console.log(`[AUTH] Found via original ID: ${sponsor.id}. Placement Leg reset to null.`);
             }
         }
 
@@ -171,7 +171,7 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
     await prisma.wallet.create({ data: { userId: user.id } });
 
     // TODO: Send verification email with token
-    console.log(`Email verification token for ${email}: ${emailVerifyToken}`);
+    // console.log(`Email verification token for ${email}: ${emailVerifyToken}`);
 
     const result = { id: user.id, username: user.username, email: user.email };
     if (process.env.NODE_ENV !== 'production') {
@@ -181,7 +181,7 @@ async function register({ name, email, phone, password, sponsorId, leg, otp }) {
 }
 
 async function login({ email: identifier, password, isAdminLogin = false }) {
-    console.log('[LOGIN] Attempting login for:', identifier, 'isAdminLogin:', isAdminLogin);
+    // console.log('[LOGIN] Attempting login for:', identifier, 'isAdminLogin:', isAdminLogin);
     const user = await prisma.user.findFirst({
         where: {
             OR: [
@@ -191,10 +191,10 @@ async function login({ email: identifier, password, isAdminLogin = false }) {
         }
     });
     if (!user) {
-        console.log('[LOGIN] User not found:', identifier);
+        // console.log('[LOGIN] User not found:', identifier);
         throw new Error('Invalid credentials');
     }
-    console.log('[LOGIN] User found:', user.id, 'email:', user.email, 'role:', user.role, 'blocked:', user.isBlocked);
+    // console.log('[LOGIN] User found:', user.id, 'email:', user.email, 'role:', user.role, 'blocked:', user.isBlocked);
 
     // Role-based login restrictions
     if (isAdminLogin && user.role !== 'ADMIN') {
@@ -206,19 +206,19 @@ async function login({ email: identifier, password, isAdminLogin = false }) {
 
     if (user.isBlocked) throw new Error('Account is blocked');
 
-    console.log('[LOGIN] Comparing password...');
-    console.log('[LOGIN] Input password length:', password?.length);
-    console.log('[LOGIN] Stored hash:', user.password?.substring(0, 20) + '...');
+    // console.log('[LOGIN] Comparing password...');
+    // console.log('[LOGIN] Input password length:', password?.length);
+    // console.log('[LOGIN] Stored hash:', user.password?.substring(0, 20) + '...');
 
     const ok = await bcrypt.compare(password, user.password);
-    console.log('[LOGIN] Password match result:', ok);
+    // console.log('[LOGIN] Password match result:', ok);
 
     if (!ok) throw new Error('Invalid credentials');
     const accessToken = signAccessToken(user);
     const refresh = genRefreshToken();
     // store refresh token
     await prisma.refreshToken.create({ data: { userId: user.id, token: refresh } });
-    console.log('[LOGIN] Login successful for:', identifier);
+    // console.log('[LOGIN] Login successful for:', identifier);
     return { accessToken, refreshToken: refresh };
 }
 
@@ -264,7 +264,7 @@ async function requestPasswordReset(email) {
     });
 
     // TODO: Send reset email with token
-    console.log(`Password reset token for ${email}: ${resetToken}`);
+    // console.log(`Password reset token for ${email}: ${resetToken}`);
 
     return { message: 'Password reset email sent' };
 }
@@ -316,7 +316,7 @@ async function sendForgotPasswordOtp(email) {
     storeOtp(`forgot:${email}`, otp); // Prefix to differentiate from registration OTP
     // await sendOtpEmail(email, otp);
 
-    console.log(`[FORGOT-PWD] OTP for ${email}: ${otp}`);
+    // console.log(`[FORGOT-PWD] OTP for ${email}: ${otp}`);
     return { message: 'OTP sent to your email' };
 }
 
@@ -347,7 +347,7 @@ async function sendEmailChangeOtp(userId, newEmail) {
     storeOtp(`emailchange:${userId}:${newEmail}`, otp);
     // await sendOtpEmail(newEmail, otp);
 
-    console.log(`[EMAIL-CHANGE] OTP for ${newEmail}: ${otp}`);
+    // console.log(`[EMAIL-CHANGE] OTP for ${newEmail}: ${otp}`);
     return { message: 'OTP sent to new email' };
 }
 

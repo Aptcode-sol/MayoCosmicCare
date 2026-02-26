@@ -47,7 +47,7 @@ async function sendOtpEmail(email, otp) {
             text: `Your OTP code is: ${otp}`,
             html: htmlContent
         });
-        console.log(`[EMAIL] OTP sent to ${email}: ${info.messageId} ${otp}`);
+        // console.log(`[EMAIL] OTP sent to ${email}: ${info.messageId} ${otp}`);
         return { sent: true, messageId: info.messageId };
     } catch (error) {
         console.error(`[EMAIL] Error sending OTP to ${email}:`, error);
@@ -60,25 +60,25 @@ async function sendOtpEmail(email, otp) {
  */
 async function sendVerificationEmail(email, token) {
     const verifyLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
-    console.log(`[EMAIL] Send verification to ${email}: ${verifyLink}`);
+    // console.log(`[EMAIL] Send verification to ${email}: ${verifyLink}`);
     // For now, we are replacing link verification with OTP, but keeping this for legacy/other flows
     return { sent: true };
 }
 
 async function sendPasswordResetEmail(email, token) {
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-    console.log(`[EMAIL] Send password reset to ${email}: ${resetLink}`);
+    // console.log(`[EMAIL] Send password reset to ${email}: ${resetLink}`);
     // TODO: Implement actual sending if needed
     return { sent: true };
 }
 
 async function sendReferralNotification(email, referredUsername) {
-    console.log(`[EMAIL] Notify ${email}: ${referredUsername} joined under you`);
+    // console.log(`[EMAIL] Notify ${email}: ${referredUsername} joined under you`);
     return { sent: true };
 }
 
 async function sendPayoutNotification(email, amount, type) {
-    console.log(`[EMAIL] Notify ${email}: You received ${type} of ₹${amount}`);
+    // console.log(`[EMAIL] Notify ${email}: You received ${type} of ₹${amount}`);
     return { sent: true };
 }
 
@@ -104,7 +104,7 @@ async function sendReceiptEmail(email, receiptNo, htmlContent, pdfBuffer) {
                 }
             ]
         });
-        console.log(`[EMAIL] Receipt sent to ${email}: ${info.messageId}`);
+        // console.log(`[EMAIL] Receipt sent to ${email}: ${info.messageId}`);
         return { sent: true, messageId: info.messageId };
     } catch (error) {
         console.error(`[EMAIL] Error sending receipt to ${email}:`, error);

@@ -46,13 +46,13 @@ async function addBeneficiary(user, bankDetails) {
     }
 
     try {
-        console.log('[PAYOUT] Adding beneficiary:', beneId);
+        // console.log('[PAYOUT] Adding beneficiary:', beneId);
         // Note: URL includes /payout context
         await axios.post(`${BASE_URL}/payout/beneficiary`, payload, { headers: await getHeaders() });
         return beneId;
     } catch (err) {
         if (err.response && err.response.status === 409) {
-            console.log('[PAYOUT] Beneficiary already exists, proceeding.');
+            // console.log('[PAYOUT] Beneficiary already exists, proceeding.');
             return beneId;
         }
         console.error('[PAYOUT] Add Beneficiary Failed:', err.response?.data || err.message);
@@ -128,24 +128,24 @@ async function executePayout(withdrawalId) {
         };
         // ... request ...
 
-        console.log('[PAYOUT] Initiating Transfer:', JSON.stringify(payload));
+        // console.log('[PAYOUT] Initiating Transfer:', JSON.stringify(payload));
         const res = await axios.post(`${BASE_URL}/payout/transfers`, payload, { headers: await getHeaders() });
         let data = res.data;
 
         // 3. Update Status
-        console.log('[PAYOUT] Cashfree Response:', JSON.stringify(data, null, 2));
+        // console.log('[PAYOUT] Cashfree Response:', JSON.stringify(data, null, 2));
 
         // If RECEIVED, check status again immediately
         if (data.status === 'RECEIVED') {
             try {
-                console.log(`[PAYOUT] Status is RECEIVED, checking endpoint for update...`);
+                // console.log(`[PAYOUT] Status is RECEIVED, checking endpoint for update...`);
                 // Short delay to allow propagation
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 const statusRes = await axios.get(`${BASE_URL}/payout/transfers?transfer_id=${transferId}`, {
                     headers: await getHeaders()
                 });
                 data = statusRes.data;
-                console.log('[PAYOUT] Polled Status Response:', JSON.stringify(data, null, 2));
+                // console.log('[PAYOUT] Polled Status Response:', JSON.stringify(data, null, 2));
             } catch (pollErr) {
                 console.warn('[PAYOUT] Could not poll status immediately:', pollErr.message);
             }
@@ -219,7 +219,7 @@ async function checkTransferStatus(withdrawalId) {
 
         const res = await axios.get(url, { headers: await getHeaders() });
         const data = res.data;
-        console.log(`[PAYOUT] Polling Status for ${withdrawalId}: ${data.status}`);
+        // console.log(`[PAYOUT] Polling Status for ${withdrawalId}: ${data.status}`);
 
         // Update DB based on new status
         // Cashfree 'SUCCESS' -> Web 'COMPLETED'
@@ -234,7 +234,7 @@ async function checkTransferStatus(withdrawalId) {
                 }
             });
         } else if (['FAILED', 'REJECTED', 'REVERSED'].includes(data.status) && withdrawal.status !== 'REJECTED') {
-            console.log(`[PAYOUT] Marking withdrawal ${withdrawalId} as REJECTED due to ${data.status}`);
+            // console.log(`[PAYOUT] Marking withdrawal ${withdrawalId} as REJECTED due to ${data.status}`);
             await prisma.$transaction([
                 prisma.withdrawal.update({
                     where: { id: withdrawalId },

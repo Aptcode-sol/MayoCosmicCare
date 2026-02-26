@@ -64,7 +64,7 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
     const earnedToday = counter?.amount || 0;
     const remaining = Math.max(0, dailyCap - earnedToday);
     if (remaining <= 0) {
-        console.log(`[LEADERSHIP] Sponsor ${sponsorId} hit daily cap (${dailyCap})`);
+        // console.log(`[LEADERSHIP] Sponsor ${sponsorId} hit daily cap (${dailyCap})`);
         return null;
     }
 
@@ -112,7 +112,7 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
         } else throw e;
     }
 
-    console.log(`[LEADERSHIP] Credited ${actualBonus} to sponsor ${sponsorId} (${percent}% of ${referralEarning})`);
+    // console.log(`[LEADERSHIP] Credited ${actualBonus} to sponsor ${sponsorId} (${percent}% of ${referralEarning})`);
     return { sponsorId, amount: actualBonus };
 }
 /**
@@ -177,7 +177,7 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         // Eligibility gate: user must have at least 2 direct referrals
         const directReferralCount = await tx.user.count({ where: { sponsorId: userId } });
         if (directReferralCount < 2) {
-            console.log(`[MATCHING] User ${userId} has ${directReferralCount} referrals (need 2). Skipping.`);
+            // console.log(`[MATCHING] User ${userId} has ${directReferralCount} referrals (need 2). Skipping.`);
             return null;
         }
 
@@ -296,7 +296,7 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
                     pairsAtChange: newTotalPairs
                 }
             });
-            console.log(`[RANK UPDATE] User ${userId} promoted from ${user.rank} to ${newRank} (${newTotalPairs} pairs)`);
+            // console.log(`[RANK UPDATE] User ${userId} promoted from ${user.rank} to ${newRank} (${newTotalPairs} pairs)`);
         }
 
         await tx.user.update({

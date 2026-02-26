@@ -197,7 +197,7 @@ export default function CartDrawer() {
                 </div>
 
                 {items.length > 0 && (
-                    <div className="p-6 border-t bg-gray-50">
+                    <div className="p-6 pb-24 md:pb-6 border-t bg-gray-50">
                         <div className="flex justify-between items-center mb-4 text-lg font-semibold">
                             <span>Total</span>
                             <span>₹{total.toLocaleString()}</span>

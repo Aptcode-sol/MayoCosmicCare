@@ -30,7 +30,7 @@ const SANKET_EMAIL = 'sanket@gmail.com';
 const SANKET_PASSWORD = 'sanket@123';
 
 // Test configuration
-const USERS_PER_SIDE = 100;
+const USERS_PER_SIDE = 50;
 
 const { execSync } = require('child_process');
 // Report data

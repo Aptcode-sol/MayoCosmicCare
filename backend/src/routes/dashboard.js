@@ -36,9 +36,20 @@ router.get('/stats', authenticate, async (req, res) => {
 
         const BV_PER_MEMBER = parseInt(process.env.PAIR_UNIT_BV || '50', 10);
 
-        // Calculate total team (base members + carry)
-        const leftMembers = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
-        const rightMembers = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
+        // Calculate paid BV from actual consumed members stored in pairPayoutRecords
+        const payoutAggregates = await prisma.pairPayoutRecord.aggregate({
+            where: { userId },
+            _sum: { leftConsumed: true, rightConsumed: true }
+        });
+        const paidLeftMembers = payoutAggregates._sum.leftConsumed || 0;
+        const paidRightMembers = payoutAggregates._sum.rightConsumed || 0;
+        const leftPaidBV = paidLeftMembers * BV_PER_MEMBER;
+        const rightPaidBV = paidRightMembers * BV_PER_MEMBER;
+
+        // Calculate total team (paid + unprocessed + carry)
+        // Matching process resets member counts after consuming them
+        const leftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
+        const rightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
         // Calculate BV from member counts for consistency
         const leftBV = leftMembers * BV_PER_MEMBER;
@@ -53,14 +64,6 @@ router.get('/stats', authenticate, async (req, res) => {
         const directActiveLeft = user.referrals.filter(r => r.position === 'LEFT' && !r.isBlocked).length;
         const directActiveRight = user.referrals.filter(r => r.position === 'RIGHT' && !r.isBlocked).length;
         const directActiveTotal = user.referrals.filter(r => !r.isBlocked).length;
-
-        // Calculate paid BV from actual consumed members stored in pairPayoutRecords
-        const payoutAggregates = await prisma.pairPayoutRecord.aggregate({
-            where: { userId },
-            _sum: { leftConsumed: true, rightConsumed: true }
-        });
-        const leftPaidBV = (payoutAggregates._sum.leftConsumed || 0) * BV_PER_MEMBER;
-        const rightPaidBV = (payoutAggregates._sum.rightConsumed || 0) * BV_PER_MEMBER;
 
         res.json({
             ok: true,
@@ -379,13 +382,14 @@ router.get('/matching', authenticate, async (req, res) => {
         const BV_PER_MEMBER = parseInt(process.env.PAIR_UNIT_BV || '50', 10);
 
         // === MEMBER CALCULATIONS ===
-        // Total accumulated members (all members ever added to this leg)
-        const totalLeftMembers = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
-        const totalRightMembers = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
-
         // Paid members from payouts (already consumed and paid out)
         const paidLeftMembers = totalPayoutAgg._sum.leftConsumed || 0;
         const paidRightMembers = totalPayoutAgg._sum.rightConsumed || 0;
+
+        // Total accumulated members = Paid + Unprocessed + Carry
+        // (matching process resets member counts after consuming them)
+        const totalLeftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
+        const totalRightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
         // Matchable pairs = min of both sides (how many could theoretically be matched)
         const matchablePairs = Math.min(totalLeftMembers, totalRightMembers);

@@ -44,7 +44,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             prisma.user.count({ where: { hasPurchased: true } }),
             prisma.user.count({ where: { hasPurchased: false } }),
             prisma.order.count({ where: { status: 'PAID' } }),
-            prisma.transaction.count({ where: { type: 'PURCHASE' } }),
+            prisma.order.count({ where: { status: 'PAID' } }), // Only count successful purchases
             prisma.product.count(),
             prisma.product.count({ where: { stock: { lt: 10 } } })
         ]);
@@ -128,26 +128,18 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         });
 
         // ===== ORDER/PURCHASE METRICS =====
-        // Count both Order records (from payment gateway) and PURCHASE transactions (direct API)
-        // totalOrders fetched in Promise.all
-        // totalPurchases fetched in Promise.all
-        const totalOrdersAndPurchases = totalOrders + totalPurchases;
+        // Only count successful (PAID) orders for all metrics
+        const totalOrdersAndPurchases = totalOrders; // Only successful orders
 
         const todayOrders = await prisma.order.count({
             where: { status: 'PAID', createdAt: { gte: startOfToday } }
         });
-        const todayPurchases = await prisma.transaction.count({
-            where: { type: 'PURCHASE', createdAt: { gte: startOfToday } }
-        });
-        const todayOrdersAndPurchases = todayOrders + todayPurchases;
+        const todayOrdersAndPurchases = todayOrders; // Only successful orders today
 
         const monthOrders = await prisma.order.count({
             where: { status: 'PAID', createdAt: { gte: startOfMonth } }
         });
-        const monthPurchases = await prisma.transaction.count({
-            where: { type: 'PURCHASE', createdAt: { gte: startOfMonth } }
-        });
-        const monthOrdersAndPurchases = monthOrders + monthPurchases;
+        const monthOrdersAndPurchases = monthOrders; // Only successful orders this month
 
         // Calculate revenue from orders and purchase transactions
         const orderRevenue = await prisma.order.aggregate({
@@ -202,11 +194,11 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             ORDER BY date ASC
         `;
 
-        // Get daily purchases (transactions of type PURCHASE)
+        // Get daily purchases (orders with status PAID)
         const dailyPurchases = await prisma.$queryRaw`
             SELECT DATE("createdAt") as date, COUNT(*) as count
-            FROM "Transaction"
-            WHERE "createdAt" >= ${thirtyDaysAgo} AND type = 'PURCHASE'
+            FROM "Order"
+            WHERE "createdAt" >= ${thirtyDaysAgo} AND status = 'PAID'
             GROUP BY DATE("createdAt")
             ORDER BY date ASC
         `;
@@ -374,15 +366,14 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                         const userEntry = dailyUsers.find(u => getDateStr(u) === dateStr);
                         const bonuses = dailyBonusStats.filter(b => getDateStr(b) === dateStr);
                         const orderData = dailyOrders.find(o => getDateStr(o) === dateStr);
-                        const purchaseData = dailyPurchases.find(p => getDateStr(p) === dateStr);
-
+                        // Only use orderData for successful orders
                         return {
                             date: dateStr,
                             count: Number(userEntry?.count || 0),
                             directBonus: Number(bonuses.find(b => b.type === 'DIRECT_BONUS')?.total || 0),
                             matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
                             leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
-                            orders: Number(orderData?.count || 0) + Number(purchaseData?.count || 0)
+                            orders: Number(orderData?.count || 0)
                         };
                     }),
                     monthlyUsers: monthlyUsers.map(m => {

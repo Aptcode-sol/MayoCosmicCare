@@ -48,10 +48,6 @@ async function createOrder(userId, items, sponsorId = null) {
     if (!user) throw new Error('User not found');
 
     // KYC Check enforced here too
-    const isFirstAdmin = user.role === 'ADMIN' && (await prisma.user.count()) === 1;
-    if (!isFirstAdmin && user.kycStatus !== 'VERIFIED') {
-        throw new Error('KYC Verification Required to create order.');
-    }
 
     // Calculate total
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);

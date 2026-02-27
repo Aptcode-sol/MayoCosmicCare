@@ -18,9 +18,6 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
     const isFirstAdmin = userToCheck.role === 'ADMIN' && (await prisma.user.count()) === 1;
     console.log('[PURCHASE] isFirstAdmin:', isFirstAdmin, 'User:', userToCheck.username, 'SponsorId:', userToCheck.sponsorId);
 
-    if (!isFirstAdmin && userToCheck.kycStatus !== 'VERIFIED') {
-        throw new Error('KYC Verification is required to purchase products. Please complete KYC in your profile.');
-    }
 
     if (!isFirstAdmin && (!userToCheck.sponsorId || !userToCheck.parentId)) {
         let sponsorIdToUse = userToCheck.sponsorId;

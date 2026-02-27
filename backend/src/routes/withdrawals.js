@@ -10,6 +10,12 @@ router.post('/', authenticate, async (req, res) => {
         const { amount, bankDetails } = req.body;
         const userId = req.user.id;
 
+        // KYC check for withdrawal
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || user.kycStatus !== 'VERIFIED') {
+            return res.status(403).json({ error: 'KYC Verification is required to withdraw funds. Please complete KYC in your profile.' });
+        }
+
         if (!amount || amount <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
         }

@@ -25,15 +25,27 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
 
         // ===== USER METRICS =====
+        // Count users with at least one successful (PAID) order
+        const usersWithPaidOrder = await prisma.user.count({
+            where: {
+                orders: {
+                    some: { status: 'PAID' }
+                }
+            }
+        });
+        const usersWithoutPaidOrder = await prisma.user.count({
+            where: {
+                orders: {
+                    none: { status: 'PAID' }
+                }
+            }
+        });
         const [
             totalUsers,
             todayUsers,
             weekUsers,
             monthUsers,
-            activeUsers,
-            pendingUsers,
             totalOrders,
-            totalPurchases,
             totalProducts,
             lowStockProducts
         ] = await Promise.all([
@@ -41,10 +53,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
             prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
             prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
-            prisma.user.count({ where: { hasPurchased: true } }),
-            prisma.user.count({ where: { hasPurchased: false } }),
             prisma.order.count({ where: { status: 'PAID' } }),
-            prisma.order.count({ where: { status: 'PAID' } }), // Only count successful purchases
             prisma.product.count(),
             prisma.product.count({ where: { stock: { lt: 10 } } })
         ]);
@@ -55,9 +64,9 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         // weekUsers fetched in Promise.all
         // monthUsers fetched in Promise.all
 
-        // Active users (users with purchases)
-        // activeUsers fetched in Promise.all
-        // pendingUsers fetched in Promise.all
+        // Active users (users with at least one successful purchase)
+        const activeUsers = usersWithPaidOrder;
+        const pendingUsers = usersWithoutPaidOrder;
 
         // ===== POSITION DISTRIBUTION =====
         const positionCounts = await prisma.user.groupBy({
@@ -141,26 +150,18 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         });
         const monthOrdersAndPurchases = monthOrders; // Only successful orders this month
 
-        // Calculate revenue from orders and purchase transactions
+        // Calculate revenue only from successful orders
         const orderRevenue = await prisma.order.aggregate({
             _sum: { totalAmount: true },
             where: { status: 'PAID' }
         });
-        const purchaseRevenue = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: { type: 'PURCHASE' }
-        });
-        const totalRevenue = (orderRevenue._sum.totalAmount || 0) + (purchaseRevenue._sum.amount || 0);
+        const totalRevenue = orderRevenue._sum.totalAmount || 0;
 
         const monthOrderRevenue = await prisma.order.aggregate({
             _sum: { totalAmount: true },
             where: { status: 'PAID', createdAt: { gte: startOfMonth } }
         });
-        const monthPurchaseRevenue = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: { type: 'PURCHASE', createdAt: { gte: startOfMonth } }
-        });
-        const monthRevenue = (monthOrderRevenue._sum.totalAmount || 0) + (monthPurchaseRevenue._sum.amount || 0);
+        const monthRevenue = monthOrderRevenue._sum.totalAmount || 0;
 
         // ===== PRODUCT METRICS =====
         // totalProducts fetched in Promise.all

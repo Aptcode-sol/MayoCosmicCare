@@ -361,6 +361,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                             matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
                             leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
                             orders: Number(orderData?.count || 0)
+                        };
                     }),
                     monthlyUsers: monthlyUsers.map(m => {
                         const bonuses = monthlyBonusStats.filter(b => b.month === m.month);

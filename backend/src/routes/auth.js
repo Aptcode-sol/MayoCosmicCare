@@ -189,6 +189,7 @@ router.get('/me', authenticate, async (req, res) => {
                 email: true,
                 phone: true,
                 kycStatus: true,
+                kycMessage: true,
                 kycRefId: true,
                 pan: true,
                 aadhaar: true,

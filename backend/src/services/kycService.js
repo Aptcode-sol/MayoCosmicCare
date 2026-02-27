@@ -58,7 +58,8 @@ async function initKyc(userId) {
                 where: { id: userId },
                 data: {
                     kycRefId: verificationId,
-                    kycStatus: "IN_PROGRESS"
+                    kycStatus: "IN_PROGRESS",
+                    kycMessage: null
                 }
             });
             return { url: url, verificationId };
@@ -150,7 +151,7 @@ async function checkStatus(userId) {
                 if (registeredName !== nameOnPan) {
                     await prisma.user.update({
                         where: { id: userId },
-                        data: { kycStatus: 'FAILED' }
+                        data: { kycStatus: 'FAILED', kycMessage: 'Name on PAN does not match registered name. Please update your name to match PAN and try again.' }
                     });
                     throw new Error('KYC Failed: Name on PAN does not match registered name. Please update your name to match PAN and try again.');
                 }
@@ -163,6 +164,7 @@ async function checkStatus(userId) {
                 where: { id: userId },
                 data: {
                     kycStatus: 'VERIFIED',
+                    kycMessage: null,
                     phone: data.user_details?.mobile || undefined, // Update phone if available from source
                     pan,
                     aadhaar
@@ -175,7 +177,7 @@ async function checkStatus(userId) {
             newStatus = 'FAILED';
             await prisma.user.update({
                 where: { id: userId },
-                data: { kycStatus: 'FAILED' }
+                data: { kycStatus: 'FAILED', kycMessage: `Verification failed with provider status: ${data.status}` }
             });
         }
 

@@ -16,6 +16,7 @@ interface UserData {
     email: string
     phone?: string
     kycStatus?: string
+    kycMessage?: string
     pan?: string
     aadhaar?: string
     createdAt?: string
@@ -205,9 +206,11 @@ export default function ProfilePage() {
                 }
                 if (res.data.status === 'VERIFIED') toast.success('KYC Verified!')
                 else if (res.data.status === 'FAILED') toast.error('KYC Failed')
+                loadUser()
             }
-        } catch {
-            toast.error('Failed to check status')
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Failed to check status')
+            loadUser()
         } finally {
             setCheckingKyc(false)
         }
@@ -313,6 +316,12 @@ export default function ProfilePage() {
                                         {kycStatus.replace('_', ' ')}
                                     </span>
                                 </div>
+
+                                {kycStatus === 'FAILED' && user?.kycMessage && (
+                                    <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                                        {user.kycMessage}
+                                    </div>
+                                )}
 
                                 {kycStatus === 'VERIFIED' ? (
                                     <div className="space-y-2 pt-2 border-t border-gray-50 text-sm">

@@ -23,6 +23,7 @@ model User {
   children         User[]   @relation("TreePlacement")
   role             Role     @default(USER)
   kycStatus        String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, VERIFIED, FAILED
+  kycMessage       String?
   kycRefId         String?
   pan              String?
   aadhaar          String?

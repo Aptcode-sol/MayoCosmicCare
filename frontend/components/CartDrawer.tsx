@@ -81,7 +81,7 @@ export default function CartDrawer() {
 
             const checkoutOptions = {
                 paymentSessionId: payment_session_id,
-                redirectTarget: "_self"
+                redirectTarget: "_modal"
             };
 
             cashfree.checkout(checkoutOptions).then(async (result: any) => {

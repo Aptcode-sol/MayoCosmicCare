@@ -270,7 +270,12 @@ export default function ProfilePage() {
                                         {(user?.name || user?.username || 'U').slice(0, 2).toUpperCase()}
                                     </span>
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">{user?.name || user?.username}</h2>
+                                <h2
+                                    className="text-xl font-bold text-gray-900 break-words max-w-full whitespace-pre-line text-center sm:text-left"
+                                    style={{ wordBreak: 'break-word', overflowWrap: 'break-word', maxWidth: '100%' }}
+                                >
+                                    {user?.name || user?.username}
+                                </h2>
                                 <p className="text-gray-500 text-sm">{user?.username}</p>
                                 {user?.phone && <p className="text-gray-400 text-xs mt-1">📱 {user.phone}</p>}
 
@@ -289,7 +294,9 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Referred By</span>
-                                        <span className="font-medium text-gray-900">{user?.sponsor ? (user.sponsor.name || user.sponsor.username) : 'N/A'}</span>
+                                        <span className="font-medium text-gray-900 break-words max-w-[120px] sm:max-w-full whitespace-pre-line" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                            {user?.sponsor ? (user.sponsor.name || user.sponsor.username) : 'N/A'}
+                                        </span>
                                     </div>
                                 </div>
                             </CardContent>

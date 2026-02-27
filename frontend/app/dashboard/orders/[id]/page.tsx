@@ -439,6 +439,32 @@ export default function OrderDetail() {
                             <span className={`w-1.5 h-1.5 rounded-full ${orderStatus.dot}`} />
                             {orderStatus.label}
                         </span>
+                        {order.status === 'PENDING' && (
+                            <Button
+                                onClick={async () => {
+                                    toast.loading('Refreshing payment status...');
+                                    try {
+                                        const res = await api.post('/api/payment/verify', { orderId: order.cashfreeOrderId });
+                                        if (res.data.status === 'PAID') {
+                                            toast.success('Payment verified!');
+                                            setOrder((prev) => prev ? { ...prev, status: 'PAID' } : prev);
+                                        } else {
+                                            toast('Payment still pending.', { icon: '⏳' });
+                                        }
+                                    } catch (e: any) {
+                                        toast.error(e?.response?.data?.error || 'Failed to refresh status');
+                                    } finally {
+                                        toast.dismiss();
+                                    }
+                                }}
+                                className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-2 text-sm font-medium transition-all duration-200 hover:shadow-lg"
+                            >
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 19a9 9 0 0014 0M5 5a9 9 0 0114 0" />
+                                </svg>
+                                Refresh Status
+                            </Button>
+                        )}
                         {order.status === 'PAID' && (
                             <Button
                                 onClick={() => handleDownload(order.id)}

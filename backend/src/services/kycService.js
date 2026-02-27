@@ -160,15 +160,22 @@ async function checkStatus(userId) {
             }
 
             // If we are here, validation passed or was skipped due to missing data (legacy users)
+
+            // Only update phone if valid (non-empty, matches phone pattern)
+            const phoneFromKyc = data.user_details?.mobile;
+            const phonePattern = /^\d{10,15}$/;
+            const updateData = {
+                kycStatus: 'VERIFIED',
+                kycMessage: null,
+                pan,
+                aadhaar
+            };
+            if (phoneFromKyc && typeof phoneFromKyc === 'string' && phonePattern.test(phoneFromKyc)) {
+                updateData.phone = phoneFromKyc;
+            }
             await prisma.user.update({
                 where: { id: userId },
-                data: {
-                    kycStatus: 'VERIFIED',
-                    kycMessage: null,
-                    phone: data.user_details?.mobile || undefined, // Update phone if available from source
-                    pan,
-                    aadhaar
-                }
+                data: updateData
             });
 
             return { status: 'VERIFIED', pan, aadhaar };

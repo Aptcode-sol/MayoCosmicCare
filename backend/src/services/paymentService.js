@@ -44,13 +44,34 @@ async function getHeaders() {
 async function createOrder(userId, items, sponsorId = null) {
     if (!items || items.length === 0) throw new Error('No items in order');
 
+    // Merge duplicate productIds and sum quantities
+    const mergedItems = [];
+    const itemMap = new Map();
+    for (const item of items) {
+        if (!item.productId) continue;
+        if (itemMap.has(item.productId)) {
+            const existing = itemMap.get(item.productId);
+            existing.quantity += item.quantity;
+        } else {
+            itemMap.set(item.productId, { ...item });
+        }
+    }
+    for (const value of itemMap.values()) mergedItems.push(value);
+
+    // Check all productIds exist
+    const productIds = mergedItems.map(i => i.productId);
+    const foundProducts = await prisma.product.findMany({ where: { id: { in: productIds } } });
+    const foundIds = new Set(foundProducts.map(p => p.id));
+    const missing = productIds.filter(id => !foundIds.has(id));
+    if (missing.length > 0) {
+        throw new Error('Some products in your cart are no longer available. Please refresh your cart. Missing product IDs: ' + missing.join(", "));
+    }
+
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
-    // KYC Check enforced here too
-
     // Calculate total
-    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalAmount = mergedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const orderId = 'ORDER_' + userId.slice(-6) + '_' + Date.now();
 
     // Create Order in DB first (Pending)
@@ -62,7 +83,7 @@ async function createOrder(userId, items, sponsorId = null) {
             cashfreeOrderId: orderId,
             sponsorId,
             items: {
-                create: items.map(item => ({
+                create: mergedItems.map(item => ({
                     productId: item.productId,
                     price: item.price,
                     quantity: item.quantity

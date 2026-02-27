@@ -251,7 +251,7 @@ export default function ProfilePage() {
 
     return (
         <DashboardLayout user={user}>
-            <div className="container mx-auto px-2 sm:px-3 lg:px-4 py-8 pt-0 max-w-5xl">
+            <div className="container mx-auto px-0 sm:px-2 lg:px-4 py-8 pt-0 max-w-full">
                 {/* Page Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>

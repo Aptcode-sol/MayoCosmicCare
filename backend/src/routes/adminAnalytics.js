@@ -146,9 +146,9 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         const todayOrdersAndPurchases = todayOrders; // Only successful orders today
 
         const monthOrders = await prisma.order.count({
-            where: { status: 'PAID', createdAt: { gte: startOfMonth } }
+            where: { status: 'PAID', createdAt: { gte: thirtyDaysAgo } }
         });
-        const monthOrdersAndPurchases = monthOrders; // Only successful orders this month
+        const monthOrdersAndPurchases = monthOrders; // Only successful orders last 30 days
 
         // Calculate revenue only from successful orders
         const orderRevenue = await prisma.order.aggregate({
@@ -159,7 +159,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
 
         const monthOrderRevenue = await prisma.order.aggregate({
             _sum: { totalAmount: true },
-            where: { status: 'PAID', createdAt: { gte: startOfMonth } }
+            where: { status: 'PAID', createdAt: { gte: thirtyDaysAgo } }
         });
         const monthRevenue = monthOrderRevenue._sum.totalAmount || 0;
 
@@ -195,14 +195,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             ORDER BY date ASC
         `;
 
-        // Get daily purchases (orders with status PAID)
-        const dailyPurchases = await prisma.$queryRaw`
-            SELECT DATE("createdAt") as date, COUNT(*) as count
-            FROM "Order"
-            WHERE "createdAt" >= ${thirtyDaysAgo} AND status = 'PAID'
-            GROUP BY DATE("createdAt")
-            ORDER BY date ASC
-        `;
+        // dailyPurchases removed since it duplicated dailyOrders and confused order counts.
 
         // Monthly user signups (last 12 months) with bonus stats
         const monthlyUsers = await prisma.$queryRaw`
@@ -276,14 +269,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             ORDER BY date ASC
         `;
 
-        // Daily purchase revenue (last 30 days)
-        const dailyPurchaseRevenue = await prisma.$queryRaw`
-            SELECT DATE("createdAt") as date, SUM(amount) as total
-            FROM "Transaction"
-            WHERE "createdAt" >= ${thirtyDaysAgo} AND type = 'PURCHASE'
-            GROUP BY DATE("createdAt")
-            ORDER BY date ASC
-        `;
+        // dailyPurchaseRevenue removed from here to not mix package purchases into eCommerce Order revenue trends.
 
         // Dev-only debug: log key analytics arrays and computed totals to help diagnose missing time-series
         if (process.env.NODE_ENV !== 'production') {
@@ -375,7 +361,6 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                             matchingBonus: Number(bonuses.find(b => b.type === 'MATCHING_BONUS')?.total || 0),
                             leadershipBonus: Number(bonuses.find(b => b.type === 'LEADERSHIP_BONUS')?.total || 0),
                             orders: Number(orderData?.count || 0)
-                        };
                     }),
                     monthlyUsers: monthlyUsers.map(m => {
                         const bonuses = monthlyBonusStats.filter(b => b.month === m.month);
@@ -400,11 +385,10 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                         const getDateStr = (item) => String(item.date instanceof Date ? item.date.toISOString() : item.date).split('T')[0];
 
                         const orderRev = dailyRevenue.find(r => getDateStr(r) === dateStr);
-                        const purchaseRev = dailyPurchaseRevenue.find(r => getDateStr(r) === dateStr);
 
                         return {
                             date: dateStr,
-                            total: Number(orderRev?.total || 0) + Number(purchaseRev?.total || 0)
+                            total: Number(orderRev?.total || 0)
                         };
                     })
                 }

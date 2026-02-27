@@ -57,45 +57,10 @@ export default function AnalyticsPage() {
         );
     }
 
-    // Compute derived order/revenue fallbacks from trends
-    const _now = new Date();
-    const _todayStart = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate()).toISOString().split('T')[0];
-
-    const _parseDateKey = (d) => {
-        if (!d) return null;
-        if (typeof d === 'string' && d.includes('T')) return d.split('T')[0];
-        return String(d).split('T')[0];
-    };
-
-    const _dailyUsers = analytics.trends?.dailyUsers || [];
-    const _dailyRevenue = analytics.trends?.dailyRevenue || [];
-
-    const derivedTodayOrders = _dailyUsers.reduce((acc, item) => {
-        const dateKey = _parseDateKey(item.date);
-        if (dateKey === _todayStart) return acc + (Number(item.orders) || 0);
-        return acc;
-    }, 0);
-
-    // Use last 30 days window instead of calendar month
-    const _thirtyDaysAgo = new Date(_now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    const derivedMonthOrders = _dailyUsers.reduce((acc, item) => {
-        const dateKey = _parseDateKey(item.date);
-        if (!dateKey) return acc;
-        const d = new Date(dateKey);
-        if (d >= _thirtyDaysAgo) return acc + (Number(item.orders) || 0);
-        return acc;
-    }, 0);
-
-    const derivedMonthRevenue = _dailyRevenue.reduce((acc, item) => {
-        const dateKey = _parseDateKey(item.date);
-        if (!dateKey) return acc;
-        const d = new Date(dateKey);
-        if (d >= _thirtyDaysAgo) return acc + (Number(item.total) || 0);
-        return acc;
-    }, 0);
-
-    console.log('AnalyticsPage Debug:', { _dailyUsers, derivedMonthOrders, derivedMonthRevenue });
+    // Use backend's accurate stats directly
+    const derivedTodayOrders = analytics.orders?.today || 0;
+    const derivedMonthOrders = analytics.orders?.thisMonth || 0;
+    const derivedMonthRevenue = analytics.orders?.monthRevenue || 0;
 
     return (
         <div className="space-y-6">

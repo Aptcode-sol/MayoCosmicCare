@@ -37,16 +37,16 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
             totalProducts,
             lowStockProducts
         ] = await Promise.all([
-                prisma.user.count(),
-                prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
-                prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
-                prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
-                prisma.user.count({ where: { hasPurchased: true } }),
-                prisma.user.count({ where: { hasPurchased: false } }),
-                prisma.order.count({ where: { status: 'PAID' } }),
-                prisma.transaction.count({ where: { type: 'PURCHASE' } }),
-                prisma.product.count(),
-                prisma.product.count({ where: { stock: { lt: 10 } } })
+            prisma.user.count(),
+            prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
+            prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
+            prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
+            prisma.user.count({ where: { hasPurchased: true } }),
+            prisma.user.count({ where: { hasPurchased: false } }),
+            prisma.order.count({ where: { status: 'PAID' } }),
+            prisma.transaction.count({ where: { type: 'PURCHASE' } }),
+            prisma.product.count(),
+            prisma.product.count({ where: { stock: { lt: 10 } } })
         ]);
 
 
@@ -427,7 +427,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
 // GET /api/admin/analytics/network - Get full binary tree for admin
 router.get('/network', authenticate, adminOnly, async (req, res) => {
     try {
-        // Get all users with their placement info
+        // Get all users with their placement info and wallet balance
         const users = await prisma.user.findMany({
             select: {
                 id: true,
@@ -445,12 +445,24 @@ router.get('/network', authenticate, adminOnly, async (req, res) => {
                 parentId: true,
                 position: true,
                 leftMemberCount: true,
-                rightMemberCount: true
+                rightMemberCount: true,
+                wallet: {
+                    select: {
+                        balance: true
+                    }
+                }
             },
             orderBy: { createdAt: 'asc' }
         });
 
-        res.json({ ok: true, users });
+        // Flatten wallet.balance to walletBalance for frontend compatibility
+        const usersWithWallet = users.map(u => ({
+            ...u,
+            walletBalance: u.wallet?.balance || 0,
+            wallet: undefined // Remove wallet object to avoid confusion
+        }));
+
+        res.json({ ok: true, users: usersWithWallet });
     } catch (err) {
         console.error('[ADMIN_NETWORK]', err);
         res.status(500).json({ ok: false, error: 'Failed to fetch network' });

@@ -64,8 +64,9 @@ function TreeNode({ node, level = 0, onNodeClick }) {
                     </div>
                 </div>
 
-                {/* Business Volume & Status Info */}
-                <div className="mt-3 space-y-2">
+
+                {/* Business Volume, Wallet, and Status Info */}
+                <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2 text-xs">
                         {/* BV Display - Only show if BV > 0 */}
                         {showBV && (
@@ -89,6 +90,11 @@ function TreeNode({ node, level = 0, onNodeClick }) {
                             <div className="text-pink-600 font-bold">{rightCount}</div>
                             <div className="text-pink-500 text-[10px]">Right</div>
                         </div>
+                    </div>
+
+                    {/* Wallet Balance - now below counts, above status */}
+                    <div className="bg-emerald-50/50 rounded-lg px-2 py-1 text-center">
+                        <span className="font-medium text-emerald-700 text-xs">₹{(node.walletBalance || 0).toLocaleString()}</span>
                     </div>
 
                     {/* Purchased Badge */}

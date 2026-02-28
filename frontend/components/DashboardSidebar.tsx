@@ -1,7 +1,9 @@
 "use client"
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
+import api from '@/lib/api'
+import toast from 'react-hot-toast'
 
 const navItems = [
     { href: '/dashboard', label: 'Overview', icon: 'home' },
@@ -57,6 +59,13 @@ export default function DashboardSidebar({
     const pathname = usePathname()
     const router = useRouter()
 
+    // Password change modal state
+    const [showPasswordModal, setShowPasswordModal] = useState(false)
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [pwLoading, setPwLoading] = useState(false)
+
     const handleLogout = () => {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
@@ -66,6 +75,43 @@ export default function DashboardSidebar({
     const handleMobileLinkClick = () => {
         if (setIsMobileMenuOpen) {
             setIsMobileMenuOpen(false)
+        }
+    }
+
+    const openPasswordModal = () => {
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setShowPasswordModal(true)
+    }
+
+    const handleChangePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            toast.error('All fields are required')
+            return
+        }
+        if (newPassword.length < 6) {
+            toast.error('New password must be at least 6 characters')
+            return
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error('New passwords do not match')
+            return
+        }
+        setPwLoading(true)
+        try {
+            const res = await api.post('/api/auth/change-password', { currentPassword, newPassword })
+            if (res.data?.ok) {
+                toast.success('Password changed successfully')
+                setShowPasswordModal(false)
+            } else {
+                toast.error(res.data?.error || 'Failed to change password')
+            }
+        } catch (err: unknown) {
+            const e = err as { response?: { data?: { error?: string } }; message?: string }
+            toast.error(e?.response?.data?.error || e?.message || 'Failed to change password')
+        } finally {
+            setPwLoading(false)
         }
     }
 
@@ -87,8 +133,78 @@ export default function DashboardSidebar({
         }
     }
 
+    // Password Change Modal Component
+    const PasswordModal = () => {
+        if (!showPasswordModal) return null
+        return (
+            <div className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center p-4" onClick={() => setShowPasswordModal(false)}>
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                        <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
+                        <button onClick={() => setShowPasswordModal(false)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                            <input
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                placeholder="Enter current password"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                            <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                placeholder="Enter new password"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                            <input
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                placeholder="Re-enter new password"
+                                onKeyDown={(e) => e.key === 'Enter' && handleChangePassword()}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-6">
+                        <button
+                            onClick={() => setShowPasswordModal(false)}
+                            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleChangePassword}
+                            disabled={pwLoading}
+                            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                            {pwLoading ? 'Changing...' : 'Change Password'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <>
+            {/* Password Change Modal */}
+            <PasswordModal />
+
             {/* Mobile Sidebar */}
             <aside
                 className={`
@@ -149,10 +265,10 @@ export default function DashboardSidebar({
                     })}
                 </nav>
 
-                {/* Mobile Logout & Forgot Password */}
+                {/* Mobile Logout & Reset Password */}
                 <div className="p-3 border-t border-gray-100 space-y-1">
                     <button
-                        onClick={() => { handleMobileLinkClick(); router.push('/forgot-password') }}
+                        onClick={() => { handleMobileLinkClick(); openPasswordModal() }}
                         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-amber-50 hover:text-amber-600 transition-colors"
                     >
                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -277,9 +393,9 @@ export default function DashboardSidebar({
                         </div>
                     </div>
 
-                    {/* Forgot Password Button */}
+                    {/* Reset Password Button */}
                     <button
-                        onClick={() => router.push('/forgot-password')}
+                        onClick={openPasswordModal}
                         title="Reset Password"
                         className={`w-full flex items-center gap-3 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-amber-50 hover:text-amber-600 transition-colors duration-300 ease-in-out group relative`}
                         style={{ paddingLeft: '12px', paddingRight: '12px' }}

@@ -415,10 +415,7 @@ router.get('/matching', authenticate, async (req, res) => {
         const paidLeftMembers = totalPayoutAgg._sum.leftConsumed || 0;
         const paidRightMembers = totalPayoutAgg._sum.rightConsumed || 0;
 
-        // Total accumulated members = Physical count of all descendants
-        // This decouples the dashboard display from the matching queue fields
-        const totalLeftMembers = leftDescendantIds.length;
-        const totalRightMembers = rightDescendantIds.length;
+
         const allPlacement = await prisma.user.findMany({
             select: { id: true, parentId: true, position: true }
         });
@@ -442,6 +439,11 @@ router.get('/matching', authenticate, async (req, res) => {
         const rightChild = immediateChildren.find(c => c.position === 'RIGHT');
         const leftDescendantIds = leftChild ? [leftChild.id, ...getAllDescendantIds(leftChild.id)] : [];
         const rightDescendantIds = rightChild ? [rightChild.id, ...getAllDescendantIds(rightChild.id)] : [];
+
+        // Total accumulated members = Physical count of all descendants
+        // This decouples the dashboard display from the matching queue fields
+        const totalLeftMembers = leftDescendantIds.length;
+        const totalRightMembers = rightDescendantIds.length;
 
         // === TOTAL BV: use user.leftBV/rightBV directly ===
         // These are already accumulated with actual product.bv on every purchase in purchaseService

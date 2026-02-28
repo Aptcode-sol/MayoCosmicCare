@@ -54,13 +54,7 @@ export default function UsersPage() {
 
 
 
-    if (loading) {
-        return (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <SkeletonTable rows={10} />
-            </div>
-        );
-    }
+
 
     return (
         <div className="space-y-6">
@@ -68,7 +62,10 @@ export default function UsersPage() {
             <div className="relative w-full">
                 <input
                     value={usersSearch}
-                    onChange={(e) => { setUsersSearch(e.target.value); setUsersPage(1); }}
+                    onChange={(e) => {
+                        setUsersSearch(e.target.value);
+                        if (usersPage !== 1) setUsersPage(1);
+                    }}
                     placeholder="Search by name, username, email, phone, or ID"
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                 />
@@ -86,6 +83,7 @@ export default function UsersPage() {
                 >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
                     <option value="blocked">Blocked</option>
                 </select>
                 {usersPagination && (
@@ -134,7 +132,13 @@ export default function UsersPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {users.length > 0 ? users.map((user) => (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={4} className="p-0">
+                                        <SkeletonTable rows={10} />
+                                    </td>
+                                </tr>
+                            ) : users.length > 0 ? users.map((user) => (
                                 <tr key={user.id} className="hover:bg-gray-50/50">
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <div className="text-gray-900 font-medium text-sm sm:text-base">{user.username}</div>
@@ -147,9 +151,11 @@ export default function UsersPage() {
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${user.isBlocked
                                             ? 'bg-red-50 text-red-700'
-                                            : 'bg-emerald-50 text-emerald-700'
+                                            : user.hasPurchased
+                                                ? 'bg-emerald-50 text-emerald-700'
+                                                : 'bg-amber-50 text-amber-700'
                                             }`}>
-                                            {user.isBlocked ? 'Blocked' : 'Active'}
+                                            {user.isBlocked ? 'Blocked' : user.hasPurchased ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-right space-x-2">

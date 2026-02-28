@@ -32,6 +32,10 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
         // Add status filter
         if (status === 'active') {
             where.isBlocked = false;
+            where.hasPurchased = true;
+        } else if (status === 'inactive') {
+            where.isBlocked = false;
+            where.hasPurchased = false;
         } else if (status === 'blocked') {
             where.isBlocked = true;
         }
@@ -49,6 +53,7 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
                     sponsorId: true,
                     role: true,
                     isBlocked: true,
+                    hasPurchased: true,
                     fraudFlag: true,
                     leftBV: true,
                     rightBV: true,

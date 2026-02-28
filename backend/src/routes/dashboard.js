@@ -314,6 +314,7 @@ router.get('/team', authenticate, async (req, res) => {
                 email: true,
                 createdAt: true,
                 isBlocked: true,
+                hasPurchased: true,
                 leftBV: true,
                 rightBV: true,
                 sponsor: { select: { username: true } },
@@ -328,7 +329,7 @@ router.get('/team', authenticate, async (req, res) => {
         const positionMap = new Map(allDescendants.map(d => [d.id, d.rootPosition]));
         const mappedMembers = members.map(m => ({
             ...m,
-            status: m.isBlocked ? 'Blocked' : 'Active',
+            status: m.isBlocked ? 'Blocked' : (m.hasPurchased ? 'Active' : 'Inactive'),
             introducer: m.sponsor?.username || 'N/A',
             team: positionMap.get(m.id) || m.position || 'N/A'
         }));

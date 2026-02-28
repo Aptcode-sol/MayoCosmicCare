@@ -46,10 +46,31 @@ router.get('/stats', authenticate, async (req, res) => {
         const leftPaidBV = paidLeftMembers * BV_PER_MEMBER;
         const rightPaidBV = paidRightMembers * BV_PER_MEMBER;
 
-        // Calculate total team (paid + unprocessed + carry)
-        // Matching process resets member counts after consuming them
-        const leftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
-        const rightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
+        // === TREE TRAVERSAL (Find exact physical member count) ===
+        // We decouple dashboard counts from matching queue fields
+        const allPlacement = await prisma.user.findMany({ select: { id: true, parentId: true, position: true } });
+        const childrenMap = new Map();
+        for (const u of allPlacement) {
+            if (u.parentId) {
+                if (!childrenMap.has(u.parentId)) childrenMap.set(u.parentId, []);
+                childrenMap.get(u.parentId).push(u);
+            }
+        }
+        function countDescendants(nodeId) {
+            let count = 0;
+            const children = childrenMap.get(nodeId) || [];
+            count += children.length;
+            for (const child of children) {
+                count += countDescendants(child.id);
+            }
+            return count;
+        }
+        const immediateChildren = childrenMap.get(userId) || [];
+        const leftChild = immediateChildren.find(c => c.position === 'LEFT');
+        const rightChild = immediateChildren.find(c => c.position === 'RIGHT');
+
+        const leftMembers = leftChild ? 1 + countDescendants(leftChild.id) : 0;
+        const rightMembers = rightChild ? 1 + countDescendants(rightChild.id) : 0;
 
         // Get the actual product BV from the database (used for paid BV calculation)
         const mainProduct = await prisma.product.findFirst({ select: { bv: true } });
@@ -394,11 +415,10 @@ router.get('/matching', authenticate, async (req, res) => {
         const paidLeftMembers = totalPayoutAgg._sum.leftConsumed || 0;
         const paidRightMembers = totalPayoutAgg._sum.rightConsumed || 0;
 
-        // Total accumulated members = Paid + Unprocessed + Carry
-        const totalLeftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
-        const totalRightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
-
-        // === TREE TRAVERSAL (shared for Total BV + Today's BV) ===
+        // Total accumulated members = Physical count of all descendants
+        // This decouples the dashboard display from the matching queue fields
+        const totalLeftMembers = leftDescendantIds.length;
+        const totalRightMembers = rightDescendantIds.length;
         const allPlacement = await prisma.user.findMany({
             select: { id: true, parentId: true, position: true }
         });

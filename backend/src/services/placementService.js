@@ -52,7 +52,6 @@ async function placeNewUser(userId, sponsorId, preferredLeg = null) {
             const leftChild = await tx.user.findFirst({ where: { parentId: sponsor.id, position: 'LEFT' } });
             if (!leftChild) {
                 await tx.user.update({ where: { id: userId }, data: { position: 'LEFT', parentId: sponsor.id } });
-                await propagateMemberCount(tx, sponsor.id, 'LEFT');
                 return { placedUnder: sponsor.id, position: 'LEFT' };
             }
 
@@ -60,7 +59,6 @@ async function placeNewUser(userId, sponsorId, preferredLeg = null) {
             const rightChild = await tx.user.findFirst({ where: { parentId: sponsor.id, position: 'RIGHT' } });
             if (!rightChild) {
                 await tx.user.update({ where: { id: userId }, data: { position: 'RIGHT', parentId: sponsor.id } });
-                await propagateMemberCount(tx, sponsor.id, 'RIGHT');
                 return { placedUnder: sponsor.id, position: 'RIGHT' };
             }
 
@@ -74,14 +72,12 @@ async function placeNewUser(userId, sponsorId, preferredLeg = null) {
                 const nodeLeft = await tx.user.findFirst({ where: { parentId: node.id, position: 'LEFT' } });
                 if (!nodeLeft) {
                     await tx.user.update({ where: { id: userId }, data: { position: 'LEFT', parentId: node.id } });
-                    await propagateMemberCount(tx, node.id, 'LEFT');
                     return { placedUnder: node.id, position: 'LEFT' };
                 }
 
                 const nodeRight = await tx.user.findFirst({ where: { parentId: node.id, position: 'RIGHT' } });
                 if (!nodeRight) {
                     await tx.user.update({ where: { id: userId }, data: { position: 'RIGHT', parentId: node.id } });
-                    await propagateMemberCount(tx, node.id, 'RIGHT');
                     return { placedUnder: node.id, position: 'RIGHT' };
                 }
 
@@ -133,8 +129,6 @@ async function placeAtTail(userId, sponsorId, leg) {
                     where: { id: userId },
                     data: { position, parentId: current.id }
                 });
-                // Propagate member count up the tree from placement point
-                await propagateMemberCount(tx, current.id, position);
                 // console.log(`[PLACEMENT] User ${userId} placed under ${current.id} at ${position} (tail of ${leg} leg)`);
                 return { placedUnder: current.id, position };
             }
@@ -149,47 +143,4 @@ async function placeAtTail(userId, sponsorId, leg) {
         return { placedUnder: sponsorId, position };
     }, { maxWait: 5000, timeout: 20000 });
 }
-
-/**
- * Propagate member count up the tree from the placement point.
- * Uses parentId to traverse up the tree (NOT sponsorId).
- */
-async function propagateMemberCount(tx, startFromId, initialPosition) {
-    let currentId = startFromId;
-    let currentPosition = initialPosition;
-    const visited = new Set();
-
-    while (currentId) {
-        if (visited.has(currentId)) {
-            console.error('[PLACEMENT] Cycle detected in tree propagation!', currentId);
-            break;
-        }
-        visited.add(currentId);
-
-        const current = await tx.user.findUnique({ where: { id: currentId } });
-        if (!current) break;
-
-        // Increment the appropriate counter
-        if (currentPosition === 'LEFT') {
-            await tx.user.update({
-                where: { id: currentId },
-                data: { leftMemberCount: { increment: 1 } }
-            });
-        } else if (currentPosition === 'RIGHT') {
-            await tx.user.update({
-                where: { id: currentId },
-                data: { rightMemberCount: { increment: 1 } }
-            });
-        }
-
-        // Move up to parent using parentId (tree structure)
-        if (current.parentId) {
-            currentPosition = current.position; // This user's position relative to their parent
-            currentId = current.parentId;
-        } else {
-            break;
-        }
-    }
-}
-
-module.exports = { placeNewUser, placeAtTail, propagateMemberCount };
+module.exports = { placeNewUser, placeAtTail };

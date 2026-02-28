@@ -135,7 +135,7 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
             }
         }
 
-        // update BV up the uplines using parentId (tree structure, not sponsorId)
+        // update BV and purchased member counts up the uplines using parentId (tree structure, not sponsorId)
         let current = buyer;
         const visited = new Set();
         let loopCount = 0;
@@ -153,12 +153,20 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
 
             const parent = await tx.user.findUnique({ where: { id: current.parentId } });
             if (!parent) break;
+
+            // Prepare update data for the parent
+            const updateData = {};
+
             // Use current user's position relative to their parent
             if (current.position === 'LEFT') {
-                await tx.user.update({ where: { id: parent.id }, data: { leftBV: parent.leftBV + product.bv } });
+                updateData.leftBV = parent.leftBV + product.bv;
+                if (isFirstPurchase) updateData.leftMemberCount = { increment: 1 };
             } else if (current.position === 'RIGHT') {
-                await tx.user.update({ where: { id: parent.id }, data: { rightBV: parent.rightBV + product.bv } });
+                updateData.rightBV = parent.rightBV + product.bv;
+                if (isFirstPurchase) updateData.rightMemberCount = { increment: 1 };
             }
+
+            await tx.user.update({ where: { id: parent.id }, data: updateData });
             sponsorsToQueue.push(parent.id);
             current = parent;
         }

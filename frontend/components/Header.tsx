@@ -58,7 +58,7 @@ export default function Header() {
 
     return (
         <>
-            <header className={`fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-transform duration-300 ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}>
+            <header className={`fixed top-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300 ${isHidden ? '-translate-y-full' : 'translate-y-0'} ${pathname.startsWith('/dashboard') ? 'left-0 lg:left-[var(--sidebar-width,0rem)]' : 'left-0'}`}>
                 <nav className={`w-full md:container md:mx-auto px-4 md:px-6 h-20 flex md:grid md:grid-cols-3 items-center ${mounted && !isLoading && !isLoggedIn ? 'justify-between' : 'justify-center md:justify-between'}`}>
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group min-w-0">

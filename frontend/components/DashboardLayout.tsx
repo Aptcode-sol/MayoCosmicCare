@@ -32,6 +32,21 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         localStorage.setItem('sidebar_pinned', String(isPinned))
     }, [isExpanded, isPinned])
 
+    // Communicate sidebar width to Header layout
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.documentElement.style.setProperty(
+                '--sidebar-width',
+                isExpanded ? '16rem' : '5rem'
+            )
+        }
+        return () => {
+            if (typeof document !== 'undefined') {
+                document.documentElement.style.setProperty('--sidebar-width', '0px')
+            }
+        }
+    }, [isExpanded])
+
     // Wrap setIsExpanded to enforce pinned-always-expanded logic without cascading renders
     const handleSetIsExpanded = (value: boolean | ((prev: boolean) => boolean)) => {
         setIsExpanded(prev => {

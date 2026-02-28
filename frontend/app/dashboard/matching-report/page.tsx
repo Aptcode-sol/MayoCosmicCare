@@ -10,8 +10,8 @@ import { formatIndian } from '@/lib/formatIndian'
 
 interface MatchingData {
     current: {
-        left: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number; totalMembers: number; paidMembers: number; unpaidMembers: number; carryMembers: number }
-        right: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number; totalMembers: number; paidMembers: number; unpaidMembers: number; carryMembers: number }
+        left: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number; totalMembers: number; totalPurchasedMembers: number; paidMembers: number; unpaidMembers: number; carryMembers: number; carryPurchasedMembers: number }
+        right: { totalBV: number; paidBV: number; unpaidBV: number; carryForward: number; totalMembers: number; totalPurchasedMembers: number; paidMembers: number; unpaidMembers: number; carryMembers: number; carryPurchasedMembers: number }
     }
     history: Array<{
         id: string
@@ -85,8 +85,8 @@ export default function MatchingReport() {
     }
 
     const current = data?.current || {
-        left: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0 },
-        right: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0 }
+        left: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, totalPurchasedMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0, carryPurchasedMembers: 0 },
+        right: { totalBV: 0, paidBV: 0, unpaidBV: 0, carryForward: 0, totalMembers: 0, totalPurchasedMembers: 0, paidMembers: 0, unpaidMembers: 0, carryMembers: 0, carryPurchasedMembers: 0 }
     }
     const history = data?.history || []
 
@@ -157,9 +157,9 @@ export default function MatchingReport() {
                                                     <span className="text-xs md:text-sm font-medium text-gray-900">Total BV</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.totalBV, current.left.totalMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.totalBV, current.right.totalMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.totalBV + current.right.totalBV, current.left.totalMembers + current.right.totalMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.totalBV, current.left.totalPurchasedMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.totalBV, current.right.totalPurchasedMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.totalBV + current.right.totalBV, current.left.totalPurchasedMembers + current.right.totalPurchasedMembers)}</td>
                                         </tr>
                                         <tr className="hover:bg-gray-50 transition-colors">
                                             <td className="py-3 md:py-4">
@@ -196,15 +196,15 @@ export default function MatchingReport() {
                                                 <div className="flex items-center gap-2 md:gap-3">
                                                     <div className="w-6 md:w-8 h-6 md:h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <svg className="w-3 md:w-4 h-3 md:h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                                         </svg>
                                                     </div>
                                                     <span className="text-xs md:text-sm font-medium text-gray-900">Carry Forward</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.carryForward, current.left.carryMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.carryForward, current.right.carryMembers)}</td>
-                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.carryForward + current.right.carryForward, current.left.carryMembers + current.right.carryMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-indigo-600">{formatWithCount(current.left.carryForward, current.left.carryPurchasedMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-pink-600">{formatWithCount(current.right.carryForward, current.right.carryPurchasedMembers)}</td>
+                                            <td className="py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900">{formatWithCount(current.left.carryForward + current.right.carryForward, current.left.carryPurchasedMembers + current.right.carryPurchasedMembers)}</td>
                                         </tr>
                                     </tbody>
                                 </table>

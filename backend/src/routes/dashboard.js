@@ -491,20 +491,24 @@ router.get('/matching', authenticate, async (req, res) => {
                     paidBV: todayPaidLeftBV,
                     unpaidBV: todayUnpaidLeftBV,
                     carryForward: carryLeftBV,
-                    totalMembers: totalLeftMembers,
+                    totalMembers: totalLeftMembers, // Physical count
+                    totalPurchasedMembers: Math.floor(totalLeftBV / PRODUCT_BV), // Members who generated the BV
                     paidMembers: todayPaidLeftMembers,
                     unpaidMembers: todayUnpaidLeftMembers,
-                    carryMembers: carryLeftMembers
+                    carryMembers: carryLeftMembers,
+                    carryPurchasedMembers: Math.floor(carryLeftBV / PRODUCT_BV)
                 },
                 right: {
                     totalBV: totalRightBV,
                     paidBV: todayPaidRightBV,
                     unpaidBV: todayUnpaidRightBV,
                     carryForward: carryRightBV,
-                    totalMembers: totalRightMembers,
+                    totalMembers: totalRightMembers, // Physical count
+                    totalPurchasedMembers: Math.floor(totalRightBV / PRODUCT_BV), // Members who generated the BV
                     paidMembers: todayPaidRightMembers,
                     unpaidMembers: todayUnpaidRightMembers,
-                    carryMembers: carryRightMembers
+                    carryMembers: carryRightMembers,
+                    carryPurchasedMembers: Math.floor(carryRightBV / PRODUCT_BV)
                 }
             },
             todayPayout: todayPayout ? {

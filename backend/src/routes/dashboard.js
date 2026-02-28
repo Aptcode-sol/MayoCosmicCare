@@ -51,9 +51,9 @@ router.get('/stats', authenticate, async (req, res) => {
         const leftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const rightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
-        // Calculate BV from member counts for consistency
-        const leftBV = leftMembers * BV_PER_MEMBER;
-        const rightBV = rightMembers * BV_PER_MEMBER;
+        // Use actual BV from user record (accumulated from real product.bv per purchase)
+        const leftBV = user.leftBV || 0;
+        const rightBV = user.rightBV || 0;
 
         // Calculate direct referrals by position
         const directLeft = user.referrals.filter(r => r.position === 'LEFT').length;
@@ -93,8 +93,8 @@ router.get('/stats', authenticate, async (req, res) => {
                     activeRight: directActiveRight
                 },
                 carryForward: {
-                    left: (user.leftCarryCount || 0) * BV_PER_MEMBER,
-                    right: (user.rightCarryCount || 0) * BV_PER_MEMBER
+                    left: Math.max(0, leftBV - leftPaidBV),
+                    right: Math.max(0, rightBV - rightPaidBV)
                 }
             }
         });
@@ -391,9 +391,9 @@ router.get('/matching', authenticate, async (req, res) => {
         const totalLeftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const totalRightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
-        // === ALL-TIME BV ===
-        const totalLeftBV = totalLeftMembers * BV_PER_MEMBER;
-        const totalRightBV = totalRightMembers * BV_PER_MEMBER;
+        // === ALL-TIME BV (from actual product.bv accumulated per purchase) ===
+        const totalLeftBV = user.leftBV || 0;
+        const totalRightBV = user.rightBV || 0;
         const totalPaidLeftBV = paidLeftMembers * BV_PER_MEMBER;
         const totalPaidRightBV = paidRightMembers * BV_PER_MEMBER;
 

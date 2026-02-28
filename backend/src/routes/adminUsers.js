@@ -90,6 +90,8 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
                     role: true,
                     isBlocked: true,
                     fraudFlag: true,
+                    leftBV: true,
+                    rightBV: true,
                     leftMemberCount: true,
                     rightMemberCount: true,
                     leftCarryCount: true,
@@ -103,17 +105,12 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
             prisma.user.count({ where })
         ]);
 
-        // Use the same BV calculation as dashboard.js
-        const BV_PER_MEMBER = parseInt(process.env.PAIR_UNIT_BV || '50', 10);
-        const users = usersRaw.map(u => {
-            const leftMembers = (u.leftMemberCount || 0) + (u.leftCarryCount || 0);
-            const rightMembers = (u.rightMemberCount || 0) + (u.rightCarryCount || 0);
-            return {
-                ...u,
-                leftBV: leftMembers * BV_PER_MEMBER,
-                rightBV: rightMembers * BV_PER_MEMBER
-            };
-        });
+        // Use actual BV from user record (accumulated from real product.bv per purchase)
+        const users = usersRaw.map(u => ({
+            ...u,
+            leftBV: u.leftBV || 0,
+            rightBV: u.rightBV || 0
+        }));
 
         const totalPages = Math.ceil(total / limit);
         res.json({

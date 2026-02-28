@@ -409,10 +409,47 @@ router.get('/matching', authenticate, async (req, res) => {
         const todayPaidLeftBV = todayPaidLeftMembers * BV_PER_MEMBER;
         const todayPaidRightBV = todayPaidRightMembers * BV_PER_MEMBER;
 
-        // Today's unpaid BV = today's unprocessed members (not yet consumed today)
-        // These are the members sitting in the queue waiting for matching today
-        const todayUnpaidLeftMembers = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
-        const todayUnpaidRightMembers = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
+        // Today's new members per leg: traverse placement tree to find
+        // users whose FIRST purchase (PAID order) was today (IST)
+        const allPlacement = await prisma.user.findMany({
+            select: { id: true, parentId: true, position: true }
+        });
+        const childrenMap = new Map();
+        for (const u of allPlacement) {
+            if (u.parentId) {
+                if (!childrenMap.has(u.parentId)) childrenMap.set(u.parentId, []);
+                childrenMap.get(u.parentId).push(u);
+            }
+        }
+        function getAllDescendantIds(nodeId) {
+            const children = childrenMap.get(nodeId) || [];
+            let ids = children.map(c => c.id);
+            for (const child of children) {
+                ids = ids.concat(getAllDescendantIds(child.id));
+            }
+            return ids;
+        }
+        const immediateChildren = childrenMap.get(userId) || [];
+        const leftChild = immediateChildren.find(c => c.position === 'LEFT');
+        const rightChild = immediateChildren.find(c => c.position === 'RIGHT');
+        const leftDescendantIds = leftChild ? [leftChild.id, ...getAllDescendantIds(leftChild.id)] : [];
+        const rightDescendantIds = rightChild ? [rightChild.id, ...getAllDescendantIds(rightChild.id)] : [];
+
+        // Find users whose first PAID order was today (these contribute +1 BV today)
+        const newPurchasersToday = await prisma.$queryRaw`
+            SELECT "userId" FROM "Order"
+            WHERE status = 'PAID'
+            GROUP BY "userId"
+            HAVING MIN("createdAt") >= ${todayStart} AND MIN("createdAt") < ${todayEnd}
+        `;
+        const newPurchaserIds = new Set(newPurchasersToday.map(r => r.userId));
+
+        const todayNewLeftMembers = leftDescendantIds.filter(id => newPurchaserIds.has(id)).length;
+        const todayNewRightMembers = rightDescendantIds.filter(id => newPurchaserIds.has(id)).length;
+
+        // Today's unpaid = today's new members - today's consumed members
+        const todayUnpaidLeftMembers = Math.max(0, todayNewLeftMembers - todayPaidLeftMembers);
+        const todayUnpaidRightMembers = Math.max(0, todayNewRightMembers - todayPaidRightMembers);
         const todayUnpaidLeftBV = todayUnpaidLeftMembers * BV_PER_MEMBER;
         const todayUnpaidRightBV = todayUnpaidRightMembers * BV_PER_MEMBER;
 

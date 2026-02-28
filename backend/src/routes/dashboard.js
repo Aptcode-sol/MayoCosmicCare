@@ -343,7 +343,7 @@ router.get('/matching', authenticate, async (req, res) => {
             }
         });
 
-        // Get today's payout record if any
+        // IST boundaries for "today"
         const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
         const nowIst = new Date(nowStr);
         const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
@@ -354,9 +354,15 @@ router.get('/matching', authenticate, async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Get total paid out
+        // Get ALL-TIME total paid out
         const totalPayoutAgg = await prisma.pairPayoutRecord.aggregate({
             where: { userId },
+            _sum: { amount: true, leftConsumed: true, rightConsumed: true }
+        });
+
+        // Get TODAY's paid out (IST scoped)
+        const todayPayoutAgg = await prisma.pairPayoutRecord.aggregate({
+            where: { userId, date: { gte: todayStart, lt: todayEnd } },
             _sum: { amount: true, leftConsumed: true, rightConsumed: true }
         });
 
@@ -375,75 +381,62 @@ router.get('/matching', authenticate, async (req, res) => {
             take: limit
         });
 
-        // Calculate clear metrics:
-        // - Total BV: All accumulated BV (from all purchases in downline)
-        // - Paid BV: BV that was matched and paid out  
-        // - Unpaid BV: Remaining BV waiting for matching (Total - Paid)
-        // - Carry Forward: Members that couldn't be matched (waiting for opposite side)
-
         const BV_PER_MEMBER = parseInt(process.env.PAIR_UNIT_BV || '50', 10);
 
-        // === MEMBER CALCULATIONS ===
-        // Paid members from payouts (already consumed and paid out)
+        // === ALL-TIME MEMBER CALCULATIONS ===
         const paidLeftMembers = totalPayoutAgg._sum.leftConsumed || 0;
         const paidRightMembers = totalPayoutAgg._sum.rightConsumed || 0;
 
         // Total accumulated members = Paid + Unprocessed + Carry
-        // (matching process resets member counts after consuming them)
         const totalLeftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const totalRightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
-        // Matchable pairs = min of both sides (how many could theoretically be matched)
-        const matchablePairs = Math.min(totalLeftMembers, totalRightMembers);
-
-        // Unpaid members = Total minus Paid
-        const unpaidLeftMembers = Math.max(0, totalLeftMembers - paidLeftMembers);
-        const unpaidRightMembers = Math.max(0, totalRightMembers - paidRightMembers);
-
-        // Carry Forward = members that CANNOT be matched because opposite leg is too small
-        // Left carry = excess left members (left > right)
-        // Right carry = excess right members (right > left)
-        const carryLeftMembers = Math.max(0, totalLeftMembers - totalRightMembers);
-        const carryRightMembers = Math.max(0, totalRightMembers - totalLeftMembers);
-
-        // === BV CALCULATIONS (based on member counts) ===
-        // Total BV = all accumulated members * BV per member
+        // === ALL-TIME BV ===
         const totalLeftBV = totalLeftMembers * BV_PER_MEMBER;
         const totalRightBV = totalRightMembers * BV_PER_MEMBER;
+        const totalPaidLeftBV = paidLeftMembers * BV_PER_MEMBER;
+        const totalPaidRightBV = paidRightMembers * BV_PER_MEMBER;
 
-        // Paid BV = paid members * BV per member
-        const paidLeftBV = paidLeftMembers * BV_PER_MEMBER;
-        const paidRightBV = paidRightMembers * BV_PER_MEMBER;
+        // === CARRY FORWARD = Total BV - Total Paid BV (all-time) ===
+        const carryLeftBV = Math.max(0, totalLeftBV - totalPaidLeftBV);
+        const carryRightBV = Math.max(0, totalRightBV - totalPaidRightBV);
+        const carryLeftMembers = Math.max(0, totalLeftMembers - paidLeftMembers);
+        const carryRightMembers = Math.max(0, totalRightMembers - paidRightMembers);
 
-        // Unpaid BV = unpaid members * BV per member
-        const unpaidLeftBV = unpaidLeftMembers * BV_PER_MEMBER;
-        const unpaidRightBV = unpaidRightMembers * BV_PER_MEMBER;
+        // === TODAY'S BV (IST scoped) ===
+        const todayPaidLeftMembers = todayPayoutAgg._sum.leftConsumed || 0;
+        const todayPaidRightMembers = todayPayoutAgg._sum.rightConsumed || 0;
+        const todayPaidLeftBV = todayPaidLeftMembers * BV_PER_MEMBER;
+        const todayPaidRightBV = todayPaidRightMembers * BV_PER_MEMBER;
 
-        // Carry BV = carry members * BV per member
-        const carryLeftBV = carryLeftMembers * BV_PER_MEMBER;
-        const carryRightBV = carryRightMembers * BV_PER_MEMBER;
+        // Today's unpaid BV = today's unprocessed members (not yet consumed today)
+        // These are the members sitting in the queue waiting for matching today
+        const todayUnpaidLeftMembers = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
+        const todayUnpaidRightMembers = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
+        const todayUnpaidLeftBV = todayUnpaidLeftMembers * BV_PER_MEMBER;
+        const todayUnpaidRightBV = todayUnpaidRightMembers * BV_PER_MEMBER;
 
         res.json({
             ok: true,
             current: {
                 left: {
                     totalBV: totalLeftBV,
-                    paidBV: paidLeftBV,
-                    unpaidBV: unpaidLeftBV,
+                    paidBV: todayPaidLeftBV,
+                    unpaidBV: todayUnpaidLeftBV,
                     carryForward: carryLeftBV,
                     totalMembers: totalLeftMembers,
-                    paidMembers: paidLeftMembers,
-                    unpaidMembers: unpaidLeftMembers,
+                    paidMembers: todayPaidLeftMembers,
+                    unpaidMembers: todayUnpaidLeftMembers,
                     carryMembers: carryLeftMembers
                 },
                 right: {
                     totalBV: totalRightBV,
-                    paidBV: paidRightBV,
-                    unpaidBV: unpaidRightBV,
+                    paidBV: todayPaidRightBV,
+                    unpaidBV: todayUnpaidRightBV,
                     carryForward: carryRightBV,
                     totalMembers: totalRightMembers,
-                    paidMembers: paidRightMembers,
-                    unpaidMembers: unpaidRightMembers,
+                    paidMembers: todayPaidRightMembers,
+                    unpaidMembers: todayUnpaidRightMembers,
                     carryMembers: carryRightMembers
                 }
             },
@@ -455,8 +448,8 @@ router.get('/matching', authenticate, async (req, res) => {
             } : null,
             totalStats: {
                 totalPayoutAmount: totalPayoutAgg._sum.amount || 0,
-                totalPaidLeftBV: paidLeftBV,
-                totalPaidRightBV: paidRightBV
+                totalPaidLeftBV: totalPaidLeftBV,
+                totalPaidRightBV: totalPaidRightBV
             },
             history,
             pagination: {

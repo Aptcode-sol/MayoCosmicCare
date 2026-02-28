@@ -389,7 +389,7 @@ export default function ProfilePage() {
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                                                <p className="text-gray-900 font-medium mt-1">{user?.phone || 'Not set'}</p>
+                                                <Input value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" placeholder="Enter phone number" />
                                             </div>
                                             <div>
                                                 <label className="text-sm font-medium text-gray-500">Username</label>

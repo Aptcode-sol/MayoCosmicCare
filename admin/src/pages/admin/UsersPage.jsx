@@ -52,6 +52,15 @@ export default function UsersPage() {
         }
     };
 
+    const handleResetPassword = async (userId) => {
+        try {
+            await api.post(`/api/admin/users/${userId}/reset-password`);
+            toast.success('Password reset link sent to user email');
+        } catch (err) {
+            toast.error('Failed to send reset link');
+        }
+    };
+
     if (loading) {
         return (
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -150,7 +159,7 @@ export default function UsersPage() {
                                             {user.isBlocked ? 'Blocked' : 'Active'}
                                         </span>
                                     </td>
-                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right space-x-2">
                                         <button
                                             onClick={() => toggleBlockUser(user.id, user.isBlocked)}
                                             className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors ${user.isBlocked
@@ -159,6 +168,12 @@ export default function UsersPage() {
                                                 }`}
                                         >
                                             {user.isBlocked ? 'Unblock' : 'Block'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleResetPassword(user.id)}
+                                            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            Reset Password
                                         </button>
                                     </td>
                                 </tr>

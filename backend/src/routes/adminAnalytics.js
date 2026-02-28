@@ -14,12 +14,14 @@ const adminOnly = (req, res, next) => {
 // GET /api/admin/analytics/stats - Get comprehensive analytics data
 router.get('/stats', authenticate, adminOnly, async (req, res) => {
     try {
-        // Get date ranges
+        // Get date ranges — use IST (UTC+5:30) for "today" boundaries
+        const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
+        const nowIst = new Date(nowStr);
+        const startOfToday = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const startOfMonth = new Date(nowIst.getFullYear(), nowIst.getMonth(), 1);
+        const startOfLastMonth = new Date(nowIst.getFullYear(), nowIst.getMonth() - 1, 1);
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
         const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);

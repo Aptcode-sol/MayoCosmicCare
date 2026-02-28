@@ -51,13 +51,14 @@ router.get('/stats', authenticate, async (req, res) => {
         const leftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const rightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
-        // Get the actual product BV from the database
+        // Get the actual product BV from the database (used for paid BV calculation)
         const mainProduct = await prisma.product.findFirst({ select: { bv: true } });
         const PRODUCT_BV = mainProduct?.bv || BV_PER_MEMBER;
 
-        // Calculate total BV using actual product BV
-        const leftBV = leftMembers * PRODUCT_BV;
-        const rightBV = rightMembers * PRODUCT_BV;
+        // Total BV: use the already-accumulated leftBV/rightBV from the user record
+        // These fields are updated by purchaseService with actual product.bv on every purchase
+        const leftBV = user.leftBV || 0;
+        const rightBV = user.rightBV || 0;
         const leftPaidBVActual = paidLeftMembers * PRODUCT_BV;
         const rightPaidBVActual = paidRightMembers * PRODUCT_BV;
 
@@ -422,12 +423,13 @@ router.get('/matching', authenticate, async (req, res) => {
         const leftDescendantIds = leftChild ? [leftChild.id, ...getAllDescendantIds(leftChild.id)] : [];
         const rightDescendantIds = rightChild ? [rightChild.id, ...getAllDescendantIds(rightChild.id)] : [];
 
-        // === TOTAL BV: use actual product BV from database ===
+        // === TOTAL BV: use user.leftBV/rightBV directly ===
+        // These are already accumulated with actual product.bv on every purchase in purchaseService
         const mainProduct = await prisma.product.findFirst({ select: { bv: true } });
         const PRODUCT_BV = mainProduct?.bv || BV_PER_MEMBER;
 
-        const totalLeftBV = totalLeftMembers * PRODUCT_BV;
-        const totalRightBV = totalRightMembers * PRODUCT_BV;
+        const totalLeftBV = user.leftBV || 0;
+        const totalRightBV = user.rightBV || 0;
         const totalPaidLeftBV = paidLeftMembers * PRODUCT_BV;
         const totalPaidRightBV = paidRightMembers * PRODUCT_BV;
 

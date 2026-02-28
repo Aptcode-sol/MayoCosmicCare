@@ -52,14 +52,7 @@ export default function UsersPage() {
         }
     };
 
-    const handleResetPassword = async (userId) => {
-        try {
-            await api.post(`/api/admin/users/${userId}/reset-password`);
-            toast.success('Password reset link sent to user email');
-        } catch (err) {
-            toast.error('Failed to send reset link');
-        }
-    };
+
 
     if (loading) {
         return (
@@ -169,12 +162,7 @@ export default function UsersPage() {
                                         >
                                             {user.isBlocked ? 'Unblock' : 'Block'}
                                         </button>
-                                        <button
-                                            onClick={() => handleResetPassword(user.id)}
-                                            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                                        >
-                                            Reset Password
-                                        </button>
+
                                     </td>
                                 </tr>
                             )) : (

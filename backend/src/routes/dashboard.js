@@ -51,9 +51,59 @@ router.get('/stats', authenticate, async (req, res) => {
         const leftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const rightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
-        // Use actual BV from user record (accumulated from real product.bv per purchase)
-        const leftBV = user.leftBV || 0;
-        const rightBV = user.rightBV || 0;
+        // Calculate total BV by summing actual product.bv from PAID orders per leg
+        const { Prisma } = require('@prisma/client');
+
+        // Build placement tree for descendant lookup
+        const allPlacement = await prisma.user.findMany({
+            select: { id: true, parentId: true, position: true }
+        });
+        const childrenMap = new Map();
+        for (const u of allPlacement) {
+            if (u.parentId) {
+                if (!childrenMap.has(u.parentId)) childrenMap.set(u.parentId, []);
+                childrenMap.get(u.parentId).push(u);
+            }
+        }
+        function getAllDescendantIds(nodeId) {
+            const children = childrenMap.get(nodeId) || [];
+            let ids = children.map(c => c.id);
+            for (const child of children) {
+                ids = ids.concat(getAllDescendantIds(child.id));
+            }
+            return ids;
+        }
+        const immChildren = childrenMap.get(userId) || [];
+        const lChild = immChildren.find(c => c.position === 'LEFT');
+        const rChild = immChildren.find(c => c.position === 'RIGHT');
+        const lDescIds = lChild ? [lChild.id, ...getAllDescendantIds(lChild.id)] : [];
+        const rDescIds = rChild ? [rChild.id, ...getAllDescendantIds(rChild.id)] : [];
+
+        // Sum actual product.bv from PAID orders per leg
+        const [lBVRes, rBVRes] = await Promise.all([
+            lDescIds.length > 0
+                ? prisma.$queryRaw`
+                    SELECT COALESCE(SUM(p."bv" * oi."quantity"), 0)::int as total
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON oi."orderId" = o."id"
+                    JOIN "Product" p ON p."id" = oi."productId"
+                    WHERE o."userId" IN (${Prisma.join(lDescIds)})
+                    AND o."status" = 'PAID'
+                  `
+                : [{ total: 0 }],
+            rDescIds.length > 0
+                ? prisma.$queryRaw`
+                    SELECT COALESCE(SUM(p."bv" * oi."quantity"), 0)::int as total
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON oi."orderId" = o."id"
+                    JOIN "Product" p ON p."id" = oi."productId"
+                    WHERE o."userId" IN (${Prisma.join(rDescIds)})
+                    AND o."status" = 'PAID'
+                  `
+                : [{ total: 0 }]
+        ]);
+        const leftBV = Number(lBVRes[0]?.total || 0);
+        const rightBV = Number(rBVRes[0]?.total || 0);
 
         // Calculate direct referrals by position
         const directLeft = user.referrals.filter(r => r.position === 'LEFT').length;
@@ -391,26 +441,7 @@ router.get('/matching', authenticate, async (req, res) => {
         const totalLeftMembers = paidLeftMembers + (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
         const totalRightMembers = paidRightMembers + (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
 
-        // === ALL-TIME BV (from actual product.bv accumulated per purchase) ===
-        const totalLeftBV = user.leftBV || 0;
-        const totalRightBV = user.rightBV || 0;
-        const totalPaidLeftBV = paidLeftMembers * BV_PER_MEMBER;
-        const totalPaidRightBV = paidRightMembers * BV_PER_MEMBER;
-
-        // === CARRY FORWARD = Total BV - Total Paid BV (all-time) ===
-        const carryLeftBV = Math.max(0, totalLeftBV - totalPaidLeftBV);
-        const carryRightBV = Math.max(0, totalRightBV - totalPaidRightBV);
-        const carryLeftMembers = Math.max(0, totalLeftMembers - paidLeftMembers);
-        const carryRightMembers = Math.max(0, totalRightMembers - paidRightMembers);
-
-        // === TODAY'S BV (IST scoped) ===
-        const todayPaidLeftMembers = todayPayoutAgg._sum.leftConsumed || 0;
-        const todayPaidRightMembers = todayPayoutAgg._sum.rightConsumed || 0;
-        const todayPaidLeftBV = todayPaidLeftMembers * BV_PER_MEMBER;
-        const todayPaidRightBV = todayPaidRightMembers * BV_PER_MEMBER;
-
-        // Today's new members per leg: traverse placement tree to find
-        // users whose FIRST purchase (PAID order) was today (IST)
+        // === TREE TRAVERSAL (shared for Total BV + Today's BV) ===
         const allPlacement = await prisma.user.findMany({
             select: { id: true, parentId: true, position: true }
         });
@@ -435,7 +466,48 @@ router.get('/matching', authenticate, async (req, res) => {
         const leftDescendantIds = leftChild ? [leftChild.id, ...getAllDescendantIds(leftChild.id)] : [];
         const rightDescendantIds = rightChild ? [rightChild.id, ...getAllDescendantIds(rightChild.id)] : [];
 
-        // Find users whose first PAID order was today (these contribute +1 BV today)
+        // === TOTAL BV: Sum actual product.bv from all PAID orders per leg ===
+        const { Prisma } = require('@prisma/client');
+        const [leftBVResult, rightBVResult] = await Promise.all([
+            leftDescendantIds.length > 0
+                ? prisma.$queryRaw`
+                    SELECT COALESCE(SUM(p."bv" * oi."quantity"), 0)::int as total
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON oi."orderId" = o."id"
+                    JOIN "Product" p ON p."id" = oi."productId"
+                    WHERE o."userId" IN (${Prisma.join(leftDescendantIds)})
+                    AND o."status" = 'PAID'
+                  `
+                : [{ total: 0 }],
+            rightDescendantIds.length > 0
+                ? prisma.$queryRaw`
+                    SELECT COALESCE(SUM(p."bv" * oi."quantity"), 0)::int as total
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON oi."orderId" = o."id"
+                    JOIN "Product" p ON p."id" = oi."productId"
+                    WHERE o."userId" IN (${Prisma.join(rightDescendantIds)})
+                    AND o."status" = 'PAID'
+                  `
+                : [{ total: 0 }]
+        ]);
+        const totalLeftBV = Number(leftBVResult[0]?.total || 0);
+        const totalRightBV = Number(rightBVResult[0]?.total || 0);
+        const totalPaidLeftBV = paidLeftMembers * BV_PER_MEMBER;
+        const totalPaidRightBV = paidRightMembers * BV_PER_MEMBER;
+
+        // === CARRY FORWARD = Total BV - Total Paid BV (all-time) ===
+        const carryLeftBV = Math.max(0, totalLeftBV - totalPaidLeftBV);
+        const carryRightBV = Math.max(0, totalRightBV - totalPaidRightBV);
+        const carryLeftMembers = Math.max(0, totalLeftMembers - paidLeftMembers);
+        const carryRightMembers = Math.max(0, totalRightMembers - paidRightMembers);
+
+        // === TODAY'S BV (IST scoped) ===
+        const todayPaidLeftMembers = todayPayoutAgg._sum.leftConsumed || 0;
+        const todayPaidRightMembers = todayPayoutAgg._sum.rightConsumed || 0;
+        const todayPaidLeftBV = todayPaidLeftMembers * BV_PER_MEMBER;
+        const todayPaidRightBV = todayPaidRightMembers * BV_PER_MEMBER;
+
+        // Today's new members per leg: users whose FIRST purchase (PAID order) was today (IST)
         const newPurchasersToday = await prisma.$queryRaw`
             SELECT "userId" FROM "Order"
             WHERE status = 'PAID'

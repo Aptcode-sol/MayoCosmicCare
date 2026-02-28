@@ -5,47 +5,7 @@ const { requireAdmin } = require('../middleware/adminMiddleware');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Admin: Reset user password (send reset link)
-router.post('/:id/reset-password', authenticate, requireAdmin, async (req, res) => {
 
-    try {
-        const { id } = req.params;
-        const user = await prisma.user.findUnique({ where: { id } });
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        if (user.role !== 'ADMIN') {
-            return res.status(403).json({ error: 'Password reset allowed only for admin users.' });
-        }
-        // Generate a reset token and expiry (valid for 1 hour)
-        const crypto = require('crypto');
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
-        await prisma.user.update({
-            where: { id },
-            data: { resetToken, resetTokenExpiry }
-        });
-        // Send reset link to user's email (reuse existing email sending logic if available)
-        // Example: https://yourdomain.com/reset-password?token=...
-        const resetUrl = `${process.env.FRONTEND_URL || 'https://yourdomain.com'}/reset-password?token=${resetToken}`;
-        // You should have a mailer utility; here is a placeholder:
-        const { sendMail } = require('../utils/mailer');
-        await sendMail({
-            to: user.email,
-            subject: 'Password Reset Request',
-            html: `<p>Hello ${user.name || user.username},</p><p>You requested a password reset. <a href="${resetUrl}">Click here to reset your password</a>. This link is valid for 1 hour.</p>`
-        });
-        await prisma.auditLog.create({
-            data: {
-                action: 'Admin triggered password reset',
-                actorId: req.user.id,
-                meta: JSON.stringify({ targetUserId: id })
-            }
-        });
-        res.json({ ok: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to send reset link' });
-    }
-});
 
 // Get all users (admin only) - with pagination
 router.get('/', authenticate, requireAdmin, async (req, res) => {

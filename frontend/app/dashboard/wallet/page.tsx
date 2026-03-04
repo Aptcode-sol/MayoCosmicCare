@@ -132,11 +132,6 @@ export default function Wallet() {
     const handleWithdraw = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (new Date().getDay() !== 1) {
-            toast.error('Withdrawals can only be requested on Mondays')
-            return
-        }
-
         const amount = Number(withdrawAmount)
 
         if (amount < 1000) {

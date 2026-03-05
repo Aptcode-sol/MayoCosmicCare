@@ -125,7 +125,8 @@ export default function WithdrawalsPage() {
                 >
                     <option value="all">All Status</option>
                     <option value="PENDING">Pending</option>
-                    <option value="APPROVED">Approved</option>
+                    <option value="APPROVED">Approved (Processing)</option>
+                    <option value="COMPLETED">Completed</option>
                     <option value="REJECTED">Rejected</option>
                 </select>
 
@@ -243,9 +244,10 @@ export default function WithdrawalsPage() {
                                             {new Date(w.createdAt).toLocaleDateString()}
                                         </td>
                                         <td className="px-3 sm:px-6 py-3 sm:py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${w.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                                                w.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-red-100 text-red-700'
+                                            <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${w.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                                    w.status === 'APPROVED' ? 'bg-blue-100 text-blue-700' :
+                                                        w.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-red-100 text-red-700'
                                                 }`}>
                                                 {w.status}
                                             </span>
@@ -260,6 +262,9 @@ export default function WithdrawalsPage() {
                                                 </button>
                                             )}
                                             {w.status === 'APPROVED' && (
+                                                <span className="text-[11px] sm:text-xs text-blue-600 font-medium">Processing...</span>
+                                            )}
+                                            {w.status === 'COMPLETED' && (
                                                 <span className="text-[11px] sm:text-xs text-green-600 font-medium">Processed</span>
                                             )}
                                         </td>

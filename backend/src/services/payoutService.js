@@ -1,4 +1,5 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const prisma = require('../prismaClient');
 
 const CLIENT_ID = process.env.CASHFREE_PAYOUT_CLIENT_ID;
@@ -33,8 +34,21 @@ async function getHeaders() {
  * Add Beneficiary (V2)
  * Endpoint: /payout/beneficiary
  */
+function buildBeneficiaryId(user, bankDetails) {
+    if (bankDetails?.vpa) {
+        const vpaHash = crypto.createHash('sha1').update(bankDetails.vpa).digest('hex').slice(0, 10);
+        return `BENE_${user.id}_${vpaHash}`;
+    }
+
+    const account = bankDetails?.accountInfo?.bankAccount || '';
+    const ifsc = bankDetails?.accountInfo?.ifsc || '';
+    const seed = `${account}:${ifsc}`;
+    const accountHash = crypto.createHash('sha1').update(seed).digest('hex').slice(0, 10);
+    return `BENE_${user.id}_${accountHash}`;
+}
+
 async function addBeneficiary(user, bankDetails) {
-    const beneId = `BENE_${user.id}`;
+    const beneId = buildBeneficiaryId(user, bankDetails);
 
     // V2 Payload - Nested Structure
     const payload = {

@@ -52,7 +52,7 @@ async function addBeneficiary(user, bankDetails) {
         payload.beneficiary_instrument_details.vpa = bankDetails.vpa;
     } else {
         payload.beneficiary_instrument_details.bank_account_number = bankDetails.accountInfo.bankAccount;
-        payload.beneficiary_instrument_details.ifsc = bankDetails.accountInfo.ifsc;
+        payload.beneficiary_instrument_details.bank_ifsc = bankDetails.accountInfo.ifsc;
     }
 
     try {
@@ -132,7 +132,7 @@ async function executePayout(withdrawalId) {
                 },
                 beneficiary_instrument_details: isUpi ? { vpa: bankDetails.vpa } : {
                     bank_account_number: bankDetails.accountInfo.bankAccount,
-                    ifsc: bankDetails.accountInfo.ifsc
+                    bank_ifsc: bankDetails.accountInfo.ifsc
                 }
             }
         };

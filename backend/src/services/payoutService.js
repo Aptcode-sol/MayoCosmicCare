@@ -5,6 +5,14 @@ const CLIENT_ID = process.env.CASHFREE_PAYOUT_CLIENT_ID;
 const CLIENT_SECRET = process.env.CASHFREE_PAYOUT_CLIENT_SECRET;
 const ENV = process.env.CASHFREE_ENV === 'PROD' ? 'PROD' : 'TEST';
 
+// Helper function to format phone number for Cashfree API
+function formatPhoneNumber(phone) {
+    if (!phone) return '';
+    // Remove +91 prefix, spaces, and any non-digit characters, then take last 10 digits
+    const cleaned = phone.replace(/^\+91/, '').replace(/\s+/g, '').replace(/\D/g, '');
+    return cleaned.slice(-10); // Get last 10 digits
+}
+
 // Correct Payouts V2 Hosts
 const BASE_URL = ENV === 'PROD'
     ? 'https://payout-api.cashfree.com'
@@ -34,7 +42,7 @@ async function addBeneficiary(user, bankDetails) {
         beneficiary_name: bankDetails.name || user.username,
         beneficiary_contact_details: {
             beneficiary_email: bankDetails.email || user.email,
-            beneficiary_phone: bankDetails.phone || user.phone,
+            beneficiary_phone: formatPhoneNumber(bankDetails.phone || user.phone),
             beneficiary_address: "India"
         },
         beneficiary_instrument_details: {}
@@ -119,7 +127,7 @@ async function executePayout(withdrawalId) {
                 beneficiary_name: bankDetails.name || withdrawal.user.username,
                 beneficiary_contact_details: {
                     beneficiary_email: bankDetails.email || withdrawal.user.email,
-                    beneficiary_phone: bankDetails.phone || withdrawal.user.phone,
+                    beneficiary_phone: formatPhoneNumber(bankDetails.phone || withdrawal.user.phone),
                     beneficiary_address: "India"
                 },
                 beneficiary_instrument_details: isUpi ? { vpa: bankDetails.vpa } : {

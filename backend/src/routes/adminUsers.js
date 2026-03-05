@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const { authenticate } = require('../middleware/authMiddleware');
 const { requireAdmin } = require('../middleware/adminMiddleware');
 const { PrismaClient } = require('@prisma/client');
@@ -118,6 +119,44 @@ router.patch('/:id/block', authenticate, requireAdmin, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to update user' });
+    }
+});
+
+// Reset user password (admin only)
+router.patch('/:id/reset-password', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { newPassword } = req.body;
+
+        if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+            return res.status(400).json({ error: 'New password must be at least 6 characters' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: { id },
+            data: {
+                password: hashedPassword,
+                resetToken: null,
+                resetTokenExpiry: null,
+                otpCode: null,
+                otpExpiry: null
+            }
+        });
+
+        await prisma.auditLog.create({
+            data: {
+                action: 'User password reset',
+                actorId: req.user.id,
+                meta: JSON.stringify({ targetUserId: id })
+            }
+        });
+
+        res.json({ ok: true, message: 'Password reset successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to reset password' });
     }
 });
 

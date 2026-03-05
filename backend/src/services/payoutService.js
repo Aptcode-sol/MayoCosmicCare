@@ -35,16 +35,21 @@ async function getHeaders() {
  * Endpoint: /payout/beneficiary
  */
 function buildBeneficiaryId(user, bankDetails) {
+    let safeUserId = String(user.id).replace(/[^a-zA-Z0-9]/g, '');
+    if (safeUserId.length > 30) {
+        safeUserId = crypto.createHash('sha1').update(safeUserId).digest('hex').slice(0, 20);
+    }
+
     if (bankDetails?.vpa) {
         const vpaHash = crypto.createHash('sha1').update(bankDetails.vpa).digest('hex').slice(0, 10);
-        return `BENE_${user.id}_${vpaHash}`;
+        return `BENE_${safeUserId}_${vpaHash}`;
     }
 
     const account = bankDetails?.accountInfo?.bankAccount || '';
     const ifsc = bankDetails?.accountInfo?.ifsc || '';
     const seed = `${account}:${ifsc}`;
     const accountHash = crypto.createHash('sha1').update(seed).digest('hex').slice(0, 10);
-    return `BENE_${user.id}_${accountHash}`;
+    return `BENE_${safeUserId}_${accountHash}`;
 }
 
 async function addBeneficiary(user, bankDetails) {

@@ -117,6 +117,39 @@ router.post('/status/:id', async (req, res) => {
     }
 });
 
+// POST /api/payouts/status-bulk (Admin only) - Check all processing (APPROVED) payouts
+router.post('/status-bulk', checkRole(['ADMIN']), async (req, res) => {
+    try {
+        const pending = await prisma.withdrawal.findMany({
+            where: { status: 'APPROVED' },
+            select: { id: true }
+        });
+
+        const results = { checked: 0, completed: 0, failed: 0, errors: [] };
+
+        for (const w of pending) {
+            try {
+                const result = await payoutService.checkTransferStatus(w.id);
+                results.checked++;
+                if (result && result.status === 'SUCCESS') {
+                    results.completed++;
+                } else if (result && ['FAILED', 'REJECTED', 'REVERSED'].includes(result.status)) {
+                    results.failed++;
+                }
+            } catch (err) {
+                results.errors.push({ id: w.id, message: err.message });
+            }
+        }
+
+        res.json({ 
+            message: `Checked ${results.checked} processing payouts. ${results.completed} completed, ${results.failed} failed.`, 
+            results 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/payouts/my-list
 router.get('/my-list', async (req, res) => {
     try {

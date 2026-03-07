@@ -13,6 +13,7 @@ export default function WithdrawalsPage() {
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
     const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+    const [isCheckingAll, setIsCheckingAll] = useState(false);
 
     // Debounce search input to prevent focus loss
     useEffect(() => {
@@ -78,6 +79,22 @@ export default function WithdrawalsPage() {
         } catch (err) {
             toast.dismiss();
             toast.error(err.response?.data?.error || 'Failed to check status');
+        }
+    };
+
+    const checkAllStatus = async () => {
+        if (!confirm('Check status for ALL processing payouts?')) return;
+        setIsCheckingAll(true);
+        const toastId = toast.loading('Checking all processing payouts...');
+
+        try {
+            const res = await api.post('/api/payouts/status-bulk');
+            toast.success(res.data.message || 'Status check completed', { id: toastId });
+            fetchWithdrawals();
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Bulk check failed', { id: toastId });
+        } finally {
+            setIsCheckingAll(false);
         }
     };
 
@@ -153,6 +170,14 @@ export default function WithdrawalsPage() {
                 </select>
 
                 <div className="flex gap-2">
+                    <button
+                        onClick={checkAllStatus}
+                        disabled={isCheckingAll}
+                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-xl text-sm font-medium disabled:opacity-50"
+                    >
+                        Check All Status
+                    </button>
+
                     {selectedIds.length > 0 && (
                         <button
                             onClick={() => approveBulk(false)}

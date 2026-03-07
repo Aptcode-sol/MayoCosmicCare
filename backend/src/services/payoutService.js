@@ -221,6 +221,33 @@ async function executePayout(withdrawalId) {
     }
 }
 
+async function rejectPayout(withdrawalId, adminId, reason = 'Rejected by Admin') {
+    const withdrawal = await prisma.withdrawal.findUnique({
+        where: { id: withdrawalId }
+    });
+    if (!withdrawal) throw new Error('Withdrawal not found');
+    if (withdrawal.status !== 'PENDING') throw new Error('Only PENDING withdrawals can be manually rejected');
+
+    // Reject and Refund
+    const [updatedWithdrawal] = await prisma.$transaction([
+        prisma.withdrawal.update({ 
+            where: { id: withdrawalId }, 
+            data: { 
+                status: 'REJECTED',
+                cfStatus: 'REJECTED',
+                // optionally save reason if schema supports: rejectionReason: reason
+                approvedBy: adminId // Store which admin rejected it
+            } 
+        }),
+        prisma.wallet.update({ 
+            where: { userId: withdrawal.userId }, 
+            data: { balance: { increment: withdrawal.amount } } 
+        })
+    ]);
+
+    return updatedWithdrawal;
+}
+
 async function checkTransferStatus(withdrawalId) {
     const withdrawal = await prisma.withdrawal.findUnique({
         where: { id: withdrawalId }
@@ -298,4 +325,4 @@ async function listWithdrawals(status) {
     });
 }
 
-module.exports = { requestPayout, executePayout, listWithdrawals, checkTransferStatus };
+module.exports = { requestPayout, executePayout, rejectPayout, listWithdrawals, checkTransferStatus };

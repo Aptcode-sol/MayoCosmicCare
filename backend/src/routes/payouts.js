@@ -69,6 +69,18 @@ router.post('/approve/:id', checkRole(['ADMIN']), async (req, res) => {
     }
 });
 
+// POST /api/payouts/reject/:id (Admin only)
+router.post('/reject/:id', checkRole(['ADMIN']), async (req, res) => {
+    try {
+        const withdrawalId = req.params.id;
+        const adminId = req.user?.id; // Assuming req.user is set by auth middleware
+        const result = await payoutService.rejectPayout(withdrawalId, adminId);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // POST /api/payouts/approve-bulk (Admin only)
 router.post('/approve-bulk', checkRole(['ADMIN']), async (req, res) => {
     try {

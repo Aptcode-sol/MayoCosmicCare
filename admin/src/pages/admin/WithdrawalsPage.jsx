@@ -60,6 +60,20 @@ export default function WithdrawalsPage() {
         }
     };
 
+    const rejectWithdrawal = async (id) => {
+        if (!confirm('Reject payout? The requested amount will be refunded to the user\'s wallet.')) return;
+        try {
+            toast.loading('Rejecting payout...');
+            await api.post(`/api/payouts/reject/${id}`);
+            toast.dismiss();
+            toast.success('Payout rejected and refunded');
+            fetchWithdrawals();
+        } catch (err) {
+            toast.dismiss();
+            toast.error(err.response?.data?.error || 'Rejection failed');
+        }
+    };
+
     const checkStatus = async (id) => {
         try {
             const toastId = toast.loading('Checking status...');
@@ -301,12 +315,20 @@ export default function WithdrawalsPage() {
                                         </td>
                                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                                             {w.status === 'PENDING' && (
-                                                <button
-                                                    onClick={() => approveWithdrawal(w.id)}
-                                                    className="px-3 py-2 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] sm:text-xs font-medium"
-                                                >
-                                                    Approve
-                                                </button>
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => rejectWithdrawal(w.id)}
+                                                        className="px-3 py-2 sm:px-4 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[11px] sm:text-xs font-medium transition-colors"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                    <button
+                                                        onClick={() => approveWithdrawal(w.id)}
+                                                        className="px-3 py-2 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] sm:text-xs font-medium transition-colors"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                </div>
                                             )}
                                             {w.status === 'APPROVED' && (
                                                 <div className="flex flex-col items-end gap-1">

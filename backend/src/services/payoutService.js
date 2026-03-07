@@ -90,6 +90,10 @@ async function addBeneficiary(user, bankDetails) {
 }
 
 async function requestPayout(userId, amount, bankDetails) {
+    if (new Date().getDay() !== 5) {
+        throw new Error('Withdrawals can only be requested on Fridays');
+    }
+
     if (amount < 1000) throw new Error('Minimum withdrawal amount is 1000');
 
     const wallet = await prisma.wallet.findUnique({ where: { userId } });

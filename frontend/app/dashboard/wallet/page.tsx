@@ -132,6 +132,11 @@ export default function Wallet() {
     const handleWithdraw = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        if (new Date().getDay() !== 5) {
+            toast.error('Withdrawals are only available on Fridays')
+            return
+        }
+
         const amount = Number(withdrawAmount)
 
         if (amount < 1000) {
@@ -332,7 +337,7 @@ export default function Wallet() {
                                                     {isWithdrawing ? '...' : 'Withdraw'}
                                                 </Button>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 text-center">Min ₹1,000. 24-48 hrs processing. Available on Mondays only.</p>
+                                            <p className="text-[10px] text-gray-400 text-center">Min ₹1,000. 24-48 hrs processing. Available on Fridays only.</p>
                                         </form>
                                     </CardContent>
                                 </Card>

@@ -59,6 +59,28 @@ export default function WithdrawalsPage() {
         }
     };
 
+    const checkStatus = async (id) => {
+        try {
+            const toastId = toast.loading('Checking status...');
+            const res = await api.post(`/api/payouts/status/${id}`);
+            toast.dismiss(toastId);
+            
+            // The API returns the Cashfree status directly 
+            if (res.data.status === 'SUCCESS') {
+                toast.success('Transfer is now COMPLETED!');
+            } else if (res.data.status === 'FAILED' || res.data.status === 'REJECTED' || res.data.status === 'REVERSED') {
+                toast.error(`Transfer ${res.data.status}. Marked as REJECTED.`);
+            } else {
+                toast.success(`Status updated: ${res.data.status}`);
+            }
+            
+            fetchWithdrawals();
+        } catch (err) {
+            toast.dismiss();
+            toast.error(err.response?.data?.error || 'Failed to check status');
+        }
+    };
+
     const approveBulk = async (allPending = false) => {
         const payload = allPending ? { allPending: true } : { ids: selectedIds };
         const msg = allPending ? 'Approve ALL pending payouts?' : `Approve ${selectedIds.length} selected payouts?`;
@@ -262,7 +284,15 @@ export default function WithdrawalsPage() {
                                                 </button>
                                             )}
                                             {w.status === 'APPROVED' && (
-                                                <span className="text-[11px] sm:text-xs text-blue-600 font-medium">Processing...</span>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <span className="text-[11px] sm:text-xs text-blue-600 font-medium pb-1">Processing...</span>
+                                                    <button
+                                                        onClick={() => checkStatus(w.id)}
+                                                        className="px-2 py-1 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 rounded text-[10px] sm:text-[11px] font-medium transition-colors"
+                                                    >
+                                                        Check Status
+                                                    </button>
+                                                </div>
                                             )}
                                             {w.status === 'COMPLETED' && (
                                                 <span className="text-[11px] sm:text-xs text-green-600 font-medium">Processed</span>

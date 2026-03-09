@@ -54,14 +54,6 @@ export default function PositionsPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <SkeletonTable rows={10} />
-            </div>
-        );
-    }
-
     return (
         <div className="space-y-6">
             {/* Search Bar */}
@@ -153,7 +145,13 @@ export default function PositionsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {positions.length > 0 ? positions.map((pos) => (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} className="p-0">
+                                        <SkeletonTable rows={10} />
+                                    </td>
+                                </tr>
+                            ) : positions.length > 0 ? positions.map((pos) => (
                                 <tr key={pos.id} className="hover:bg-gray-50/50">
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <div className="text-gray-900 font-medium text-sm sm:text-base">{pos.user?.username}</div>

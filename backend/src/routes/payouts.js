@@ -23,11 +23,26 @@ const { checkRole } = require('../middleware/roleMiddleware');
 router.get('/admin/list', checkRole(['ADMIN']), async (req, res) => {
     try {
         const { status } = req.query;
+        const search = (req.query.search || '').trim();
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
         const skip = (page - 1) * limit;
 
-        const where = status ? { status } : {};
+        const where = {};
+        if (status) {
+            where.status = status;
+        }
+
+        if (search) {
+            where.user = {
+                OR: [
+                    { username: { contains: search, mode: 'insensitive' } },
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { phone: { contains: search, mode: 'insensitive' } },
+                    { id: { contains: search, mode: 'insensitive' } }
+                ]
+            };
+        }
 
         const [withdrawals, total] = await Promise.all([
             prisma.withdrawal.findMany({

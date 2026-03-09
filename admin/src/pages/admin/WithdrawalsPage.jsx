@@ -146,14 +146,6 @@ export default function WithdrawalsPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <SkeletonTable rows={10} />
-            </div>
-        );
-    }
-
     return (
         <div className="space-y-6">
             {/* Search Bar */}
@@ -270,7 +262,13 @@ export default function WithdrawalsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {withdrawals.length > 0 ? withdrawals.map((w) => {
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={7} className="p-0">
+                                        <SkeletonTable rows={10} />
+                                    </td>
+                                </tr>
+                            ) : withdrawals.length > 0 ? withdrawals.map((w) => {
                                 const details = w.bankDetails ? JSON.parse(w.bankDetails) : {};
                                 return (
                                     <tr key={w.id} className={`hover:bg-gray-50/50 ${selectedIds.includes(w.id) ? 'bg-indigo-50/30' : ''}`}>

@@ -127,6 +127,7 @@ export default function DashboardSidebar({
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                prefetch={false}
                                 onClick={handleMobileLinkClick}
                                 className={`
                                     flex items-center gap-3 px-3 py-2.5 rounded-lg
@@ -217,6 +218,7 @@ export default function DashboardSidebar({
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                prefetch={false}
                                 className={`flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-colors duration-300 ease-in-out group relative ${isActive ? 'bg-white text-black shadow-lg border border-gray-200' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
                                 style={{ paddingLeft: '12px', paddingRight: '12px' }}
                                 title={item.label}

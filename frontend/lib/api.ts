@@ -98,42 +98,7 @@ api.interceptors.response.use(
             }
         }
 
-        // Handle 401 with token refresh attempt
-        if (status === 401 && originalRequest && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            const refreshToken = localStorage.getItem('refreshToken');
-            if (refreshToken) {
-                try {
-                    const resp = await axios.post(`${API_URL}/api/auth/refresh`, {
-                        refresh: refreshToken
-                    });
-                    const d = resp.data || {}
-                    const tokens = d.tokens || d
-
-                    if (tokens.accessToken && tokens.refreshToken) {
-                        localStorage.setItem('accessToken', tokens.accessToken);
-                        localStorage.setItem('refreshToken', tokens.refreshToken);
-
-                        // @ts-ignore
-                        originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`
-                        return api(originalRequest as AxiosRequestConfig);
-                    } else {
-                        console.warn('Refresh endpoint returned no tokens', d)
-                        clearAuthAndRedirect()
-                    }
-                } catch (err: unknown) {
-                    console.debug('Token refresh failed', err)
-                    clearAuthAndRedirect()
-                    return Promise.reject(parseApiError(err));
-                }
-            } else {
-                // No refresh token available
-                clearAuthAndRedirect()
-            }
-        }
-
-        // For 401 that already retried or has no refresh token
+        // Handle 401 - clear auth and redirect to login
         if (status === 401) {
             clearAuthAndRedirect()
         }

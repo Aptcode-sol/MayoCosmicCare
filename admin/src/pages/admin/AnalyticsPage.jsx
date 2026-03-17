@@ -355,24 +355,39 @@ export default function AnalyticsPage() {
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                     <h3 className="font-semibold text-gray-900 mb-4">Withdrawal Summary</h3>
                     <div className="grid grid-cols-3 gap-4">
-                        {analytics.financial?.withdrawals?.length > 0 ? (
-                            analytics.financial.withdrawals.map(w => (
-                                <div key={w.status} className={`text-center p-4 rounded-xl ${w.status === 'APPROVED' ? 'bg-green-50' : w.status === 'PENDING' ? 'bg-yellow-50' : 'bg-red-50'}`}>
-                                    <p className={`text-xl font-bold ${w.status === 'APPROVED' ? 'text-green-600' : w.status === 'PENDING' ? 'text-yellow-600' : 'text-red-600'}`}>
-                                        {formatIndian(w.total || 0)}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">{w.status}</p>
-                                    <p className="text-xs text-gray-400">{w.count} requests</p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="col-span-3 text-center py-8 text-gray-400">
-                                <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                <p className="text-sm">No withdrawal history yet</p>
-                            </div>
-                        )}
+                        {(() => {
+                            const withdrawals = analytics.financial?.withdrawals || [];
+                            const getWithdrawal = (status) => withdrawals.find(w => w.status === status) || { total: 0, count: 0 };
+                            const completed = getWithdrawal('APPROVED');
+                            const pending = getWithdrawal('PENDING');
+                            const rejected = getWithdrawal('REJECTED');
+
+                            return (
+                                <>
+                                    <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#f0fdf4' }}>
+                                        <p className="text-xl font-bold" style={{ color: '#16a34a' }}>
+                                            {formatIndian(completed.total || 0)}
+                                        </p>
+                                        <p className="text-xs mt-1" style={{ color: '#16a34a' }}>COMPLETED</p>
+                                        <p className="text-xs text-gray-400">{completed.count} requests</p>
+                                    </div>
+                                    <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#fffbeb' }}>
+                                        <p className="text-xl font-bold" style={{ color: '#d97706' }}>
+                                            {formatIndian(pending.total || 0)}
+                                        </p>
+                                        <p className="text-xs mt-1" style={{ color: '#d97706' }}>PENDING</p>
+                                        <p className="text-xs text-gray-400">{pending.count} requests</p>
+                                    </div>
+                                    <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#fef2f2' }}>
+                                        <p className="text-xl font-bold" style={{ color: '#dc2626' }}>
+                                            {formatIndian(rejected.total || 0)}
+                                        </p>
+                                        <p className="text-xs mt-1" style={{ color: '#dc2626' }}>REJECTED</p>
+                                        <p className="text-xs text-gray-400">{rejected.count} requests</p>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 

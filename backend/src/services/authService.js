@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const crypto = require('crypto');
 
 function signAccessToken(user) {
-    return jwt.sign({ sub: user.id, role: user.role }, JWT_SECRET, { expiresIn: '15m' });
+    return jwt.sign({ sub: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1m' });
 }
 
 function genRefreshToken() {

@@ -250,7 +250,7 @@ export default function TransactionsPage() {
                                         <div className="text-gray-500 text-[11px] sm:text-xs">{tx.user?.phone || tx.user?.email}</div>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
-                                        <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${TYPE_STYLES[tx.type] || 'bg-gray-100 text-gray-700'}`}>
+                                        <span className={`inline-block whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${TYPE_STYLES[tx.type] || 'bg-gray-100 text-gray-700'}`}>
                                             {TYPE_LABELS[tx.type] || tx.type}
                                         </span>
                                     </td>

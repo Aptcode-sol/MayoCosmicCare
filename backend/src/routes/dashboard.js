@@ -29,7 +29,7 @@ router.get('/stats', authenticate, async (req, res) => {
                 },
                 // Direct referrals (sponsor relationship)
                 referrals: {
-                    select: { id: true, position: true, isBlocked: true }
+                    select: { id: true, position: true, isBlocked: true, hasPurchased: true }
                 }
             }
         });
@@ -48,7 +48,7 @@ router.get('/stats', authenticate, async (req, res) => {
 
         // === TREE TRAVERSAL (Find exact physical member count) ===
         // We decouple dashboard counts from matching queue fields
-        const allPlacement = await prisma.user.findMany({ select: { id: true, parentId: true, position: true } });
+        const allPlacement = await prisma.user.findMany({ select: { id: true, parentId: true, position: true, hasPurchased: true, isBlocked: true } });
         const childrenMap = new Map();
         for (const u of allPlacement) {
             if (u.parentId) {
@@ -58,19 +58,27 @@ router.get('/stats', authenticate, async (req, res) => {
         }
         function countDescendants(nodeId) {
             let count = 0;
+            let activeCount = 0;
             const children = childrenMap.get(nodeId) || [];
-            count += children.length;
             for (const child of children) {
-                count += countDescendants(child.id);
+                count += 1;
+                if (child.hasPurchased && !child.isBlocked) activeCount += 1;
+                const sub = countDescendants(child.id);
+                count += sub.total;
+                activeCount += sub.active;
             }
-            return count;
+            return { total: count, active: activeCount };
         }
         const immediateChildren = childrenMap.get(userId) || [];
         const leftChild = immediateChildren.find(c => c.position === 'LEFT');
         const rightChild = immediateChildren.find(c => c.position === 'RIGHT');
 
-        const leftMembers = leftChild ? 1 + countDescendants(leftChild.id) : 0;
-        const rightMembers = rightChild ? 1 + countDescendants(rightChild.id) : 0;
+        const leftResult = leftChild ? countDescendants(leftChild.id) : { total: 0, active: 0 };
+        const rightResult = rightChild ? countDescendants(rightChild.id) : { total: 0, active: 0 };
+        const leftMembers = leftChild ? 1 + leftResult.total : 0;
+        const rightMembers = rightChild ? 1 + rightResult.total : 0;
+        const activeLeftMembers = leftChild ? (leftChild.hasPurchased && !leftChild.isBlocked ? 1 : 0) + leftResult.active : 0;
+        const activeRightMembers = rightChild ? (rightChild.hasPurchased && !rightChild.isBlocked ? 1 : 0) + rightResult.active : 0;
 
         // Get the actual product BV from the database (used for paid BV calculation)
         const mainProduct = await prisma.product.findFirst({ select: { bv: true } });
@@ -89,9 +97,9 @@ router.get('/stats', authenticate, async (req, res) => {
         const directTotal = user.referrals.length;
 
         // Active counts (non-blocked) for direct referrals
-        const directActiveLeft = user.referrals.filter(r => r.position === 'LEFT' && !r.isBlocked).length;
-        const directActiveRight = user.referrals.filter(r => r.position === 'RIGHT' && !r.isBlocked).length;
-        const directActiveTotal = user.referrals.filter(r => !r.isBlocked).length;
+        const directActiveLeft = user.referrals.filter(r => r.position === 'LEFT' && !r.isBlocked && r.hasPurchased).length;
+        const directActiveRight = user.referrals.filter(r => r.position === 'RIGHT' && !r.isBlocked && r.hasPurchased).length;
+        const directActiveTotal = user.referrals.filter(r => !r.isBlocked && r.hasPurchased).length;
 
         res.json({
             ok: true,
@@ -101,8 +109,8 @@ router.get('/stats', authenticate, async (req, res) => {
                     rightMembers,
                     leftBV,
                     rightBV,
-                    activeLeft: leftMembers,
-                    activeRight: rightMembers,
+                    activeLeft: activeLeftMembers,
+                    activeRight: activeRightMembers,
                     leftPaidBV,
                     rightPaidBV,
                     leftCarryMembers: user.leftCarryCount || 0,

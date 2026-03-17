@@ -358,7 +358,12 @@ export default function AnalyticsPage() {
                         {(() => {
                             const withdrawals = analytics.financial?.withdrawals || [];
                             const getWithdrawal = (status) => withdrawals.find(w => w.status === status) || { total: 0, count: 0 };
-                            const completed = getWithdrawal('APPROVED');
+                            const approved = getWithdrawal('APPROVED');
+                            const completedStatus = getWithdrawal('COMPLETED');
+                            const completed = {
+                                total: (approved.total || 0) + (completedStatus.total || 0),
+                                count: (approved.count || 0) + (completedStatus.count || 0)
+                            };
                             const pending = getWithdrawal('PENDING');
                             const rejected = getWithdrawal('REJECTED');
 

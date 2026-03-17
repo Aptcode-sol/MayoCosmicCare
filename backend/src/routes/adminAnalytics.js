@@ -256,7 +256,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
                 SUM(amount) as total
             FROM "Withdrawal"
             WHERE "createdAt" >= ${sixMonthsAgo}
-            AND status = 'APPROVED'
+            AND status IN ('APPROVED', 'COMPLETED')
             GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
             ORDER BY month ASC
         `;

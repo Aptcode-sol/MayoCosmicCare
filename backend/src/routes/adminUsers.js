@@ -62,7 +62,8 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
                     rightMemberCount: true,
                     leftCarryCount: true,
                     rightCarryCount: true,
-                    createdAt: true
+                    createdAt: true,
+                    wallet: { select: { balance: true } }
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
@@ -75,7 +76,8 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
         const users = usersRaw.map(u => ({
             ...u,
             leftBV: u.leftBV || 0,
-            rightBV: u.rightBV || 0
+            rightBV: u.rightBV || 0,
+            walletBalance: u.wallet?.balance || 0
         }));
 
         const totalPages = Math.ceil(total / limit);
@@ -93,6 +95,174 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Get single user profile with full stats (admin only)
+router.get('/:id', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Fetch user with wallet and referrals
+        const user = await prisma.user.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                phone: true,
+                sponsorId: true,
+                role: true,
+                isBlocked: true,
+                hasPurchased: true,
+                fraudFlag: true,
+                leftBV: true,
+                rightBV: true,
+                leftMemberCount: true,
+                rightMemberCount: true,
+                leftCarryCount: true,
+                rightCarryCount: true,
+                rank: true,
+                totalPairs: true,
+                position: true,
+                createdAt: true,
+                wallet: { select: { balance: true } },
+                sponsor: { select: { id: true, username: true, name: true, email: true, phone: true } },
+                parent: { select: { id: true, username: true } },
+                referrals: {
+                    select: { id: true, position: true, isBlocked: true, hasPurchased: true }
+                }
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Direct referral stats
+        const directLeft = user.referrals.filter(r => r.position === 'LEFT').length;
+        const directRight = user.referrals.filter(r => r.position === 'RIGHT').length;
+        const directTotal = user.referrals.length;
+        const directActiveLeft = user.referrals.filter(r => r.position === 'LEFT' && !r.isBlocked && r.hasPurchased).length;
+        const directActiveRight = user.referrals.filter(r => r.position === 'RIGHT' && !r.isBlocked && r.hasPurchased).length;
+        const directActiveTotal = user.referrals.filter(r => !r.isBlocked && r.hasPurchased).length;
+
+        // Total team via tree traversal
+        const allPlacement = await prisma.user.findMany({
+            select: { id: true, parentId: true, position: true, hasPurchased: true, isBlocked: true }
+        });
+        const childrenMap = new Map();
+        for (const u of allPlacement) {
+            if (u.parentId) {
+                if (!childrenMap.has(u.parentId)) childrenMap.set(u.parentId, []);
+                childrenMap.get(u.parentId).push(u);
+            }
+        }
+        function countDescendants(nodeId) {
+            let count = 0, activeCount = 0;
+            const children = childrenMap.get(nodeId) || [];
+            for (const child of children) {
+                count += 1;
+                if (child.hasPurchased && !child.isBlocked) activeCount += 1;
+                const sub = countDescendants(child.id);
+                count += sub.total;
+                activeCount += sub.active;
+            }
+            return { total: count, active: activeCount };
+        }
+        const immediateChildren = childrenMap.get(id) || [];
+        const leftChild = immediateChildren.find(c => c.position === 'LEFT');
+        const rightChild = immediateChildren.find(c => c.position === 'RIGHT');
+        const leftResult = leftChild ? countDescendants(leftChild.id) : { total: 0, active: 0 };
+        const rightResult = rightChild ? countDescendants(rightChild.id) : { total: 0, active: 0 };
+        const leftMembers = leftChild ? 1 + leftResult.total : 0;
+        const rightMembers = rightChild ? 1 + rightResult.total : 0;
+        const activeLeftMembers = leftChild ? (leftChild.hasPurchased && !leftChild.isBlocked ? 1 : 0) + leftResult.active : 0;
+        const activeRightMembers = rightChild ? (rightChild.hasPurchased && !rightChild.isBlocked ? 1 : 0) + rightResult.active : 0;
+
+        // Earnings breakdown
+        const earningsAgg = await prisma.transaction.groupBy({
+            by: ['type'],
+            where: { userId: id },
+            _sum: { amount: true }
+        });
+        let directBonus = 0, matchingBonus = 0, leadershipBonus = 0;
+        earningsAgg.forEach(agg => {
+            if (agg.type === 'DIRECT_BONUS') directBonus = agg._sum.amount || 0;
+            if (agg.type === 'MATCHING_BONUS') matchingBonus = agg._sum.amount || 0;
+            if (agg.type === 'LEADERSHIP_BONUS') leadershipBonus = agg._sum.amount || 0;
+        });
+
+        // Recent transactions
+        const recentTransactions = await prisma.transaction.findMany({
+            where: { userId: id },
+            orderBy: { createdAt: 'desc' },
+            take: 10
+        });
+
+        // Recent orders
+        const recentOrders = await prisma.order.findMany({
+            where: { userId: id },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            include: {
+                items: {
+                    include: { product: { select: { name: true } } }
+                }
+            }
+        });
+
+        res.json({
+            ok: true,
+            user: {
+                id: user.id,
+                username: user.username,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                isBlocked: user.isBlocked,
+                hasPurchased: user.hasPurchased,
+                fraudFlag: user.fraudFlag,
+                rank: user.rank,
+                totalPairs: user.totalPairs,
+                position: user.position,
+                createdAt: user.createdAt,
+                walletBalance: user.wallet?.balance || 0,
+                sponsor: user.sponsor,
+                parent: user.parent
+            },
+            teamStats: {
+                directTeam: {
+                    total: directTotal,
+                    left: directLeft,
+                    right: directRight,
+                    activeTotal: directActiveTotal,
+                    activeLeft: directActiveLeft,
+                    activeRight: directActiveRight
+                },
+                totalTeam: {
+                    leftMembers,
+                    rightMembers,
+                    activeLeft: activeLeftMembers,
+                    activeRight: activeRightMembers,
+                    leftBV: user.leftBV || 0,
+                    rightBV: user.rightBV || 0
+                }
+            },
+            earnings: {
+                directBonus,
+                matchingBonus,
+                leadershipBonus,
+                totalEarnings: directBonus + matchingBonus + leadershipBonus
+            },
+            recentTransactions,
+            recentOrders
+        });
+    } catch (err) {
+        console.error('Admin User Profile Error:', err);
+        res.status(500).json({ error: 'Failed to fetch user profile' });
     }
 });
 

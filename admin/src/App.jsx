@@ -5,6 +5,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import ProductsPage from './pages/admin/ProductsPage';
 import UsersPage from './pages/admin/UsersPage';
+import UserProfilePage from './pages/admin/UserProfilePage';
 import NetworkPage from './pages/admin/NetworkPage';
 import PositionsPage from './pages/admin/PositionsPage';
 import WithdrawalsPage from './pages/admin/WithdrawalsPage';
@@ -36,6 +37,7 @@ function App() {
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="users/:id" element={<UserProfilePage />} />
           <Route path="network" element={<NetworkPage />} />
           <Route path="positions" element={<PositionsPage />} />
           <Route path="withdrawals" element={<WithdrawalsPage />} />

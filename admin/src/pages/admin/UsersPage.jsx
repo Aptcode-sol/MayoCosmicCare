@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import { SkeletonTable } from '../../components/SkeletonCard';
+import { formatIndian } from '../../utils/formatIndian';
 
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
@@ -11,6 +13,7 @@ export default function UsersPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     // Debounce search input to prevent focus loss
     useEffect(() => {
@@ -127,6 +130,7 @@ export default function UsersPage() {
                             <tr>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">User</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">BV</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Wallet</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">Status</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-right">Actions</th>
                             </tr>
@@ -134,12 +138,12 @@ export default function UsersPage() {
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="p-0">
+                                    <td colSpan={5} className="p-0">
                                         <SkeletonTable rows={10} />
                                     </td>
                                 </tr>
                             ) : users.length > 0 ? users.map((user) => (
-                                <tr key={user.id} className="hover:bg-gray-50/50">
+                                <tr key={user.id} className="hover:bg-gray-50/50 cursor-pointer" onClick={() => navigate(`/dashboard/users/${user.id}`)}>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <div className="text-gray-900 font-medium text-sm sm:text-base">{user.username}</div>
                                         {user.name && <div className="text-gray-700 text-xs sm:text-sm">{user.name}</div>}
@@ -147,6 +151,9 @@ export default function UsersPage() {
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600">
                                         L: {user.leftBV} / R: {user.rightBV}
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                        <span className="font-medium text-gray-900">{formatIndian(user.walletBalance)}</span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                                         <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium ${user.isBlocked
@@ -158,7 +165,7 @@ export default function UsersPage() {
                                             {user.isBlocked ? 'Blocked' : user.hasPurchased ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right space-x-2">
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
                                         <button
                                             onClick={() => toggleBlockUser(user.id, user.isBlocked)}
                                             className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-colors ${user.isBlocked
@@ -173,7 +180,7 @@ export default function UsersPage() {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={4} className="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={5} className="px-3 sm:px-6 py-12 text-center text-gray-500">
                                         No users found
                                     </td>
                                 </tr>

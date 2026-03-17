@@ -354,7 +354,7 @@ export default function AnalyticsPage() {
             <div className="grid lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                     <h3 className="font-semibold text-gray-900 mb-4">Withdrawal Summary</h3>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {(() => {
                             const withdrawals = analytics.financial?.withdrawals || [];
                             const getWithdrawal = (status) => withdrawals.find(w => w.status === status) || { total: 0, count: 0 };

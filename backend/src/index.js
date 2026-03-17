@@ -1,11 +1,11 @@
-console.log('[BOOT] index.js starting', {
-    pid: process.pid,
-    pm_id: process.env.pm_id,
-    NODE_APP_INSTANCE: process.env.NODE_APP_INSTANCE,
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    env: process.env
-});
+// console.log('[BOOT] index.js starting', {
+//     pid: process.pid,
+//     pm_id: process.env.pm_id,
+//     NODE_APP_INSTANCE: process.env.NODE_APP_INSTANCE,
+//     uptime: process.uptime(),
+//     memory: process.memoryUsage(),
+//     env: process.env
+// });
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
@@ -18,7 +18,6 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const CASHFREE_ENV = process.env.CASHFREE_ENV || 'SANDBOX';
 
-
 app.use(helmet());
 app.use(cors());
 app.use(cookieParser());
@@ -29,14 +28,14 @@ app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
-        console.log(`[${req.method}] ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
+        console.log(`[${new Date().toLocaleString()}] [${req.method}] ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
     });
     next();
 });
 
-// Rate limiting - disabled for stress testing
-// const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
-// app.use(limiter);
+// Rate limiting
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
+app.use(limiter);
 
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/users');
@@ -88,7 +87,6 @@ app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }
 // Start matching worker (BullMQ) - requires Redis
 try {
     require('./queues/workers/matchingWorker');
-    console.log(CASHFREE_ENV, "in the EC2")
     console.log('Matching worker started');
 } catch (err) {
     console.warn('Matching worker not started (Redis may not be available):', err.message);

@@ -9,6 +9,7 @@ import UserProfilePage from './pages/admin/UserProfilePage';
 import NetworkPage from './pages/admin/NetworkPage';
 import PositionsPage from './pages/admin/PositionsPage';
 import WithdrawalsPage from './pages/admin/WithdrawalsPage';
+import TransactionsPage from './pages/admin/TransactionsPage';
 import { isAuthenticated } from './lib/auth';
 import './index.css';
 
@@ -41,6 +42,7 @@ function App() {
           <Route path="network" element={<NetworkPage />} />
           <Route path="positions" element={<PositionsPage />} />
           <Route path="withdrawals" element={<WithdrawalsPage />} />
+          <Route path="transactions" element={<TransactionsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

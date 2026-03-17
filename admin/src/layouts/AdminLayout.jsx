@@ -10,7 +10,8 @@ const tabs = [
     { key: 'users', label: 'Users', path: '/dashboard/users' },
     { key: 'network', label: 'Network', path: '/dashboard/network' },
     { key: 'positions', label: 'Positions', path: '/dashboard/positions' },
-    { key: 'withdrawals', label: 'Withdrawals', path: '/dashboard/withdrawals' }
+    { key: 'withdrawals', label: 'Withdrawals', path: '/dashboard/withdrawals' },
+    { key: 'transactions', label: 'Transactions', path: '/dashboard/transactions' }
 ];
 
 export default function AdminLayout() {

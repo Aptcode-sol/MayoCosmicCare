@@ -364,26 +364,26 @@ export default function AnalyticsPage() {
 
                             return (
                                 <>
-                                    <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#f0fdf4' }}>
-                                        <p className="text-xl font-bold" style={{ color: '#16a34a' }}>
+                                    <div className="text-center p-4 rounded-xl bg-green-50">
+                                        <p className="text-xl font-bold text-green-600">
                                             {formatIndian(completed.total || 0)}
                                         </p>
-                                        <p className="text-xs mt-1" style={{ color: '#16a34a' }}>COMPLETED</p>
-                                        <p className="text-xs text-gray-400">{completed.count} requests</p>
+                                        <p className="text-xs mt-1 text-green-700 font-medium">COMPLETED</p>
+                                        <p className="text-xs text-gray-500 mt-1">{completed.count} requests</p>
                                     </div>
-                                    <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#fffbeb' }}>
-                                        <p className="text-xl font-bold" style={{ color: '#d97706' }}>
+                                    <div className="text-center p-4 rounded-xl bg-yellow-50">
+                                        <p className="text-xl font-bold text-yellow-600">
                                             {formatIndian(pending.total || 0)}
                                         </p>
-                                        <p className="text-xs mt-1" style={{ color: '#d97706' }}>PENDING</p>
-                                        <p className="text-xs text-gray-400">{pending.count} requests</p>
+                                        <p className="text-xs mt-1 text-yellow-700 font-medium">PENDING</p>
+                                        <p className="text-xs text-gray-500 mt-1">{pending.count} requests</p>
                                     </div>
-                                    <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#fef2f2' }}>
-                                        <p className="text-xl font-bold" style={{ color: '#dc2626' }}>
+                                    <div className="text-center p-4 rounded-xl bg-red-50">
+                                        <p className="text-xl font-bold text-red-600">
                                             {formatIndian(rejected.total || 0)}
                                         </p>
-                                        <p className="text-xs mt-1" style={{ color: '#dc2626' }}>REJECTED</p>
-                                        <p className="text-xs text-gray-400">{rejected.count} requests</p>
+                                        <p className="text-xs mt-1 text-red-700 font-medium">REJECTED</p>
+                                        <p className="text-xs text-gray-500 mt-1">{rejected.count} requests</p>
                                     </div>
                                 </>
                             );

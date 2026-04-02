@@ -309,9 +309,7 @@ router.patch('/:id/reset-password', authenticate, requireAdmin, async (req, res)
             data: {
                 password: hashedPassword,
                 resetToken: null,
-                resetTokenExpiry: null,
-                otpCode: null,
-                otpExpiry: null
+                resetTokenExpiry: null
             }
         });
 

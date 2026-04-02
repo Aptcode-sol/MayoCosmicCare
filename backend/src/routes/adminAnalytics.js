@@ -148,9 +148,9 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
         const todayOrdersAndPurchases = todayOrders; // Only successful orders today
 
         const monthOrders = await prisma.order.count({
-            where: { status: 'PAID', createdAt: { gte: thirtyDaysAgo } }
+            where: { status: 'PAID', createdAt: { gte: startOfMonth } }
         });
-        const monthOrdersAndPurchases = monthOrders; // Only successful orders last 30 days
+        const monthOrdersAndPurchases = monthOrders; // Only successful orders in current month
 
         // Calculate revenue only from successful orders
         const orderRevenue = await prisma.order.aggregate({
@@ -161,7 +161,7 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
 
         const monthOrderRevenue = await prisma.order.aggregate({
             _sum: { totalAmount: true },
-            where: { status: 'PAID', createdAt: { gte: thirtyDaysAgo } }
+            where: { status: 'PAID', createdAt: { gte: startOfMonth } }
         });
         const monthRevenue = monthOrderRevenue._sum.totalAmount || 0;
 

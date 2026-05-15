@@ -116,8 +116,7 @@ module.exports = {
             },
             animation: {
                 'float': 'float 6s ease-in-out infinite',
-                'slide-in-right': 'slide-in-right 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
-                'slide-in-left': 'slide-in-left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+                'fade-in': 'fade-in 0.4s ease-out forwards',
                 'glow': 'glow 2s ease-in-out infinite',
                 'shimmer': 'shimmer 2s linear infinite',
             },
@@ -126,13 +125,9 @@ module.exports = {
                     '0%, 100%': { transform: 'translateY(0px)' },
                     '50%': { transform: 'translateY(-10px)' },
                 },
-                'slide-in-right': {
-                    '0%': { transform: 'translateX(50px)', opacity: '0' },
-                    '100%': { transform: 'translateX(0)', opacity: '1' },
-                },
-                'slide-in-left': {
-                    '0%': { transform: 'translateX(-50px)', opacity: '0' },
-                    '100%': { transform: 'translateX(0)', opacity: '1' },
+                'fade-in': {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
                 },
                 glow: {
                     '0%, 100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' },

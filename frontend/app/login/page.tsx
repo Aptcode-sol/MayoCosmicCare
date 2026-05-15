@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { login as loginApi } from '../../lib/services/auth'
 import { parseApiError } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
+import AuthLeftPanel from '../components/AuthLeftPanel'
 
 export default function Login() {
     const router = useRouter()
@@ -47,53 +48,20 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden animate-slide-in-left">
-            {/* Left Panel: Branding & Narrative (50/50 Split) */}
-            <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
-                <div className="mb-stack-md self-start">
-                    <Link href="/" className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
-                        <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-                        <span className="font-label-sm text-label-sm">Back to Home</span>
-                    </Link>
-                </div>
-
-                {/* Centerpiece Graphic & Message */}
-                <div className="flex-grow flex flex-col justify-center items-center text-center max-w-lg mx-auto w-full">
-                    <div className="flex items-center gap-base justify-center mb-stack-md">
-                        <h1 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Mayo Cosmic Care</h1>
-                    </div>
-                    <div className="relative w-40 h-40 mx-auto mb-base">
-                        <div className="absolute inset-0 flex items-center justify-center p-2">
-                            <Image src="/MCC2.png" alt="Mayo Cosmic Care Products" fill sizes="160px" className="object-contain drop-shadow-2xl grayscale contrast-125 brightness-110" />
-                        </div>
-                    </div>
-                    <h2 className="font-display-xl text-display-xl mb-stack-md leading-tight text-on-surface">Experience the Power of
-                        Bio Magnetic Wellness</h2>
-                    <p className="text-on-surface-variant font-body-md max-w-md mx-auto mb-section-gap">
-                        Premium magnetic mattress technology designed for
-                        better health, sleep, and lasting vitality.
-                    </p>
-                    <div className="grid grid-cols-1 gap-stack-sm text-left mb-8">
-                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                            <span className="material-symbols-outlined text-primary">bed</span>
-                            <span className="font-label-sm text-label-sm">Precision-engineered for holistic healing support.</span>
-                        </div>
-                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                            <span className="material-symbols-outlined text-primary">diamond</span>
-                            <span className="font-label-sm text-label-sm">Deeper sleep cycles and body restoration overnight.</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer Segment */}
-                <footer className="pt-stack-md mt-auto">
-                    <p className="font-label-sm text-label-sm text-on-secondary-fixed-variant text-center">Essential Wellness. Designed for Longevity.</p>
-                </footer>
-            </section>
+        <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+            <AuthLeftPanel
+                variant="login"
+                headline="Experience the Power of Bio Magnetic Wellness"
+                description="Premium bio magnetic mattress technology designed for better health, deeper sleep, and lasting vitality."
+                features={[
+                    { icon: 'medical_services', text: 'Precision-engineered for holistic healing support.' },
+                    { icon: 'bedtime', text: 'Deeper sleep cycles and body restoration overnight.' },
+                ]}
+            />
 
             {/* Right Panel: Login Form (50/50 Split) */}
             <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center p-gutter md:p-container-margin">
-                <div className="w-full max-w-[440px] flex flex-col space-y-section-gap">
+                <div className="w-full max-w-[440px] flex flex-col space-y-section-gap animate-fade-in">
                     {/* Mobile Brand Header */}
                     <header className="flex md:hidden items-center gap-base mb-stack-md">
                         <div className="relative w-8 h-8 flex-shrink-0">

@@ -1,57 +1,14 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { register, sendOtp, verifyOtp } from '../../lib/services/auth'
 import { parseApiError } from '../../lib/api'
 import toast from 'react-hot-toast'
 import useDebounce from '@/lib/useDebounce'
+import AuthLeftPanel from '../components/AuthLeftPanel'
 
-// Shared left decorative panel for both steps
-function LeftPanel() {
-    return (
-        <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
-            <div className="mb-stack-md self-start">
-                <Link href="/" className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
-                    <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-                    <span className="font-label-sm text-label-sm">Back to Home</span>
-                </Link>
-            </div>
-
-            {/* Centerpiece Graphic & Message */}
-            <div className="flex-grow flex flex-col justify-center items-center text-center max-w-lg mx-auto w-full">
-                <div className="flex items-center gap-base justify-center mb-stack-md">
-                    <h1 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Mayo Cosmic Care</h1>
-                </div>
-                <div className="relative w-40 h-40 mx-auto mb-base">
-                    <div className="absolute inset-0 flex items-center justify-center p-2">
-                        <Image src="/MCC2.png" alt="Mayo Cosmic Care Products" fill sizes="160px" className="object-contain drop-shadow-2xl grayscale contrast-125 brightness-110" />
-                    </div>
-                </div>
-                <h2 className="font-display-xl text-display-xl mb-stack-md leading-tight text-on-surface">Join the Bio Magnetic Wellness Revolution</h2>
-                <p className="text-on-surface-variant font-body-md max-w-md mx-auto mb-section-gap">
-                    Discover premium bio magnetic wellness products and build a thriving essential wellness business with our global network.
-                </p>
-                <div className="grid grid-cols-1 gap-stack-sm text-left mb-8">
-                    <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                        <span className="material-symbols-outlined text-primary">bed</span>
-                        <span className="font-label-sm text-label-sm">Premium bio magnetic mattress for natural healing</span>
-                    </div>
-                    <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                        <span className="material-symbols-outlined text-primary">diamond</span>
-                        <span className="font-label-sm text-label-sm">Exclusive wellness products with high reward value</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Footer Segment */}
-            <footer className="pt-stack-md mt-auto">
-                <p className="font-label-sm text-label-sm text-on-secondary-fixed-variant text-center">Essential Wellness. Designed for Longevity.</p>
-            </footer>
-        </section>
-    )
-}
 
 // Password strength checker
 function getPasswordStrength(password: string) {
@@ -407,10 +364,18 @@ export default function Register() {
 
     // Step 1: Registration Form
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden animate-slide-in-right selection:bg-primary-fixed selection:text-primary">
-            <LeftPanel />
+        <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+            <AuthLeftPanel
+                variant="register"
+                headline="Join the Bio Magnetic Wellness Revolution"
+                description="Discover premium bio magnetic wellness products and build a thriving essential wellness business with our global network."
+                features={[
+                    { icon: 'bed', text: 'Premium bio magnetic mattress for natural healing' },
+                    { icon: 'diamond', text: 'Exclusive wellness products with high reward value' },
+                ]}
+            />
             <section className="w-full md:w-1/2 flex items-center justify-center p-gutter md:p-container-margin relative pb-16">
-                <div className="w-full max-w-[440px]">
+                <div className="w-full max-w-[440px] animate-fade-in">
                     {/* Mobile Logo */}
                     <div className="md:hidden mb-stack-md flex items-center gap-3">
                         <div className="relative w-8 h-8 flex-shrink-0">

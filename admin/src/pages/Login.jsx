@@ -71,17 +71,17 @@ export default function Login() {
                     </p>
 
                     {/* Info Boxes */}
-                    <div className="w-full max-w-sm mx-auto space-y-stack-sm text-left">
-                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                            <span className="material-symbols-outlined text-on-surface-variant">manage_accounts</span>
+                    <div className="w-full max-w-sm mx-auto space-y-stack-sm">
+                        <div className="bg-surface-container-low px-4 py-2.5 border border-outline-variant rounded flex items-center justify-center gap-3">
+                            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">manage_accounts</span>
                             <span className="text-label-sm">Manage members, distributors &amp; network</span>
                         </div>
-                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                            <span className="material-symbols-outlined text-on-surface-variant">analytics</span>
+                        <div className="bg-surface-container-low px-4 py-2.5 border border-outline-variant rounded flex items-center justify-center gap-3">
+                            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">analytics</span>
                             <span className="text-label-sm">View real-time business analytics &amp; reports</span>
                         </div>
-                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
-                            <span className="material-symbols-outlined text-on-surface-variant">account_balance_wallet</span>
+                        <div className="bg-surface-container-low px-4 py-2.5 border border-outline-variant rounded flex items-center justify-center gap-3">
+                            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">account_balance_wallet</span>
                             <span className="text-label-sm">Process commissions, wallets &amp; payouts</span>
                         </div>
                     </div>

@@ -47,7 +47,7 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+        <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden animate-slide-in-left">
             {/* Left Panel: Branding & Narrative (50/50 Split) */}
             <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
                 <div className="mb-stack-md self-start">
@@ -67,18 +67,20 @@ export default function Login() {
                             <Image src="/MCC2.png" alt="Mayo Cosmic Care Products" fill sizes="160px" className="object-contain drop-shadow-2xl grayscale contrast-125 brightness-110" />
                         </div>
                     </div>
-                    <h2 className="font-display-xl text-display-xl mb-stack-md leading-tight text-on-surface">Join the Bio Magnetic Wellness Revolution</h2>
+                    <h2 className="font-display-xl text-display-xl mb-stack-md leading-tight text-on-surface">Experience the Power of
+                        Bio Magnetic Wellness</h2>
                     <p className="text-on-surface-variant font-body-md max-w-md mx-auto mb-section-gap">
-                        Discover premium bio magnetic wellness products and build a thriving essential wellness business with our global network.
+                        Premium magnetic mattress technology designed for
+                        better health, sleep, and lasting vitality.
                     </p>
                     <div className="grid grid-cols-1 gap-stack-sm text-left mb-8">
                         <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
                             <span className="material-symbols-outlined text-primary">bed</span>
-                            <span className="font-label-sm text-label-sm">Premium bio magnetic mattress for natural healing</span>
+                            <span className="font-label-sm text-label-sm">Precision-engineered for holistic healing support.</span>
                         </div>
                         <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
                             <span className="material-symbols-outlined text-primary">diamond</span>
-                            <span className="font-label-sm text-label-sm">Exclusive wellness products with high reward value</span>
+                            <span className="font-label-sm text-label-sm">Deeper sleep cycles and body restoration overnight.</span>
                         </div>
                     </div>
                 </div>
@@ -99,7 +101,7 @@ export default function Login() {
                         </div>
                         <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">Mayo Cosmic Care</h1>
                     </header>
-                    
+
                     <div className="space-y-stack-sm">
                         <h2 className="font-headline-lg text-headline-lg md:text-display-xl text-primary">Welcome back</h2>
                         <p className="font-body-md text-body-md text-secondary">Enter your credentials to access your account</p>
@@ -110,17 +112,17 @@ export default function Login() {
                         {/* Username Field */}
                         <div className="flex flex-col space-y-base">
                             <label className="font-label-sm text-label-sm text-primary" htmlFor="username">Username or Email</label>
-                            <input 
-                                className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all" 
-                                id="username" 
-                                placeholder="Enter your username or email" 
+                            <input
+                                className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all"
+                                id="username"
+                                placeholder="Enter your username or email"
                                 type="text"
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 required
                             />
                         </div>
-                        
+
                         {/* Password Field */}
                         <div className="flex flex-col space-y-base">
                             <div className="flex justify-between items-center">
@@ -128,17 +130,17 @@ export default function Login() {
                                 <Link className="font-label-sm text-label-sm text-secondary-fixed-dim hover:text-primary transition-colors" href="/forgot-password">Forgot Password?</Link>
                             </div>
                             <div className="relative">
-                                <input 
-                                    className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all" 
-                                    id="password" 
-                                    placeholder="••••••••" 
+                                <input
+                                    className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all"
+                                    id="password"
+                                    placeholder="••••••••"
                                     type={showPassword ? "text" : "password"}
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     required
                                 />
-                                <button 
-                                    className="absolute right-stack-md top-1/2 -translate-y-1/2 text-secondary-fixed-dim hover:text-primary transition-colors" 
+                                <button
+                                    className="absolute right-stack-md top-1/2 -translate-y-1/2 text-secondary-fixed-dim hover:text-primary transition-colors"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
@@ -148,8 +150,8 @@ export default function Login() {
                         </div>
 
                         {/* Action Button */}
-                        <button 
-                            className="w-full mt-stack-md py-stack-md bg-primary text-on-primary font-button-text text-button-text rounded hover:bg-on-tertiary-container transition-all active:opacity-80 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed" 
+                        <button
+                            className="w-full mt-stack-md py-stack-md bg-primary text-on-primary font-button-text text-button-text rounded hover:bg-on-tertiary-container transition-all active:opacity-80 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
                             type="submit"
                             disabled={loading}
                         >

@@ -407,7 +407,7 @@ export default function Register() {
 
     // Step 1: Registration Form
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden selection:bg-primary-fixed selection:text-primary">
+        <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden animate-slide-in-right selection:bg-primary-fixed selection:text-primary">
             <LeftPanel />
             <section className="w-full md:w-1/2 flex items-center justify-center p-gutter md:p-container-margin relative pb-16">
                 <div className="w-full max-w-[440px]">

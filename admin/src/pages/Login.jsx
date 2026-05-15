@@ -38,15 +38,6 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden animate-slide-in-left">
-            <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-                <nav className="px-4 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <img src="/MCC_Light.png" alt="Mayo Cosmic Care" className="w-8 h-8 object-contain" />
-                        <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
-                    </div>
-                </nav>
-            </header>
-
             {/* Left Panel: Branding */}
             <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
                 {/* Back nav placeholder to keep spacing consistent */}
@@ -104,8 +95,12 @@ export default function Login() {
             </section>
 
             {/* Right Panel: Login Form */}
-            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-6 pt-24 pb-4 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin">
+            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin">
                 <div className="w-full max-w-[400px]">
+                    <div className="md:hidden flex flex-col items-center gap-2 mb-4">
+                        <img src="/MCC_Light.png" alt="Mayo Cosmic Care" className="w-10 h-10 object-contain" />
+                        <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                    </div>
 
                     {/* Form header */}
                     <div className="mb-6">

@@ -271,17 +271,6 @@ export default function Register() {
     if (step === 2) {
         return (
             <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden selection:bg-primary-fixed selection:text-primary">
-                <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-                    <nav className="px-4 h-20 flex items-center justify-between">
-                        <Link href="/" className="flex items-center gap-2 min-w-0">
-                            <div className="relative w-8 h-8 flex-shrink-0">
-                                <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
-                            </div>
-                            <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
-                        </Link>
-                    </nav>
-                </header>
-
                 <AuthLeftPanel
                     variant="register"
                     headline="Verify your email to continue"
@@ -291,8 +280,14 @@ export default function Register() {
                         { icon: 'mail', text: 'Code delivery to your registered email' },
                     ]}
                 />
-                <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-24 pb-4 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin">
+                <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin">
                     <div className="w-full max-w-[440px]">
+                        <Link href="/" className="md:hidden flex flex-col items-center gap-2 mb-4">
+                            <div className="relative w-10 h-10 flex-shrink-0">
+                                <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="40px" className="object-contain" />
+                            </div>
+                            <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                        </Link>
 
                         {/* Icon */}
                         <div className="w-14 h-14 bg-surface-container-high rounded-xl flex items-center justify-center mb-6">
@@ -377,17 +372,6 @@ export default function Register() {
     // Step 1: Registration Form
     return (
         <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
-            <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-                <nav className="px-4 h-20 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 min-w-0">
-                        <div className="relative w-8 h-8 flex-shrink-0">
-                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
-                        </div>
-                        <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
-                    </Link>
-                </nav>
-            </header>
-
             <AuthLeftPanel
                 variant="register"
                 headline="Join the Bio Magnetic Wellness Revolution"
@@ -397,8 +381,14 @@ export default function Register() {
                     { icon: 'diamond', text: 'Exclusive wellness products with high reward value' },
                 ]}
             />
-            <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-24 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin relative pb-16">
+            <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin relative">
                 <div className="w-full max-w-[440px] animate-fade-in">
+                    <Link href="/" className="md:hidden flex flex-col items-center gap-2 mb-4">
+                        <div className="relative w-10 h-10 flex-shrink-0">
+                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="40px" className="object-contain" />
+                        </div>
+                        <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                    </Link>
 
                     <div className="mb-6">
                         <h1 className="font-headline-lg text-3xl sm:text-headline-lg text-on-surface mb-2 tracking-tight leading-tight">Create an account</h1>

@@ -2,17 +2,55 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { register, sendOtp, verifyOtp } from '../../lib/services/auth'
 import { parseApiError } from '../../lib/api'
 import toast from 'react-hot-toast'
 import useDebounce from '@/lib/useDebounce'
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
 
-// Minimal Label component inline
-function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelHTMLAttributes<HTMLLabelElement>>) {
-    return <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" {...props}>{children}</label>
+// Shared left decorative panel for both steps
+function LeftPanel() {
+    return (
+        <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
+            <div className="mb-stack-md self-start">
+                <Link href="/" className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
+                    <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                    <span className="font-label-sm text-label-sm">Back to Home</span>
+                </Link>
+            </div>
+
+            {/* Centerpiece Graphic & Message */}
+            <div className="flex-grow flex flex-col justify-center items-center text-center max-w-lg mx-auto w-full">
+                <div className="flex items-center gap-base justify-center mb-stack-md">
+                    <h1 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Mayo Cosmic Care</h1>
+                </div>
+                <div className="relative w-40 h-40 mx-auto mb-base">
+                    <div className="absolute inset-0 flex items-center justify-center p-2">
+                        <Image src="/MCC2.png" alt="Mayo Cosmic Care Products" fill sizes="160px" className="object-contain drop-shadow-2xl grayscale contrast-125 brightness-110" />
+                    </div>
+                </div>
+                <h2 className="font-display-xl text-display-xl mb-stack-md leading-tight text-on-surface">Join the Bio Magnetic Wellness Revolution</h2>
+                <p className="text-on-surface-variant font-body-md max-w-md mx-auto mb-section-gap">
+                    Discover premium bio magnetic wellness products and build a thriving essential wellness business with our global network.
+                </p>
+                <div className="grid grid-cols-1 gap-stack-sm text-left mb-8">
+                    <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
+                        <span className="material-symbols-outlined text-primary">bed</span>
+                        <span className="font-label-sm text-label-sm">Premium bio magnetic mattress for natural healing</span>
+                    </div>
+                    <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
+                        <span className="material-symbols-outlined text-primary">diamond</span>
+                        <span className="font-label-sm text-label-sm">Exclusive wellness products with high reward value</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer Segment */}
+            <footer className="pt-stack-md mt-auto">
+                <p className="font-label-sm text-label-sm text-on-secondary-fixed-variant text-center">Essential Wellness. Designed for Longevity.</p>
+            </footer>
+        </section>
+    )
 }
 
 // Password strength checker
@@ -24,10 +62,10 @@ function getPasswordStrength(password: string) {
     if (/[0-9]/.test(password)) score++
     if (/[^A-Za-z0-9]/.test(password)) score++
 
-    if (score <= 2) return { level: 'Weak', color: 'bg-red-500', percentage: 25 }
-    if (score <= 3) return { level: 'Fair', color: 'bg-yellow-500', percentage: 50 }
-    if (score <= 4) return { level: 'Good', color: 'bg-blue-500', percentage: 75 }
-    return { level: 'Strong', color: 'bg-green-500', percentage: 100 }
+    if (score <= 2) return { level: 'Weak', color: 'bg-error', percentage: 25 }
+    if (score <= 3) return { level: 'Fair', color: 'bg-primary-fixed-dim', percentage: 50 }
+    if (score <= 4) return { level: 'Good', color: 'bg-secondary', percentage: 75 }
+    return { level: 'Strong', color: 'bg-primary', percentage: 100 }
 }
 
 // Validation helpers
@@ -275,306 +313,334 @@ export default function Register() {
     // Step 2: OTP Verification Page
     if (step === 2) {
         return (
-            <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-gray-50/50 pt-32">
-                <Card className="w-full max-w-md shadow-xl border-gray-100 bg-white">
-                    <CardHeader className="text-center pb-6 pt-8">
-                        <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </div>
-                        <CardTitle className="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
-                            Enter verification code
-                        </CardTitle>
-                        <CardDescription className="text-gray-500">
-                            We've sent a code to {form.email}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* OTP Input Boxes */}
-                        <div className="flex justify-center gap-3">
-                            {[0, 1, 2, 3, 4, 5].map((index) => (
-                                <input
-                                    key={index}
-                                    ref={el => { otpInputRefs.current[index] = el }}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    value={otpDigits[index]}
-                                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                    className="w-14 h-14 text-center text-2xl font-semibold bg-white border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
-                                />
-                            ))}
+            <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden selection:bg-primary-fixed selection:text-primary">
+                <LeftPanel />
+                <section className="w-full md:w-1/2 flex items-center justify-center p-gutter md:p-container-margin">
+                    <div className="w-full max-w-[440px]">
+                        {/* Mobile Logo */}
+                        <div className="md:hidden mb-stack-md flex items-center gap-3">
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                                <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
+                            </div>
+                            <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary">Mayo Cosmic Care</span>
                         </div>
 
-                        {/* Timer */}
-                        <p className="text-center text-gray-500">
-                            Code expires in <span className="text-gray-900 font-medium">{formatTime(otpTimer)}</span>
-                        </p>
+                        {/* Icon */}
+                        <div className="w-14 h-14 bg-surface-container-high rounded-xl flex items-center justify-center mb-6">
+                            <span className="material-symbols-outlined text-primary text-[28px]">mark_email_read</span>
+                        </div>
 
-                        {/* Verify Button */}
-                        <Button
-                            onClick={handleVerifyAndRegister}
-                            disabled={loading || otpDigits.join('').length < 6}
-                            className="w-full"
-                        >
-                            {loading ? 'Verifying...' : 'Verify Email'}
-                        </Button>
+                        <div className="mb-8">
+                            <h1 className="font-headline-lg text-headline-lg text-on-surface mb-base tracking-tight">Check your email</h1>
+                            <p className="text-on-surface-variant font-body-md">We&apos;ve sent a 6-digit code to <span className="font-medium text-on-surface">{form.email}</span></p>
+                        </div>
 
-                        {/* Resend Link */}
-                        <button
-                            type="button"
-                            onClick={handleResendOtp}
-                            disabled={otpTimer > 0}
-                            className={`w-full text-center text-sm ${otpTimer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-900 hover:underline'} transition-colors`}
-                        >
-                            Resend verification code
-                        </button>
+                        <div className="space-y-6">
+                            {/* OTP Input Boxes */}
+                            <div className="flex justify-between gap-2">
+                                {[0, 1, 2, 3, 4, 5].map((index) => (
+                                    <input
+                                        key={index}
+                                        ref={el => { otpInputRefs.current[index] = el }}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={otpDigits[index]}
+                                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                        className="w-12 h-14 text-center text-2xl font-display-xl font-bold bg-surface-container-lowest border border-outline-variant rounded focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface transition-all"
+                                    />
+                                ))}
+                            </div>
 
-                        {/* Back Link */}
-                        <button
-                            type="button"
-                            onClick={() => setStep(1)}
-                            className="w-full text-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                        >
-                            ← Change email address
-                        </button>
-                    </CardContent>
-                </Card>
+                            {/* Timer */}
+                            <p className="text-center text-label-sm font-label-sm text-secondary">
+                                Code expires in{' '}
+                                <span className="font-bold text-primary">{formatTime(otpTimer)}</span>
+                            </p>
+
+                            {/* Verify Button */}
+                            <button
+                                onClick={handleVerifyAndRegister}
+                                disabled={loading || otpDigits.join('').length < 6}
+                                className="w-full bg-primary text-on-primary py-4 px-base font-button-text text-button-text hover:bg-on-surface-variant rounded transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex justify-center items-center"
+                            >
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Verifying...
+                                    </>
+                                ) : 'Verify & Create Account'}
+                            </button>
+
+                            {/* Resend Link */}
+                            <button
+                                type="button"
+                                onClick={handleResendOtp}
+                                disabled={otpTimer > 0}
+                                className={`w-full text-center text-label-sm font-label-sm transition-colors ${otpTimer > 0
+                                    ? 'text-on-surface-variant opacity-60 cursor-not-allowed'
+                                    : 'text-primary hover:underline underline-offset-4'
+                                    }`}
+                            >
+                                Didn&apos;t receive it? Resend code
+                            </button>
+
+                            {/* Back Link */}
+                            <button
+                                type="button"
+                                onClick={() => setStep(1)}
+                                className="w-full text-center text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center gap-1"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                                Change email address
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
         )
     }
 
     // Step 1: Registration Form
     return (
-        <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-gray-50/50 pt-32">
-            <Card className="w-full max-w-lg shadow-xl border-gray-100 bg-white">
-                <CardHeader className="text-center pb-6 pt-8">
-                    <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                    </div>
-                    <CardTitle className="text-2xl font-semibold text-gray-900 tracking-tight mb-2">Create an account</CardTitle>
-                    <CardDescription className="text-gray-500">
-                        Join the Mayo Cosmic Care network today
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {/* Full Name */}
-                    <div className="space-y-2">
-                        <LocalLabel htmlFor="name">Full Name <span className="text-xs text-gray-500 font-normal">(As per PAN)</span></LocalLabel>
-                        <Input
-                            id="name"
-                            type="text"
-                            value={form.name}
-                            onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            required
-                            placeholder="Full Name (min 8 characters)"
-                        />
-                        {form.name && form.name.length < 8 && (
-                            <p className="text-xs text-red-500">Name must be at least 8 characters</p>
-                        )}
+        <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden selection:bg-primary-fixed selection:text-primary">
+            <LeftPanel />
+            <section className="w-full md:w-1/2 flex items-center justify-center p-gutter md:p-container-margin relative pb-16">
+                <div className="w-full max-w-[440px]">
+                    {/* Mobile Logo */}
+                    <div className="md:hidden mb-stack-md flex items-center gap-3">
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
+                        </div>
+                        <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary">Mayo Cosmic Care</span>
                     </div>
 
-                    {/* Email */}
-                    <div className="space-y-2">
-                        <LocalLabel htmlFor="email">Email</LocalLabel>
-                        <Input
-                            id="email"
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                            required
-                            placeholder="your@email.com"
-                        />
-                        {form.email && !validateEmail(form.email) && (
-                            <p className="text-xs text-red-500">Please enter a valid email address</p>
-                        )}
+                    <div className="mb-6">
+                        <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2 tracking-tight">Create an account</h1>
+                        <p className="text-on-surface-variant font-body-md text-sm">Join the Mayo Cosmic Care network today</p>
                     </div>
 
-                    {/* Password */}
-                    <div className="space-y-2">
-                        <LocalLabel htmlFor="password">Password</LocalLabel>
-                        <div className="relative">
-                            <Input
-                                id="password"
-                                type={showPassword ? "text" : "password"}
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleProceedToOtp(); }}>
+                        <div className="space-y-1">
+                            <label className="font-label-sm text-label-sm text-on-surface-variant flex justify-between" htmlFor="full-name">
+                                <span>Full Name <span className="opacity-60">(As per PAN)</span></span>
+                            </label>
+                            <input
+                                id="full-name"
+                                className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                type="text"
+                                value={form.name}
+                                onChange={(e) => setForm({ ...form, name: e.target.value })}
                                 required
-                                placeholder="••••••••"
-                                className="pr-10"
+                                placeholder="Full Name (min 8 characters)"
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                {showPassword ? (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                                ) : (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                )}
-                            </button>
+                            {form.name && form.name.length < 8 && (
+                                <p className="text-xs text-error">Name must be at least 8 characters</p>
+                            )}
                         </div>
 
-                        {/* Password Strength Indicator */}
-                        {form.password && (
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="text-gray-500">Password Strength</span>
-                                    <span className={`font-medium ${passwordStrength.level === 'Strong' ? 'text-green-600' : passwordStrength.level === 'Good' ? 'text-blue-600' : passwordStrength.level === 'Fair' ? 'text-yellow-600' : 'text-red-600'}`}>
-                                        {passwordStrength.level}
-                                    </span>
-                                </div>
-                                <div className="flex gap-1">
-                                    {[1, 2, 3, 4].map((i) => (
-                                        <div
-                                            key={i}
-                                            className={`h-1 flex-1 rounded-full transition-all ${i <= passwordStrength.percentage / 25 ? passwordStrength.color : 'bg-gray-200'}`}
-                                        />
-                                    ))}
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <svg className={`w-4 h-4 ${passwordValidation.checks.has8Chars ? 'text-green-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        <span className={passwordValidation.checks.has8Chars ? 'text-gray-700' : 'text-gray-400'}>At least 8 characters</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <svg className={`w-4 h-4 ${passwordValidation.checks.hasUppercase ? 'text-green-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        <span className={passwordValidation.checks.hasUppercase ? 'text-gray-700' : 'text-gray-400'}>One uppercase letter</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <svg className={`w-4 h-4 ${passwordValidation.checks.hasLowercase ? 'text-green-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        <span className={passwordValidation.checks.hasLowercase ? 'text-gray-700' : 'text-gray-400'}>One lowercase letter</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <svg className={`w-4 h-4 ${passwordValidation.checks.hasNumber ? 'text-green-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        <span className={passwordValidation.checks.hasNumber ? 'text-gray-700' : 'text-gray-400'}>One number</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <svg className={`w-4 h-4 ${passwordValidation.checks.hasSpecial ? 'text-green-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        <span className={passwordValidation.checks.hasSpecial ? 'text-gray-700' : 'text-gray-400'}>One special character</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Confirm Password */}
-                    <div className="space-y-2">
-                        <LocalLabel htmlFor="confirmPassword">Confirm Password</LocalLabel>
-                        <div className="relative">
-                            <Input
-                                id="confirmPassword"
-                                type={showConfirmPassword ? "text" : "password"}
-                                value={form.confirmPassword}
-                                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                        <div className="space-y-1">
+                            <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="email">Email</label>
+                            <input
+                                id="email"
+                                className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                type="email"
+                                value={form.email}
+                                onChange={(e) => setForm({ ...form, email: e.target.value })}
                                 required
-                                placeholder="••••••••"
-                                className="pr-10"
+                                placeholder="your@email.com"
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                {showConfirmPassword ? (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                                ) : (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                )}
-                            </button>
+                            {form.email && !validateEmail(form.email) && (
+                                <p className="text-xs text-error">Please enter a valid email address</p>
+                            )}
                         </div>
-                        {form.confirmPassword && form.password !== form.confirmPassword && (
-                            <p className="text-xs text-red-500">Passwords do not match</p>
-                        )}
-                        {form.confirmPassword && form.password === form.confirmPassword && form.confirmPassword.length > 0 && (
-                            <div className="flex items-center gap-2 text-xs">
-                                <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                <span className="text-green-600">Passwords match</span>
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Sponsor (Optional) */}
-                    <div className="space-y-2 relative">
-                        <LocalLabel>Sponsor (Optional)</LocalLabel>
-                        {selectedSponsor ? (
-                            <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                                    {selectedSponsor.username.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-900">{selectedSponsor.username}</div>
-                                    <div className="text-xs text-gray-500">{selectedSponsor.email}</div>
-                                </div>
+                        <div className="space-y-1">
+                            <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="password">Password</label>
+                            <div className="relative">
+                                <input
+                                    id="password"
+                                    className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 pr-12"
+                                    type={showPassword ? "text" : "password"}
+                                    value={form.password}
+                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                    required
+                                    placeholder="••••••••"
+                                />
                                 <button
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary"
                                     type="button"
-                                    onClick={() => {
-                                        setSelectedSponsor(null)
-                                        setForm({ ...form, sponsorId: '' })
-                                    }}
-                                    className="text-gray-400 hover:text-gray-600 p-1"
+                                    onClick={() => setShowPassword(!showPassword)}
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <span className="material-symbols-outlined text-[20px]">{showPassword ? "visibility_off" : "visibility"}</span>
                                 </button>
                             </div>
-                        ) : (
-                            <>
-                                <Input
-                                    type="text"
-                                    value={sponsorQuery}
-                                    onChange={(e) => {
-                                        const v = e.target.value
-                                        setSponsorQuery(v)
-                                        setForm(f => ({ ...f, sponsorId: v }))
-                                    }}
-                                    placeholder="Search by username or email..."
-                                />
-                                {sponsorSuggestions.length > 0 && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                        {sponsorSuggestions.map((sponsor) => (
-                                            <button
-                                                key={sponsor.id}
-                                                type="button"
-                                                onClick={() => selectSponsor(sponsor)}
-                                                className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm border-b border-gray-50 last:border-b-0 flex items-center gap-2"
-                                            >
-                                                <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600">
-                                                    {sponsor.username.slice(0, 2).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <div className="font-medium text-gray-900">{sponsor.username}</div>
-                                                    <div className="text-xs text-gray-500">{sponsor.email}</div>
-                                                </div>
-                                            </button>
+                            
+                            {/* Password Strength Indicator */}
+                            {form.password && (
+                                <div className="space-y-2 mt-2">
+                                    <div className="flex items-center justify-between text-xs font-label-sm">
+                                        <span className="text-on-surface-variant">Password Strength</span>
+                                        <span className={`font-bold ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                                            {passwordStrength.level}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4].map((i) => (
+                                            <div
+                                                key={i}
+                                                className={`h-1 flex-1 rounded-full transition-all ${i <= passwordStrength.percentage / 25 ? passwordStrength.color : 'bg-surface-variant'}`}
+                                            />
                                         ))}
                                     </div>
-                                )}
-                            </>
-                        )}
-                    </div>
+                                    <div className="space-y-1 mt-2">
+                                        <div className="flex items-center gap-2 text-xs font-label-sm">
+                                            <span className={`material-symbols-outlined text-[14px] ${passwordValidation.checks.has8Chars ? 'text-primary' : 'text-outline-variant'}`}>check</span>
+                                            <span className={passwordValidation.checks.has8Chars ? 'text-on-surface' : 'text-on-surface-variant'}>At least 8 characters</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs font-label-sm">
+                                            <span className={`material-symbols-outlined text-[14px] ${passwordValidation.checks.hasUppercase ? 'text-primary' : 'text-outline-variant'}`}>check</span>
+                                            <span className={passwordValidation.checks.hasUppercase ? 'text-on-surface' : 'text-on-surface-variant'}>One uppercase letter</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs font-label-sm">
+                                            <span className={`material-symbols-outlined text-[14px] ${passwordValidation.checks.hasLowercase ? 'text-primary' : 'text-outline-variant'}`}>check</span>
+                                            <span className={passwordValidation.checks.hasLowercase ? 'text-on-surface' : 'text-on-surface-variant'}>One lowercase letter</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs font-label-sm">
+                                            <span className={`material-symbols-outlined text-[14px] ${passwordValidation.checks.hasNumber ? 'text-primary' : 'text-outline-variant'}`}>check</span>
+                                            <span className={passwordValidation.checks.hasNumber ? 'text-on-surface' : 'text-on-surface-variant'}>One number</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs font-label-sm">
+                                            <span className={`material-symbols-outlined text-[14px] ${passwordValidation.checks.hasSpecial ? 'text-primary' : 'text-outline-variant'}`}>check</span>
+                                            <span className={passwordValidation.checks.hasSpecial ? 'text-on-surface' : 'text-on-surface-variant'}>One special character</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Submit Button */}
-                    <Button
-                        type="button"
-                        onClick={handleProceedToOtp}
-                        disabled={loading}
-                        className="w-full"
-                    >
-                        {loading ? 'Sending OTP...' : 'Create Account'}
-                    </Button>
-                </CardContent>
-                <CardFooter className="flex justify-center pb-8">
-                    <p className="text-sm text-gray-500">
-                        Already have an account?{' '}
-                        <Link href="/login" className="font-medium text-gray-900 hover:underline underline-offset-4">
-                            Sign in
-                        </Link>
-                    </p>
-                </CardFooter>
-            </Card>
+                        <div className="space-y-1">
+                            <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="confirm-password">Confirm Password</label>
+                            <div className="relative">
+                                <input
+                                    id="confirm-password"
+                                    className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 pr-12"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={form.confirmPassword}
+                                    onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                                    required
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary"
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">{showConfirmPassword ? "visibility_off" : "visibility"}</span>
+                                </button>
+                            </div>
+                            {form.confirmPassword && form.password !== form.confirmPassword && (
+                                <p className="text-xs text-error mt-1">Passwords do not match</p>
+                            )}
+                            {form.confirmPassword && form.password === form.confirmPassword && form.confirmPassword.length > 0 && (
+                                <div className="flex items-center gap-2 text-xs font-label-sm mt-1">
+                                    <span className="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+                                    <span className="text-primary">Passwords match</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-1 relative">
+                            <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="sponsor">Sponsor (Optional)</label>
+                            {selectedSponsor ? (
+                                <div className="flex items-center gap-3 p-2 bg-surface-container-low border border-outline-variant rounded">
+                                    <div className="h-8 w-8 rounded-full bg-surface-variant flex items-center justify-center text-xs font-medium text-on-surface">
+                                        {selectedSponsor.username.slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-sm font-medium text-on-surface">{selectedSponsor.username}</div>
+                                        <div className="text-xs text-secondary">{selectedSponsor.email}</div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedSponsor(null)
+                                            setForm({ ...form, sponsorId: '' })
+                                        }}
+                                        className="text-on-surface-variant hover:text-primary p-1 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">close</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <input
+                                        id="sponsor"
+                                        className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                        type="text"
+                                        value={sponsorQuery}
+                                        onChange={(e) => {
+                                            const v = e.target.value
+                                            setSponsorQuery(v)
+                                            setForm(f => ({ ...f, sponsorId: v }))
+                                        }}
+                                        placeholder="Search by username or email..."
+                                    />
+                                    {sponsorSuggestions.length > 0 && (
+                                        <div className="absolute z-10 w-full mt-1 bg-surface-container-lowest border border-outline-variant rounded shadow-lg max-h-48 overflow-y-auto">
+                                            {sponsorSuggestions.map((sponsor) => (
+                                                <button
+                                                    key={sponsor.id}
+                                                    type="button"
+                                                    onClick={() => selectSponsor(sponsor)}
+                                                    className="w-full px-4 py-3 text-left hover:bg-surface-container-low text-sm border-b border-outline-variant last:border-b-0 flex items-center gap-3 transition-colors"
+                                                >
+                                                    <div className="h-8 w-8 rounded-full bg-surface-variant flex items-center justify-center text-xs font-medium text-on-surface">
+                                                        {sponsor.username.slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-on-surface">{sponsor.username}</div>
+                                                        <div className="text-xs text-secondary">{sponsor.email}</div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        <div className="pt-2">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-primary text-on-primary py-3 px-base rounded font-button-text text-button-text hover:bg-on-surface-variant transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Sending OTP...
+                                    </>
+                                ) : 'Continue'}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="mt-4 text-center">
+                        <p className="font-label-sm text-label-sm text-on-surface-variant">
+                            Already have an account?{' '}
+                            <Link className="text-primary font-bold hover:underline" href="/login">Sign in</Link>
+                        </p>
+                    </div>
+                </div>
+            </section>
         </div>
     )
 }

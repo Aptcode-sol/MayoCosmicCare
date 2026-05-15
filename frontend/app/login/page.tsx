@@ -2,18 +2,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { login as loginApi } from '../../lib/services/auth'
 import { parseApiError } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card"
-
-// Minimal Label component if not created globally yet since I missed creating it in previous step
-function LocalLabel({ children, ...props }: React.PropsWithChildren<React.LabelHTMLAttributes<HTMLLabelElement>>) {
-    return <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" {...props}>{children}</label>
-}
 
 export default function Login() {
     const router = useRouter()
@@ -54,58 +47,112 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-gray-50/50">
-            <Card className="w-full max-w-md shadow-lg border-gray-100">
-                <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-semibold tracking-tight">Welcome back</CardTitle>
-                    <CardDescription>
-                        Enter your credentials to access your account
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <LocalLabel htmlFor="username">Username or Email</LocalLabel>
-                            <Input
-                                id="username"
+        <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+            {/* Left Panel: Branding & Narrative (50/50 Split) */}
+            <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
+                <div className="mb-stack-md self-start">
+                    <Link href="/" className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
+                        <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                        <span className="font-label-sm text-label-sm">Back to Home</span>
+                    </Link>
+                </div>
+
+                {/* Centerpiece Graphic & Message */}
+                <div className="flex-grow flex flex-col justify-center items-center text-center max-w-lg mx-auto w-full">
+                    <div className="flex items-center gap-base justify-center mb-stack-md">
+                        <h1 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Mayo Cosmic Care</h1>
+                    </div>
+                    <div className="relative w-40 h-40 mx-auto mb-base">
+                        <div className="absolute inset-0 flex items-center justify-center p-2">
+                            <Image src="/MCC2.png" alt="Mayo Cosmic Care Products" fill sizes="160px" className="object-contain drop-shadow-2xl grayscale contrast-125 brightness-110" />
+                        </div>
+                    </div>
+                    <h2 className="font-display-xl text-display-xl mb-stack-md leading-tight text-on-surface">Join the Bio Magnetic Wellness Revolution</h2>
+                    <p className="text-on-surface-variant font-body-md max-w-md mx-auto mb-section-gap">
+                        Discover premium bio magnetic wellness products and build a thriving essential wellness business with our global network.
+                    </p>
+                    <div className="grid grid-cols-1 gap-stack-sm text-left mb-8">
+                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
+                            <span className="material-symbols-outlined text-primary">bed</span>
+                            <span className="font-label-sm text-label-sm">Premium bio magnetic mattress for natural healing</span>
+                        </div>
+                        <div className="bg-surface-container-low p-stack-md border border-outline-variant rounded flex items-center gap-stack-md">
+                            <span className="material-symbols-outlined text-primary">diamond</span>
+                            <span className="font-label-sm text-label-sm">Exclusive wellness products with high reward value</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Segment */}
+                <footer className="pt-stack-md mt-auto">
+                    <p className="font-label-sm text-label-sm text-on-secondary-fixed-variant text-center">Essential Wellness. Designed for Longevity.</p>
+                </footer>
+            </section>
+
+            {/* Right Panel: Login Form (50/50 Split) */}
+            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center p-gutter md:p-container-margin">
+                <div className="w-full max-w-[440px] flex flex-col space-y-section-gap">
+                    {/* Mobile Brand Header */}
+                    <header className="flex md:hidden items-center gap-base mb-stack-md">
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
+                        </div>
+                        <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">Mayo Cosmic Care</h1>
+                    </header>
+                    
+                    <div className="space-y-stack-sm">
+                        <h2 className="font-headline-lg text-headline-lg md:text-display-xl text-primary">Welcome back</h2>
+                        <p className="font-body-md text-body-md text-secondary">Enter your credentials to access your account</p>
+                    </div>
+
+                    {/* Form Container */}
+                    <form onSubmit={handleSubmit} className="flex flex-col space-y-stack-md">
+                        {/* Username Field */}
+                        <div className="flex flex-col space-y-base">
+                            <label className="font-label-sm text-label-sm text-primary" htmlFor="username">Username or Email</label>
+                            <input 
+                                className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all" 
+                                id="username" 
+                                placeholder="Enter your username or email" 
                                 type="text"
-                                placeholder="Enter your username or email"
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <LocalLabel htmlFor="password">Password</LocalLabel>
+                        
+                        {/* Password Field */}
+                        <div className="flex flex-col space-y-base">
+                            <div className="flex justify-between items-center">
+                                <label className="font-label-sm text-label-sm text-primary" htmlFor="password">Password</label>
+                                <Link className="font-label-sm text-label-sm text-secondary-fixed-dim hover:text-primary transition-colors" href="/forgot-password">Forgot Password?</Link>
+                            </div>
                             <div className="relative">
-                                <Input
-                                    id="password"
+                                <input 
+                                    className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all" 
+                                    id="password" 
+                                    placeholder="••••••••" 
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="••••••••"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     required
-                                    className="pr-10"
                                 />
-                                <button
+                                <button 
+                                    className="absolute right-stack-md top-1/2 -translate-y-1/2 text-secondary-fixed-dim hover:text-primary transition-colors" 
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 >
-                                    {showPassword ? (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                                    ) : (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                    )}
+                                    <span className="material-symbols-outlined">{showPassword ? "visibility_off" : "visibility"}</span>
                                 </button>
                             </div>
                         </div>
-                        <div className="flex justify-end">
-                            <Link href="/forgot-password" className="text-sm text-gray-500 hover:text-gray-900 hover:underline underline-offset-4">
-                                Forgot Password?
-                            </Link>
-                        </div>
-                        <Button type="submit" className="w-full" disabled={loading}>
+
+                        {/* Action Button */}
+                        <button 
+                            className="w-full mt-stack-md py-stack-md bg-primary text-on-primary font-button-text text-button-text rounded hover:bg-on-tertiary-container transition-all active:opacity-80 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed" 
+                            type="submit"
+                            disabled={loading}
+                        >
                             {loading ? (
                                 <>
                                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -114,21 +161,25 @@ export default function Login() {
                                     </svg>
                                     Signing in...
                                 </>
-                            ) : (
-                                'Sign In'
-                            )}
-                        </Button>
+                            ) : 'Sign In'}
+                        </button>
                     </form>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                    <p className="text-sm text-gray-500">
-                        Don&apos;t have an account?{' '}
-                        <Link href="/register" className="font-medium text-gray-900 hover:underline underline-offset-4">
-                            Sign up
-                        </Link>
-                    </p>
-                </CardFooter>
-            </Card>
+
+                    {/* Bottom Navigation */}
+                    <div className="text-center pt-stack-md border-t border-outline-variant">
+                        <p className="font-label-sm text-label-sm text-secondary">
+                            Don&apos;t have an account?{' '}
+                            <Link className="font-bold text-primary hover:underline transition-all" href="/register">Sign up</Link>
+                        </p>
+                    </div>
+
+                    {/* Mobile Support Links */}
+                    <div className="flex justify-center gap-stack-md md:hidden pt-stack-md">
+                        <Link className="font-label-sm text-label-sm text-secondary-fixed-dim" href="/support">Support</Link>
+                        <Link className="font-label-sm text-label-sm text-secondary-fixed-dim" href="/privacy">Privacy</Link>
+                    </div>
+                </div>
+            </main>
         </div>
     )
 }

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - Mayo Cosmic Care</title>
+<!-- Google Fonts: Hanken Grotesk -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-secondary-fixed-variant": "#464747",
+                        "inverse-primary": "#c6c6c6",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#838484",
+                        "surface-container": "#eeeeee",
+                        "primary": "#000000",
+                        "tertiary-fixed": "#e2e2e2",
+                        "surface": "#f9f9f9",
+                        "surface-bright": "#f9f9f9",
+                        "on-background": "#1a1c1c",
+                        "surface-container-low": "#f3f3f3",
+                        "secondary-container": "#e0dfdf",
+                        "background": "#f9f9f9",
+                        "on-primary-container": "#848484",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#2f3131",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#626363",
+                        "primary-fixed": "#e2e2e2",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#cfc4c5",
+                        "on-primary-fixed-variant": "#474747",
+                        "primary-container": "#1b1b1b",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#000000",
+                        "outline": "#7e7576",
+                        "on-surface": "#1a1c1c",
+                        "on-primary-fixed": "#1b1b1b",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "inverse-on-surface": "#f1f1f1",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-surface-variant": "#4c4546",
+                        "surface-variant": "#e2e2e2",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e8e8e8",
+                        "surface-container-highest": "#e2e2e2",
+                        "tertiary-container": "#1a1c1c",
+                        "surface-tint": "#5e5e5e",
+                        "surface-dim": "#dadada",
+                        "secondary": "#5e5e5f",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#e3e2e2",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "tertiary-fixed-dim": "#c6c6c6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "base": "8px",
+                        "stack-md": "24px",
+                        "container-margin": "64px",
+                        "section-gap": "80px",
+                        "stack-sm": "12px"
+                    },
+                    "fontFamily": {
+                        "display-xl": ["Hanken Grotesk"],
+                        "button-text": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "display-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "button-text": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f9f9f9;
+        }
+    </style>
+<style data-stitch-cursor=""></style><style data-stitch-scroll-lock=""></style><style data-stitch-cursor=""></style><style data-stitch-scroll-lock=""></style></head>
+<body class="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+<!-- Left Panel: Branding & Narrative (50/50 Split) -->
+<section class="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center"><div class="mb-stack-md self-start">
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+<span class="font-label-sm text-label-sm">Back to Home</span>
+</a>
+</div>
+<!-- Brand Header -->
+<header class="flex items-center gap-base justify-center">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Mayo Cosmic Care</h1>
+</header>
+<!-- Centerpiece Graphic & Message -->
+<div class="flex-grow flex flex-col justify-center items-center text-center max-w-lg mx-auto">
+<div class="relative w-full max-w-[180px] flex items-center justify-center mb-4"><img alt="Mayo Cosmic Care Logo" class="w-48 h-48 object-contain mx-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFVaWj12A6OTdl8eFJvi0L6T85qBS1ooAITpn-x8vil115XVfRgtLxaoSbW8n9uhc5ObIVGxKmgr2XUUaEK5YoX712JJ7kGWNFKzrZQm2e6eUc_WYv-fQRjRj_GmeqQhmFTfB2ic_aWYJy1AttQxugusFT8BjdXEvQIm8ZYZgJzHQOXEB9XGlTxg43IEhIXVLSFd-UCoBUIKQvhJDqLfQi4-6eVqCjt158p-T6NtOeuXFYMiQ1ri78-g_b9UL9LPjAlFx9YDM6SDg"/></div>
+<div class="space-y-stack-md">
+<h2 class="font-display-xl text-display-xl text-primary">Experience the Power of Bio Magnetic Wellness</h2>
+<p class="font-body-md text-body-md text-secondary max-w-md mx-auto">
+                    Premium bio magnetic mattress technology designed for better health, deeper sleep, and lasting vitality.
+                </p>
+</div>
+<!-- Feature List -->
+<ul class="w-full text-left space-y-stack-md pt-stack-md items-center">
+<li class="flex items-start gap-stack-md p-stack-md border border-outline-variant rounded-lg bg-surface-container-lowest justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="medical_services">medical_services</span>
+<div class="text-center">
+<p class="font-label-sm text-label-sm font-bold text-primary">Advanced Bio-Magnetic Matrix</p>
+<p class="font-label-sm text-label-sm text-secondary">Precision-engineered for holistic healing support.</p>
+</div>
+</li>
+<li class="flex items-start gap-stack-md p-stack-md border border-outline-variant rounded-lg bg-surface-container-lowest justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="bedtime">bedtime</span>
+<div class="text-center">
+<p class="font-label-sm text-label-sm font-bold text-primary">Enhanced Recovery</p>
+<p class="font-label-sm text-label-sm text-secondary">Deeper sleep cycles and body restoration overnight.</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Footer Segment -->
+<footer class="pt-stack-md">
+<p class="font-label-sm text-label-sm text-on-secondary-fixed-variant text-center">Essential Wellness. Designed for Longevity.</p>
+</footer>
+</section>
+<!-- Right Panel: Login Form (50/50 Split) -->
+<main class="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center p-gutter md:p-container-margin">
+<div class="w-full max-w-[440px] flex flex-col space-y-section-gap">
+<!-- Mobile Brand Header (Visible only on mobile) -->
+<header class="flex items-center gap-base mb-stack-md">
+<span class="material-symbols-outlined text-primary" data-icon="settings_ethernet">settings_ethernet</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">Mayo Cosmic Care</h1>
+</header>
+<div class="space-y-stack-sm">
+<h2 class="font-headline-lg text-headline-lg md:text-display-xl text-primary">Welcome back</h2>
+<p class="font-body-md text-body-md text-secondary">Enter your credentials to access your account</p>
+</div>
+<!-- Form Container -->
+<form class="flex flex-col space-y-stack-md" onsubmit="event.preventDefault();">
+<!-- Username Field -->
+<div class="flex flex-col space-y-base">
+<label class="font-label-sm text-label-sm text-primary" for="username">Username or Email</label>
+<input class="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all" id="username" placeholder="Enter your username or email" type="text"/>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col space-y-base">
+<div class="flex justify-between items-center">
+<label class="font-label-sm text-label-sm text-primary" for="password">Password</label>
+<a class="font-label-sm text-label-sm text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<input class="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-stack-md top-1/2 -translate-y-1/2 text-secondary-fixed-dim hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full mt-stack-md py-stack-md bg-primary text-on-primary font-button-text text-button-text rounded hover:bg-on-tertiary-container transition-all active:opacity-80" type="submit">
+                    Sign In
+                </button>
+</form>
+<!-- Bottom Navigation -->
+<div class="text-center pt-stack-md border-t border-outline-variant">
+<p class="font-label-sm text-label-sm text-secondary">
+                    Don't have an account? 
+                    <a class="font-bold text-primary hover:underline transition-all" href="#">Sign up</a>
+</p>
+</div>
+<!-- Mobile Support Links -->
+<div class="flex justify-center gap-stack-md md:hidden pt-stack-md">
+<a class="font-label-sm text-label-sm text-secondary-fixed-dim" href="#">Support</a>
+<a class="font-label-sm text-label-sm text-secondary-fixed-dim" href="#">Privacy</a>
+</div>
+</div>
+</main>
+<!-- Suppressed Navigation Shell as per Transactional Screen Rule -->
+</body></html>

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Hanken_Grotesk } from 'next/font/google'
 import './globals.css'
 import ClientToaster from '../components/ClientToaster'
 import HeaderClient from '../components/HeaderClient'
-import Footer from '../components/Footer'
+import FooterClient from '../components/FooterClient'
 import SmoothScroll from '../components/SmoothScroll'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const hankenGrotesk = Hanken_Grotesk({ subsets: ['latin'], variable: '--font-hanken-grotesk' })
 
 export const metadata: Metadata = {
   title: 'Mayo Cosmic Care - Partner Network',
@@ -26,7 +27,10 @@ import ContextProviders from '../components/ContextProviders'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col`} suppressHydrationWarning>
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+      </head>
+      <body className={`${inter.variable} ${hankenGrotesk.variable} font-sans antialiased bg-white text-gray-900 min-h-screen flex flex-col`} suppressHydrationWarning>
         <ContextProviders>
           <ClientToaster />
           <HeaderClient />
@@ -35,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </div>
           </SmoothScroll>
-          <Footer />
+          <FooterClient />
         </ContextProviders>
       </body>
     </html>

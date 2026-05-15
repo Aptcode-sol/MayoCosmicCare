@@ -1,14 +1,11 @@
 "use client"
-import dynamic from 'next/dynamic'
-import React from 'react'
 import { usePathname } from 'next/navigation'
-
-const Header = dynamic(() => import('./Header'), { ssr: false })
+import Footer from './Footer'
 
 const AUTH_PATHS = ['/login', '/register']
 
-export default function HeaderClient() {
+export default function FooterClient() {
     const pathname = usePathname()
     if (AUTH_PATHS.includes(pathname)) return null
-    return <Header />
+    return <Footer />
 }

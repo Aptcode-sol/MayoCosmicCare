@@ -60,13 +60,13 @@ export default function Login() {
             />
 
             {/* Right Panel: Login Form (50/50 Split) */}
-            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin">
+            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-8 pt-8 pb-6 sm:p-gutter md:p-container-margin">
                 <div className="w-full max-w-[440px] flex flex-col space-y-6 md:space-y-section-gap animate-fade-in">
-                    <Link href="/" className="md:hidden flex flex-col items-center gap-2 mb-2">
-                        <div className="relative w-10 h-10 flex-shrink-0">
-                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="40px" className="object-contain" />
+                    <Link href="/" className="md:hidden flex items-center gap-2 mb-6 self-start">
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                            <Image src="/MCC2.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
                         </div>
-                        <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                        <span className="text-[18px] font-semibold text-on-surface tracking-tight leading-tight">Mayo Cosmic Care</span>
                     </Link>
 
                     <div className="space-y-stack-sm">

@@ -95,11 +95,11 @@ export default function Login() {
             </section>
 
             {/* Right Panel: Login Form */}
-            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin">
+            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-8 pt-8 pb-6 sm:p-gutter md:p-container-margin">
                 <div className="w-full max-w-[400px]">
-                    <div className="md:hidden flex flex-col items-center gap-2 mb-4">
-                        <img src="/MCC_Light.png" alt="Mayo Cosmic Care" className="w-10 h-10 object-contain" />
-                        <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                    <div className="md:hidden flex items-center gap-2 mb-6 self-start">
+                        <img src="/MCC2.png" alt="Mayo Cosmic Care" className="w-8 h-8 object-contain" />
+                        <span className="text-[18px] font-semibold text-on-surface tracking-tight leading-tight">Mayo Cosmic Care</span>
                     </div>
 
                     {/* Form header */}

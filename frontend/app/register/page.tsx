@@ -280,13 +280,13 @@ export default function Register() {
                         { icon: 'mail', text: 'Code delivery to your registered email' },
                     ]}
                 />
-                <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin">
+                <section className="w-full md:w-1/2 flex items-center justify-center px-8 pt-8 pb-6 sm:p-gutter md:p-container-margin">
                     <div className="w-full max-w-[440px]">
-                        <Link href="/" className="md:hidden flex flex-col items-center gap-2 mb-4">
-                            <div className="relative w-10 h-10 flex-shrink-0">
-                                <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="40px" className="object-contain" />
+                        <Link href="/" className="md:hidden flex items-center gap-2 mb-6 self-start">
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                                <Image src="/MCC2.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
                             </div>
-                            <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                            <span className="text-[18px] font-semibold text-on-surface tracking-tight leading-tight">Mayo Cosmic Care</span>
                         </Link>
 
                         {/* Icon */}
@@ -381,13 +381,13 @@ export default function Register() {
                     { icon: 'diamond', text: 'Exclusive wellness products with high reward value' },
                 ]}
             />
-            <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-8 pb-6 sm:p-gutter md:p-container-margin relative">
+            <section className="w-full md:w-1/2 flex items-center justify-center px-8 pt-8 pb-6 sm:p-gutter md:p-container-margin relative">
                 <div className="w-full max-w-[440px] animate-fade-in">
-                    <Link href="/" className="md:hidden flex flex-col items-center gap-2 mb-4">
-                        <div className="relative w-10 h-10 flex-shrink-0">
-                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="40px" className="object-contain" />
+                    <Link href="/" className="md:hidden flex items-center gap-2 mb-6 self-start">
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                            <Image src="/MCC2.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
                         </div>
-                        <span className="text-2xl font-semibold text-on-surface tracking-tight">Mayo Cosmic Care</span>
+                        <span className="text-[18px] font-semibold text-on-surface tracking-tight leading-tight">Mayo Cosmic Care</span>
                     </Link>
 
                     <div className="mb-6">

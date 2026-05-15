@@ -271,16 +271,28 @@ export default function Register() {
     if (step === 2) {
         return (
             <div className="min-h-screen flex flex-col md:flex-row bg-surface-container-lowest text-on-surface font-body-md overflow-x-hidden selection:bg-primary-fixed selection:text-primary">
-                <LeftPanel />
-                <section className="w-full md:w-1/2 flex items-center justify-center p-gutter md:p-container-margin">
-                    <div className="w-full max-w-[440px]">
-                        {/* Mobile Logo */}
-                        <div className="md:hidden mb-stack-md flex items-center gap-3">
+                <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+                    <nav className="px-4 h-20 flex items-center justify-between">
+                        <Link href="/" className="flex items-center gap-2 min-w-0">
                             <div className="relative w-8 h-8 flex-shrink-0">
                                 <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
                             </div>
-                            <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary">Mayo Cosmic Care</span>
-                        </div>
+                            <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
+                        </Link>
+                    </nav>
+                </header>
+
+                <AuthLeftPanel
+                    variant="register"
+                    headline="Verify your email to continue"
+                    description="Enter the 6-digit code sent to your inbox to secure your account and complete registration."
+                    features={[
+                        { icon: 'security', text: 'Secure one-time code verification' },
+                        { icon: 'mail', text: 'Code delivery to your registered email' },
+                    ]}
+                />
+                <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-24 pb-4 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin">
+                    <div className="w-full max-w-[440px]">
 
                         {/* Icon */}
                         <div className="w-14 h-14 bg-surface-container-high rounded-xl flex items-center justify-center mb-6">
@@ -294,7 +306,7 @@ export default function Register() {
 
                         <div className="space-y-6">
                             {/* OTP Input Boxes */}
-                            <div className="flex justify-between gap-2">
+                            <div className="flex justify-center gap-1.5 sm:gap-2">
                                 {[0, 1, 2, 3, 4, 5].map((index) => (
                                     <input
                                         key={index}
@@ -305,7 +317,7 @@ export default function Register() {
                                         value={otpDigits[index]}
                                         onChange={(e) => handleOtpChange(index, e.target.value)}
                                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                        className="w-12 h-14 text-center text-2xl font-display-xl font-bold bg-surface-container-lowest border border-outline-variant rounded focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface transition-all"
+                                        className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-display-xl font-bold bg-surface-container-lowest border border-outline-variant rounded focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface transition-all"
                                     />
                                 ))}
                             </div>
@@ -365,6 +377,17 @@ export default function Register() {
     // Step 1: Registration Form
     return (
         <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+            <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+                <nav className="px-4 h-20 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-2 min-w-0">
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
+                        </div>
+                        <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
+                    </Link>
+                </nav>
+            </header>
+
             <AuthLeftPanel
                 variant="register"
                 headline="Join the Bio Magnetic Wellness Revolution"
@@ -374,18 +397,11 @@ export default function Register() {
                     { icon: 'diamond', text: 'Exclusive wellness products with high reward value' },
                 ]}
             />
-            <section className="w-full md:w-1/2 flex items-center justify-center p-gutter md:p-container-margin relative pb-16">
+            <section className="w-full md:w-1/2 flex items-center justify-center px-6 pt-24 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin relative pb-16">
                 <div className="w-full max-w-[440px] animate-fade-in">
-                    {/* Mobile Logo */}
-                    <div className="md:hidden mb-stack-md flex items-center gap-3">
-                        <div className="relative w-8 h-8 flex-shrink-0">
-                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
-                        </div>
-                        <span className="font-headline-lg-mobile text-headline-lg-mobile text-primary">Mayo Cosmic Care</span>
-                    </div>
 
                     <div className="mb-6">
-                        <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2 tracking-tight">Create an account</h1>
+                        <h1 className="font-headline-lg text-3xl sm:text-headline-lg text-on-surface mb-2 tracking-tight leading-tight">Create an account</h1>
                         <p className="text-on-surface-variant font-body-md text-sm">Join the Mayo Cosmic Care network today</p>
                     </div>
 
@@ -396,7 +412,7 @@ export default function Register() {
                             </label>
                             <input
                                 id="full-name"
-                                className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                className="w-full px-3 py-3 text-base md:text-body-md bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                 type="text"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -412,7 +428,7 @@ export default function Register() {
                             <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="email">Email</label>
                             <input
                                 id="email"
-                                className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                className="w-full px-3 py-3 text-base md:text-body-md bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                 type="email"
                                 value={form.email}
                                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -429,7 +445,7 @@ export default function Register() {
                             <div className="relative">
                                 <input
                                     id="password"
-                                    className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 pr-12"
+                                    className="w-full px-3 py-3 pr-12 text-base md:text-body-md bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                     type={showPassword ? "text" : "password"}
                                     value={form.password}
                                     onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -444,7 +460,7 @@ export default function Register() {
                                     <span className="material-symbols-outlined text-[20px]">{showPassword ? "visibility_off" : "visibility"}</span>
                                 </button>
                             </div>
-                            
+
                             {/* Password Strength Indicator */}
                             {form.password && (
                                 <div className="space-y-2 mt-2">
@@ -493,7 +509,7 @@ export default function Register() {
                             <div className="relative">
                                 <input
                                     id="confirm-password"
-                                    className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 pr-12"
+                                    className="w-full px-3 py-3 pr-12 text-base md:text-body-md bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                     type={showConfirmPassword ? "text" : "password"}
                                     value={form.confirmPassword}
                                     onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
@@ -526,9 +542,9 @@ export default function Register() {
                                     <div className="h-8 w-8 rounded-full bg-surface-variant flex items-center justify-center text-xs font-medium text-on-surface">
                                         {selectedSponsor.username.slice(0, 2).toUpperCase()}
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="text-sm font-medium text-on-surface">{selectedSponsor.username}</div>
-                                        <div className="text-xs text-secondary">{selectedSponsor.email}</div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-medium text-on-surface truncate">{selectedSponsor.username}</div>
+                                        <div className="text-xs text-secondary truncate">{selectedSponsor.email}</div>
                                     </div>
                                     <button
                                         type="button"
@@ -545,7 +561,7 @@ export default function Register() {
                                 <>
                                     <input
                                         id="sponsor"
-                                        className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                        className="w-full px-3 py-3 text-base md:text-body-md bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                         type="text"
                                         value={sponsorQuery}
                                         onChange={(e) => {
@@ -583,7 +599,7 @@ export default function Register() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-primary text-on-primary py-3 px-base rounded font-button-text text-button-text hover:bg-on-surface-variant transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="w-full min-h-12 bg-primary text-on-primary py-3 px-base rounded font-button-text text-button-text hover:bg-on-surface-variant transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
                             >
                                 {loading ? (
                                     <>

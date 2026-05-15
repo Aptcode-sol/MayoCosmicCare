@@ -49,6 +49,17 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+            <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+                <nav className="px-4 h-20 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-2 min-w-0">
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
+                        </div>
+                        <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
+                    </Link>
+                </nav>
+            </header>
+
             <AuthLeftPanel
                 variant="login"
                 headline="Experience the Power of Bio Magnetic Wellness"
@@ -60,18 +71,11 @@ export default function Login() {
             />
 
             {/* Right Panel: Login Form (50/50 Split) */}
-            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center p-gutter md:p-container-margin">
-                <div className="w-full max-w-[440px] flex flex-col space-y-section-gap animate-fade-in">
-                    {/* Mobile Brand Header */}
-                    <header className="flex md:hidden items-center gap-base mb-stack-md">
-                        <div className="relative w-8 h-8 flex-shrink-0">
-                            <Image src="/MCC_Light.png" alt="Mayo Cosmic Care" fill sizes="32px" className="object-contain" />
-                        </div>
-                        <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">Mayo Cosmic Care</h1>
-                    </header>
+            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-6 pt-24 pb-4 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin">
+                <div className="w-full max-w-[440px] flex flex-col space-y-6 md:space-y-section-gap animate-fade-in">
 
                     <div className="space-y-stack-sm">
-                        <h2 className="font-headline-lg text-headline-lg md:text-display-xl text-primary">Welcome back</h2>
+                        <h2 className="font-headline-lg text-3xl sm:text-headline-lg md:text-display-xl text-primary leading-tight">Welcome back</h2>
                         <p className="font-body-md text-body-md text-secondary">Enter your credentials to access your account</p>
                     </div>
 
@@ -81,7 +85,7 @@ export default function Login() {
                         <div className="flex flex-col space-y-base">
                             <label className="font-label-sm text-label-sm text-primary" htmlFor="username">Username or Email</label>
                             <input
-                                className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all"
+                                className="w-full px-stack-md py-3 border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface text-base md:text-body-md placeholder:text-secondary-fixed-dim transition-all"
                                 id="username"
                                 placeholder="Enter your username or email"
                                 type="text"
@@ -99,7 +103,7 @@ export default function Login() {
                             </div>
                             <div className="relative">
                                 <input
-                                    className="w-full px-stack-md py-stack-sm border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface font-body-md placeholder:text-secondary-fixed-dim transition-all"
+                                    className="w-full px-stack-md py-3 border border-outline-variant rounded bg-surface focus:ring-0 focus:border-primary focus:outline-none text-on-surface text-base md:text-body-md placeholder:text-secondary-fixed-dim transition-all"
                                     id="password"
                                     placeholder="••••••••"
                                     type={showPassword ? "text" : "password"}
@@ -119,7 +123,7 @@ export default function Login() {
 
                         {/* Action Button */}
                         <button
-                            className="w-full mt-stack-md py-stack-md bg-primary text-on-primary font-button-text text-button-text rounded hover:bg-on-tertiary-container transition-all active:opacity-80 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full mt-stack-md min-h-12 py-stack-md bg-primary text-on-primary font-button-text text-button-text rounded hover:bg-on-tertiary-container transition-all active:opacity-80 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
                             type="submit"
                             disabled={loading}
                         >

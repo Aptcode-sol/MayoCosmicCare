@@ -38,6 +38,15 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row overflow-x-hidden animate-slide-in-left">
+            <header className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+                <nav className="px-4 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <img src="/MCC_Light.png" alt="Mayo Cosmic Care" className="w-8 h-8 object-contain" />
+                        <span className="text-md font-semibold text-gray-900 whitespace-nowrap">Mayo Cosmic Care</span>
+                    </div>
+                </nav>
+            </header>
+
             {/* Left Panel: Branding */}
             <section className="hidden md:flex md:w-1/2 bg-surface-container-low border-r border-outline-variant flex-col p-container-margin items-center">
                 {/* Back nav placeholder to keep spacing consistent */}
@@ -95,18 +104,12 @@ export default function Login() {
             </section>
 
             {/* Right Panel: Login Form */}
-            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center p-gutter md:p-container-margin">
+            <main className="w-full md:w-1/2 bg-surface-container-lowest flex items-center justify-center px-6 pt-24 pb-4 sm:p-gutter sm:pt-24 md:p-container-margin md:pt-container-margin">
                 <div className="w-full max-w-[400px]">
-
-                    {/* Mobile brand header */}
-                    <div className="flex md:hidden items-center gap-2 mb-stack-md">
-                        <span className="material-symbols-outlined text-primary">admin_panel_settings</span>
-                        <span className="text-label-sm font-bold text-primary uppercase tracking-widest">Admin Portal</span>
-                    </div>
 
                     {/* Form header */}
                     <div className="mb-6">
-                        <h2 className="text-display-xl text-on-surface mb-2 tracking-tight">Welcome back</h2>
+                        <h2 className="text-3xl sm:text-display-xl text-on-surface mb-2 tracking-tight leading-tight">Welcome back</h2>
                         <p className="text-body-md text-on-surface-variant">Enter your admin credentials to access the dashboard.</p>
                     </div>
 
@@ -121,7 +124,7 @@ export default function Login() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
+                                className="w-full px-3 py-3 text-base bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                 placeholder="admin@mayocosmiccare.com"
                                 required
                             />
@@ -147,7 +150,7 @@ export default function Login() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 pr-10"
+                                    className="w-full px-3 py-3 pr-10 text-base bg-surface-container-lowest border border-outline-variant rounded text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -168,7 +171,7 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-primary text-on-primary py-3 px-base rounded text-button-text font-semibold hover:bg-primary-container transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 "
+                                className="w-full min-h-12 bg-primary text-on-primary py-3 px-base rounded text-button-text font-semibold hover:bg-primary-container transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <>

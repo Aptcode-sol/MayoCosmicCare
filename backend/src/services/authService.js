@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PrismaClient, Prisma } = require('@prisma/client');
+const { Prisma } = require('@prisma/client');
 const prisma = require('../prismaClient');
 const { placeNewUser } = require('./placementService');
 const { generateOtp, storeOtp, verifyOtp, peekOtp } = require('./otpService');

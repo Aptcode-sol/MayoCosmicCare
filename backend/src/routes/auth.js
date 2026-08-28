@@ -8,7 +8,6 @@ const {
 } = require('../services/authService');
 const { authenticate } = require('../middleware/authMiddleware');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
-const { PrismaClient } = require('@prisma/client');
 const prisma = require('../prismaClient');
 
 

@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/authMiddleware');
 const { requireAdmin } = require('../middleware/adminMiddleware');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 
 // Get all rank changes with optional filters and pagination
 router.get('/', authenticate, requireAdmin, async (req, res) => {

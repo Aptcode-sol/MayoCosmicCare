@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getUserTree } = require('../services/userService');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 
 router.get('/:id/tree', async (req, res) => {
     try {

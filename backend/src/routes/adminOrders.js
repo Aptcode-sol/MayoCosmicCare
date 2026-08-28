@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prismaClient');
 const { authenticateToken, authorizeAdmin } = require('../middleware/auth'); // Assuming authorizeAdmin exists or check role manually
 
 const checkAdmin = (req, res, next) => {

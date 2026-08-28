@@ -1,16 +1,14 @@
+require('dotenv').config();
+
 const { Worker } = require('bullmq');
-const IORedis = require('ioredis');
+const { workerConnection } = require('../redisConnection');
+const { rateLimited } = require('../../logger');
 
 const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true';
 
 if (REDIS_ENABLED) {
-    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
-
     try {
-        const connection = new IORedis(redisUrl, {
-            maxRetriesPerRequest: null,
-            lazyConnect: true
-        });
+        const connection = workerConnection('receipt-worker');
 
         const worker = new Worker('receipt-email', async (job) => {
             const { orderId } = job.data;
@@ -67,6 +65,11 @@ if (REDIS_ENABLED) {
 
         worker.on('failed', (job, err) => {
             console.error(`[RECEIPT-WORKER] Job ${job?.id} failed:`, err.message);
+        });
+
+        // Was missing entirely: without this a dead connection hot-loops silently.
+        worker.on('error', (err) => {
+            rateLimited('worker:receipt', 'receipt_worker_error', { err: err.message });
         });
 
         // console.log('[RECEIPT-WORKER] Receipt email worker started');

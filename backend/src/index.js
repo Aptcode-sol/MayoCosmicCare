@@ -23,15 +23,18 @@ app.use(cors());
 app.use(cookieParser());
 app.use(express.json({ limit: '10kb' }));
 
-// Request logging middleware
-app.use((req, res, next) => {
-    const start = Date.now();
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        console.log(`[${new Date().toLocaleString()}] [${req.method}] ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
+// Request logging. Off by default: this logged EVERY request and was the main
+// contributor to the unbounded PM2 logs that filled the 8GB root volume.
+// Set REQUEST_LOGGING=true to re-enable for debugging.
+if (process.env.REQUEST_LOGGING === 'true') {
+    app.use((req, res, next) => {
+        const start = Date.now();
+        res.on('finish', () => {
+            console.log(`[${new Date().toISOString()}] [${req.method}] ${req.originalUrl} - ${res.statusCode} - ${Date.now() - start}ms`);
+        });
+        next();
     });
-    next();
-});
+}
 
 // Rate limiting
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
@@ -52,8 +55,6 @@ const treeRouter = require('./routes/tree');
 const referralsRouter = require('./routes/referrals');
 const pairPayoutsRouter = require('./routes/pairPayouts');
 const dashboardRouter = require('./routes/dashboard');
-const queueStatsRouter = require('./routes/queueStats');
-const { router: sseRouter } = require('./routes/sse');
 const kycRouter = require('./routes/kyc');
 const paymentRouter = require('./routes/payment');
 const payoutsRouter = require('./routes/payouts');
@@ -76,8 +77,6 @@ app.use('/api/tree', treeRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/pair-payouts', pairPayoutsRouter);
 app.use('/api/dashboard', dashboardRouter);
-app.use('/api/queue', queueStatsRouter);
-app.use('/api/sse', sseRouter);
 app.use('/api/kyc', kycRouter);
 app.use('/api/payment', authenticate, paymentRouter);
 app.use('/api/payouts', authenticate, payoutsRouter);
@@ -86,20 +85,75 @@ app.use('/api/orders', authenticate, ordersRouter);
 
 app.get('/', (req, res) => res.json({ ok: true, message: 'MLM Backend Running' }));
 
-// Start matching worker (BullMQ) - requires Redis
-try {
-    require('./queues/workers/matchingWorker');
-    console.log('Matching worker started');
-} catch (err) {
-    console.warn('Matching worker not started (Redis may not be available):', err.message);
+/**
+ * Real health check.
+ *
+ * The queue block is the important part: during the outage the API was healthy,
+ * Redis was reachable, and jobs were being enqueued fine — but nothing was
+ * consuming them. `waiting` climbing with `workers: 0` is the signal that would
+ * have caught it in hours instead of seven weeks. Alarm on those two.
+ */
+app.get('/health', async (req, res) => {
+    const prisma = require('./prismaClient');
+    const { matchingQueue } = require('./queues/queue');
+    const out = { ok: false, db: 'down', redis: 'down', queue: null, workers: null, oldestWaitingMs: null };
+
+    // Never echo raw driver errors here: this endpoint is unauthenticated and
+    // Prisma/ioredis messages embed the DB and Redis host:port.
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        out.db = 'up';
+    } catch (err) {
+        out.db = 'down';
+        console.error('[health] db check failed:', err.message);
+    }
+
+    if (matchingQueue) {
+        try {
+            out.queue = await matchingQueue.getJobCounts();
+            out.redis = 'up';
+            out.workers = (await matchingQueue.getWorkers()).length;
+
+            const [oldest] = await matchingQueue.getWaiting(0, 0);
+            if (oldest?.timestamp) out.oldestWaitingMs = Date.now() - oldest.timestamp;
+        } catch (err) {
+            out.redis = 'down';
+            console.error('[health] redis check failed:', err.message);
+        }
+    } else {
+        out.redis = 'disabled';
+    }
+
+    // Degraded, not down, if Redis is off: the inline fallback still pays out.
+    out.ok = out.db === 'up' && out.redis !== 'down';
+    res.status(out.ok ? 200 : 503).json(out);
+});
+
+// QueueScheduler: required in BullMQ v1 for retries, delayed-job promotion and
+// stalled-job recovery. Only one instance should run it, hence the guard.
+// Phase 2 moves this into a dedicated worker process.
+if (!process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0') {
+    try {
+        require('./queues/scheduler').startSchedulers();
+    } catch (err) {
+        console.warn('Queue schedulers not started:', err.message);
+    }
 }
 
-// Start receipt email worker (BullMQ) - requires Redis
+// Start BullMQ workers. Each module no-ops unless REDIS_ENABLED=true and logs
+// its own status, so don't claim "started" here — that was misleading.
+// Note these run in EVERY cluster instance; Phase 2 moves them to a dedicated
+// single worker process.
+try {
+    require('./queues/workers/matchingWorker');
+} catch (err) {
+    console.warn('Matching worker failed to load:', err.message);
+}
+
 try {
     require('./queues/workers/receiptEmailWorker');
-    console.log('Receipt email worker started');
 } catch (err) {
-    console.warn('Receipt email worker not started (Redis may not be available):', err.message);
+    console.warn('Receipt email worker failed to load:', err.message);
 }
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

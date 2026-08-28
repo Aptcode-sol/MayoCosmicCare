@@ -1,39 +1,8 @@
 const prisma = require('../prismaClient');
 const crypto = require('crypto');
-
-/**
- * Calculate 1:1 tail binary matching.
- * Pairs = min(left, right) - (left === right ? 1 : 0)
- * Requires an extra "tail" member on one side for matching to work.
- * Each pair consumes 1 from left + 1 from right = 2 members total.
- */
-function calculate1to1TailMatching(leftCount, rightCount) {
-    const left = leftCount;
-    const right = rightCount;
-
-    // Need at least 1 on each side, and a tail (extra) on one side
-    // If equal: pairs = count - 1 (no tail on either side for the last one)
-    // If unequal: pairs = min (the smaller side fully pairs, larger has tail)
-    let totalMatches = 0;
-    if (left > 0 && right > 0) {
-        totalMatches = left === right
-            ? Math.max(0, left - 1)
-            : Math.min(left, right);
-    }
-
-    const leftConsumed = totalMatches;
-    const rightConsumed = totalMatches;
-    const carryLeft = left - leftConsumed;
-    const carryRight = right - rightConsumed;
-
-    return {
-        totalMatches,
-        membersConsumed: totalMatches * 2,
-        leftConsumed, rightConsumed,
-        carryLeft, carryRight,
-        matchType: totalMatches > 0 ? '1:1' : 'none'
-    };
-}
+// Pure helpers live in matchingMath.js so they can be unit-tested without a DB.
+// Keep them there — do not re-inline this logic.
+const { calculate1to1TailMatching, rankForPairs, istDayBounds } = require('./matchingMath');
 
 /**
  * Credit leadership bonus to sponsor when referral earns income.
@@ -53,10 +22,7 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
     if (bonusAmount <= 0) return null;
 
     // Check daily limit (Strictly IST based)
-    const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
-    const nowIst = new Date(nowStr);
-    const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
-    const todayEnd = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate() + 1);
+    const { todayStart, todayEnd } = istDayBounds();
 
     let counter = await prismaClient.dailyLeadershipCounter.findFirst({
         where: { userId: sponsorId, date: { gte: todayStart, lt: todayEnd } }
@@ -187,10 +153,7 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         if (leftTotal <= 0 || rightTotal <= 0) return null;
 
         // Use start and end of today for date comparison (Strictly IST based)
-        const nowStr = new Date().toLocaleString("en-US", { timeZone: 'Asia/Kolkata' });
-        const nowIst = new Date(nowStr);
-        const todayStart = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate());
-        const todayEnd = new Date(nowIst.getFullYear(), nowIst.getMonth(), nowIst.getDate() + 1);
+        const { todayStart, todayEnd } = istDayBounds();
 
         let counter = await tx.dailyPairCounter.findFirst({
             where: { userId, date: { gte: todayStart, lt: todayEnd } }
@@ -260,31 +223,9 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
         const newTotalPairs = currentTotalPairs + matchesToPay;
 
         // 2. Determine new rank
-        let newRank = "Rookie";
-        if (newTotalPairs >= 50000) newRank = "National Director";
-        else if (newTotalPairs >= 20000) newRank = "Director";
-        else if (newTotalPairs >= 10000) newRank = "Regional Manager";
-        else if (newTotalPairs >= 5000) newRank = "Senior Manager";
-        else if (newTotalPairs >= 1000) newRank = "Manager";
-        else if (newTotalPairs >= 300) newRank = "Assistant Manager";
-        else if (newTotalPairs >= 150) newRank = "Senior Team Leader";
-        else if (newTotalPairs >= 100) newRank = "Team Leader";
-        else if (newTotalPairs >= 50) newRank = "Senior Associate";
-        else if (newTotalPairs >= 15) newRank = "Associate Executive";
-        else newRank = "Rookie";
-
+        const newRank = rankForPairs(newTotalPairs);
 
         // 3. Update User with new totalPairs and Rank (if changed)
-        // Note: We already updated user counts above, so we can chain another update or merge them if performance is critical
-        // Merging into the previous update call would be better but requires logic shift. Ideally we do one update.
-        // For now, let's do a separate update to keep logic clean, or append to the previous one.
-        // Let's do a meaningful update only if needed.
-
-        // Actually, we can just perform the update. Since we are in a transaction, it's fine.
-        // But wait, we already did `tx.user.update` for member counts. Let's optimize by adding this logic BEFORE that update and doing it in ONE go?
-        // No, `matchesToPay` is calculated after. 
-        // Let's just do a second update for now to be safe and simple.
-
         const updateData = { totalPairs: { increment: matchesToPay } };
         // Only update rank if it's "higher"? The logic implies simple threshold check is sufficient assuming pairs only go up.
         if (newRank !== user.rank) {
@@ -306,7 +247,10 @@ async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
             data: updateData
         });
 
-        try { const { broadcastPayout } = require('../routes/sse'); broadcastPayout(payout).catch?.(() => { }); } catch (e) { }
+        // (Removed: an SSE broadcast used to run here via a circular
+        // require('../routes/sse'). Its body was a synchronous res.write loop over
+        // every subscriber, executing inside the payout's critical section, and it
+        // had zero consumers in the frontend or admin app.)
 
         // Trigger leadership bonus for user's sponsor
         if (user.sponsorId && bonus > 0) {

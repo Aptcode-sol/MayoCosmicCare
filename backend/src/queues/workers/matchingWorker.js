@@ -1,76 +1,64 @@
+// Loaded directly by `npm run worker:matching`, so it must bootstrap its own env.
+// Without this, REDIS_ENABLED/DATABASE_URL are undefined and the standalone
+// worker silently prints "disabled" and exits — it has never actually worked.
+require('dotenv').config();
+
 const { Worker } = require('bullmq');
 const { processMatchingBonus } = require('../../services/commissionService');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { workerConnection } = require('../redisConnection');
+const { info, error, rateLimited } = require('../../logger');
+const prisma = require('../../prismaClient');
 
-// Only enable Redis if explicitly set to 'true'
 const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true';
+const CONCURRENCY = Number(process.env.MATCHING_CONCURRENCY || 5);
 
 let worker = null;
 
 if (REDIS_ENABLED) {
-    const IORedis = require('ioredis');
-    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+    const connection = workerConnection('matching-worker');
 
-    try {
-        const connection = new IORedis(redisUrl, {
-            maxRetriesPerRequest: null,
-            retryStrategy: (times) => {
-                if (times > 3) {
-                    console.warn('Redis connection failed after 3 attempts, worker disabled');
-                    return null;
-                }
-                return Math.min(times * 100, 3000);
-            }
-        });
+    worker = new Worker('matching', async (job) => {
+        const { userId } = job.data;
+        try {
+            await processMatchingBonus(prisma, userId);
+            info('matching_job_completed', { jobId: job.id, userId });
+        } catch (err) {
+            error('matching_job_failed', { jobId: job.id, userId, err: err.message });
+            throw err; // let BullMQ retry (requires the QueueScheduler)
+        }
+    }, { connection, concurrency: CONCURRENCY });
 
-        connection.on('error', (err) => {
-            console.warn('Redis connection error:', err.message);
-        });
+    worker.on('failed', (job, err) => {
+        error('matching_job_failed_event', { jobId: job?.id, err: err?.message });
+    });
 
-        worker = new Worker('matching', async job => {
-            const { userId } = job.data;
-            try {
-                await processMatchingBonus(prisma, userId);
-                try { const { info } = require('../../logger'); info('matching_job_completed', { jobId: job.id, userId }); } catch (e) { }
-            } catch (err) {
-                console.error('Error processing matching bonus for', userId, err);
-                try { const { error } = require('../../logger'); error('matching_job_failed', { jobId: job.id, userId, err: err.message }); } catch (e) { }
-                throw err;
-            }
-        }, { connection, concurrency: 5 });
+    // Previously absent. A dead connection makes BullMQ hot-loop moveToActive,
+    // and without a rate limit that wrote ~1GB of identical stack traces to disk.
+    worker.on('error', (err) => {
+        rateLimited('worker:matching', 'matching_worker_error', { err: err.message });
+    });
 
-        worker.on('completed', job => console.log('Matching job completed', job.id));
-        worker.on('failed', (job, err) => console.error('Matching job failed', job.id, err));
-
-        console.log('Matching worker started (Redis enabled)');
-    } catch (err) {
-        console.warn('Could not initialize matching worker:', err.message);
-    }
+    info('matching_worker_started', { concurrency: CONCURRENCY });
+    console.log('Matching worker started (Redis enabled)');
 } else {
     console.log('Matching worker disabled (set REDIS_ENABLED=true to enable)');
 }
 
-// Graceful shutdown
-
-// Only exit process if not running as a PM2 cluster worker
-process.on('SIGINT', async () => {
-    // console.error('[SIGINT] Received in matchingWorker.js', {
-    //     pid: process.pid,
-    //     pm_id: process.env.pm_id,
-    //     NODE_APP_INSTANCE: process.env.NODE_APP_INSTANCE,
-    //     uptime: process.uptime(),
-    //     memory: process.memoryUsage(),
-    //     env: process.env
-    // });
-    if (worker) {
-        console.log('Shutting down matching worker...');
-        await worker.close();
+async function shutdown(signal) {
+    console.log(`[matching-worker] ${signal} received, draining...`);
+    try {
+        if (worker) await worker.close(); // waits for in-flight jobs
+    } catch (err) {
+        error('matching_worker_shutdown_error', { err: err.message });
     }
-    // Only exit if not a PM2 cluster worker
+    // Only own the exit when running standalone; under PM2 cluster the API
+    // process manages its own lifecycle.
     if (!process.env.NODE_APP_INSTANCE && !process.env.pm_id) {
         process.exit(0);
     }
-});
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM')); // PM2 sends SIGTERM, not SIGINT
 
 module.exports = worker;

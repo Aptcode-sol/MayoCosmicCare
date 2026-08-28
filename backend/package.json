@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "postinstall": "prisma generate",
+    "test": "node --test --test-concurrency=1 'test/unit/*.test.js'",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "main": "src/index.js",
@@ -43,15 +44,13 @@
     "pdfkit": "^0.17.2",
     "pg": "^8.10.0",
     "prisma": "^5.0.0",
-    "puppeteer": "^24.37.3",
     "zod": "^3.21.4"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
   },
   "optionalDependencies": {
-    "@bull-board/express": "^4.0.0",
-    "winston": "^3.8.2"
+    "@bull-board/express": "^4.0.0"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

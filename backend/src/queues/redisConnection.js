@@ -14,6 +14,19 @@ const { rateLimited } = require('../logger');
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
+/**
+ * Explicit TLS for rediss:// (AWS ElastiCache/Valkey).
+ *
+ * ioredis does derive `tls: true` from the rediss:// scheme on its own, but the
+ * configuration that has actually been running in production since 2026-02-25
+ * passes `tls: {}` explicitly — it was an undocumented hotfix applied directly on
+ * the EC2 box and hidden from git with `git update-index --skip-worktree`, so it
+ * never appeared in any diff. Since only the `tls: {}` form is known to work
+ * against that cluster, reproduce it exactly rather than relying on ioredis's
+ * inferred value, which has never been exercised there.
+ */
+const TLS_OPTIONS = REDIS_URL.startsWith('rediss://') ? { tls: {} } : {};
+
 /** Exponential-ish backoff, capped. Never returns null — that is the whole point. */
 function retryStrategy(times) {
     return Math.min(times * 200, 5000);
@@ -39,6 +52,7 @@ function attachHandlers(client, label) {
  */
 function workerConnection(label = 'worker') {
     return attachHandlers(new IORedis(REDIS_URL, {
+        ...TLS_OPTIONS,
         maxRetriesPerRequest: null,
         enableReadyCheck: false,
         retryStrategy,
@@ -58,6 +72,7 @@ function workerConnection(label = 'worker') {
  */
 function producerConnection(label = 'producer') {
     return attachHandlers(new IORedis(REDIS_URL, {
+        ...TLS_OPTIONS,
         maxRetriesPerRequest: 2,
         enableOfflineQueue: false,
         connectTimeout: 5000,

@@ -1,7 +1,8 @@
 const prisma = require('../prismaClient');
-const { creditDirectBonus } = require('./commissionService');
+const { creditDirectBonusInTx } = require('./commissionService');
 const { addMatchingJob } = require('../queues/queue');
 const { placeNewUser } = require('./placementService');
+const { error } = require('../logger');
 
 /**
  * Process purchase: reduce stock, create transaction, update BV up the uplines
@@ -116,20 +117,18 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
         // Credit direct bonus to sponsor ONLY on buyer's FIRST purchase
         // const buyer = await tx.user.findUnique({ where: { id: userId } }); // Already fetched
         console.log('[PURCHASE] Refetched buyer:', buyer.id, 'Sponsor:', buyer.sponsorId, 'hasPurchased:', buyer.hasPurchased);
-        let deferredDirectBonus = null;
         if (buyer && buyer.sponsorId) {
             if (isFirstPurchase) {
-                try {
-                    await creditDirectBonus(tx, buyer.sponsorId, product.bv, buyer.id);
-                    console.log('[PURCHASE] Direct bonus credited to sponsor:', buyer.sponsorId);
-                } catch (err) {
-                    const msg = String(err?.message || err).toLowerCase()
-                    if (msg.includes('transaction') || msg.includes('unable to start a transaction') || msg.includes('transaction not found')) {
-                        throw err
-                    }
-                    deferredDirectBonus = { sponsorId: buyer.sponsorId, bv: product.bv };
-                    try { const { error } = require('../logger'); error('direct-bonus-deferred', { err: err.message }); } catch (e) { }
-                }
+                // No try/catch: a failure here must roll the purchase back.
+                //
+                // This used to be swallowed into a `deferredDirectBonus`, whose
+                // "recovery" enqueued a MATCHING job — which pays a different
+                // bonus type entirely and never credits the direct bonus. That
+                // money was silently dropped. The old catch existed to defend
+                // against nested-transaction errors, which cannot happen now that
+                // this is a transaction-only helper.
+                await creditDirectBonusInTx(tx, buyer.sponsorId, product.bv, buyer.id);
+                console.log('[PURCHASE] Direct bonus credited to sponsor:', buyer.sponsorId);
             } else {
                 console.log('[PURCHASE] Skipping direct bonus - not first purchase');
             }
@@ -139,7 +138,6 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
         let current = buyer;
         const visited = new Set();
         let loopCount = 0;
-        const { processMatchingBonus } = require('./commissionService');
         while (current && current.parentId) {
             if (loopCount++ > 1000) {
                 console.error('[PURCHASE] BV propagation depth exceeded limit (1000) for user:', userId);
@@ -151,18 +149,27 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
             }
             visited.add(current.parentId);
 
-            const parent = await tx.user.findUnique({ where: { id: current.parentId } });
+            const parent = await tx.user.findUnique({
+                where: { id: current.parentId },
+                select: { id: true, parentId: true, position: true }
+            });
             if (!parent) break;
 
             // Prepare update data for the parent
             const updateData = {};
 
-            // Use current user's position relative to their parent
+            // Use current user's position relative to their parent.
+            //
+            // BV uses `increment`, not `parent.leftBV + product.bv`. The old
+            // read-modify-write lost an increment whenever two purchases shared an
+            // upline: both read the same value and the second overwrote the first.
+            // Note the member count beside it was already atomic — the two
+            // adjacent lines disagreed.
             if (current.position === 'LEFT') {
-                updateData.leftBV = parent.leftBV + product.bv;
+                updateData.leftBV = { increment: product.bv };
                 if (isFirstPurchase) updateData.leftMemberCount = { increment: 1 };
             } else if (current.position === 'RIGHT') {
-                updateData.rightBV = parent.rightBV + product.bv;
+                updateData.rightBV = { increment: product.bv };
                 if (isFirstPurchase) updateData.rightMemberCount = { increment: 1 };
             }
 
@@ -171,7 +178,7 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
             current = parent;
         }
 
-        return { success: true, sponsorsToQueue, deferredDirectBonus };
+        return { success: true, sponsorsToQueue };
     };
 
     // Retry transient transaction start failures
@@ -182,24 +189,18 @@ async function purchaseProduct(userId, productId, newSponsorId = null, leg = nul
         try {
             const result = await prisma.$transaction(runTx, { maxWait: 5000, timeout: 20000 })
 
-            // After transaction commits, enqueue matching jobs for collected sponsors
+            // After the transaction commits, trigger matching for each upline.
+            // addMatchingJob now falls back to inline processing if the queue is
+            // unavailable, so a failure here means the payout genuinely could not
+            // be made rather than the job merely being dropped — log it loudly.
+            // The Phase 2 reconciliation sweep is the backstop.
             if (result && result.sponsorsToQueue && result.sponsorsToQueue.length) {
                 for (const sponsorId of result.sponsorsToQueue) {
                     try {
                         await addMatchingJob(sponsorId);
-                    } catch (e) {
-                        try { const { error } = require('../logger'); error('queue-add-failed', { sponsorId, err: e.message }); } catch (e) { }
+                    } catch (err) {
+                        error('matching_trigger_failed', { sponsorId, buyerId: userId, err: err.message });
                     }
-                }
-            }
-
-            // If direct bonus was deferred due to transaction issues, enqueue a fallback job to credit it
-            if (result && result.deferredDirectBonus) {
-                const d = result.deferredDirectBonus;
-                try {
-                    await addMatchingJob(d.sponsorId);
-                } catch (e) {
-                    try { const { error } = require('../logger'); error('direct-bonus-enqueue-failed', { sponsorId: d.sponsorId, err: e.message }); } catch (e) { }
                 }
             }
 

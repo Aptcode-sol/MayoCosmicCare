@@ -8,9 +8,15 @@
  * Run after stress test to calculate all pending matching bonuses
  */
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-const { processMatchingBonus } = require('../src/services/commissionService');
+require('dotenv').config();
+const prisma = require('../src/prismaClient');
+const { processMatchingBonus, LockBusyError } = require('../src/services/commissionService');
+
+// NOTE: the selection filter below is still wrong and will be replaced in Phase 2
+// by a proper sweep service. It filters on BV (over-selects: harmless) and on
+// hasPurchased (under-selects: CAN SKIP USERS WHO ARE OWED MONEY, because
+// processMatchingBonus does not require hasPurchased). Do not treat this script
+// as a complete reconciliation.
 
 async function run() {
     console.log('╔═══════════════════════════════════════════════════════════════╗');
@@ -51,19 +57,27 @@ async function run() {
                 console.log(`  Left BV: ${user.leftBV} (Carry: ${user.leftCarryBV})`);
                 console.log(`  Right BV: ${user.rightBV} (Carry: ${user.rightCarryBV})`);
 
-                const result = await processMatchingBonus(prisma, user.id);
+                const result = await processMatchingBonus(user.id);
 
-                if (result && result.bonus > 0) {
-                    console.log(`  ✓ Matching bonus: ₹${result.bonus}`);
-                    totalPayout += result.bonus;
+                // `amount`, not `bonus`: the return value is a PairPayoutRecord.
+                // The old check on result.bonus was always undefined, so this
+                // script always reported ₹0 even when it had paid out correctly.
+                if (result && result.amount > 0) {
+                    console.log(`  ✓ Matching bonus: ₹${result.amount} (${result.pairs} pairs)`);
+                    totalPayout += result.amount;
                 } else {
-                    console.log(`  - No matching bonus (pairs: ${result?.pairs || 0})`);
+                    console.log('  - No matching bonus owed');
                 }
 
                 processed++;
             } catch (err) {
-                console.error(`  ✗ Error: ${err.message}`);
-                failed++;
+                if (err instanceof LockBusyError) {
+                    // The live worker is already paying this user; skip, don't retry.
+                    console.log('  - Skipped (locked by another payout)');
+                } else {
+                    console.error(`  ✗ Error: ${err.message}`);
+                    failed++;
+                }
             }
             console.log('');
         }

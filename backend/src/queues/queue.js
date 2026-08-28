@@ -67,15 +67,17 @@ function withTimeout(promise, ms, label) {
 /**
  * Pay a user's matching bonus in-process.
  *
- * Uses the shared Prisma singleton — the previous version constructed a
- * `new PrismaClient()` on every call, leaking a connection pool each time.
+ * processMatchingBonus opens its own transaction and takes a row lock, so this
+ * is safe to run concurrently with the worker — the loser waits, then finds the
+ * counts already consumed and returns null.
  */
 async function runMatchingInline(userId) {
-    const prisma = require('../prismaClient');
     const { processMatchingBonus } = require('../services/commissionService');
     try {
-        return await processMatchingBonus(prisma, userId);
+        return await processMatchingBonus(userId);
     } catch (err) {
+        // Includes LockBusyError: another payout is already handling this user,
+        // so there is nothing to do and nothing was lost.
         error('inline_matching_failed', { userId, err: err.message });
         return null;
     }

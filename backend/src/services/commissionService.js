@@ -1,44 +1,81 @@
 const prisma = require('../prismaClient');
-const crypto = require('crypto');
 // Pure helpers live in matchingMath.js so they can be unit-tested without a DB.
 // Keep them there — do not re-inline this logic.
 const { calculate1to1TailMatching, rankForPairs, istDayBounds } = require('./matchingMath');
 
 /**
- * Credit leadership bonus to sponsor when referral earns income.
- * @param {PrismaClient} prismaClient - Transaction client (required)
- * @param {string} sponsorId - The sponsor's user ID
- * @param {number} referralEarning - Amount earned by the referral
- * @param {string} referralId - The referral's user ID (for audit trail)
+ * Transaction settings for a payout.
+ *
+ * The payout issues ~13 sequential statements, plus ~6 more in the leadership
+ * bonus, plus the lock wait — well past Prisma's 5s default timeout.
  */
-async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, referralId) {
-    if (!prismaClient || !sponsorId || referralEarning <= 0) return null;
+const MATCHING_TX = {
+    maxWait: Number(process.env.MATCHING_TX_MAXWAIT_MS || 15000),
+    timeout: Number(process.env.MATCHING_TX_TIMEOUT_MS || 30000)
+};
+
+/** Bounded lock wait, so contention becomes a clean retryable error, not a stuck pool connection. */
+const LOCK_TIMEOUT_MS = Math.max(100, Math.trunc(Number(process.env.MATCHING_LOCK_TIMEOUT_MS || 4000)));
+
+/** Thrown when another payout holds this user's row. Retryable — nothing has been written. */
+class LockBusyError extends Error {
+    constructor(userId) {
+        super(`matching: row lock busy for ${userId}`);
+        this.name = 'LockBusyError';
+        this.code = 'LOCK_BUSY';
+    }
+}
+
+function isLockTimeout(err) {
+    const m = String(err?.message || '');
+    return m.includes('55P03') || /lock timeout|canceling statement due to lock/i.test(m);
+}
+
+/**
+ * Reject the root PrismaClient where an interactive transaction client is required.
+ *
+ * This guard is the structural fix for the original bug: `processMatchingBonus`
+ * used to take a client and branch on whether one was passed, so handing it the
+ * root client (which every caller did) silently skipped the transaction AND
+ * turned pg_advisory_xact_lock into a no-op. The two cases were indistinguishable
+ * at runtime. A TransactionClient has no $transaction method; the root client does.
+ */
+function assertTxClient(tx, fnName) {
+    if (tx && typeof tx.$transaction === 'function') {
+        throw new TypeError(
+            `${fnName}: expected an interactive transaction client, got the root PrismaClient. ` +
+            `Call it without a tx to let it open its own transaction.`
+        );
+    }
+}
+
+/**
+ * Credit leadership bonus to a sponsor when their referral earns matching income.
+ * Transaction-only: always called from inside the payout transaction.
+ */
+async function creditLeadershipBonusInTx(tx, sponsorId, referralEarning, referralId) {
+    assertTxClient(tx, 'creditLeadershipBonusInTx');
+    if (!tx || !sponsorId || referralEarning <= 0) return null;
 
     const percent = parseInt(process.env.LEADERSHIP_BONUS_PERCENT || '10', 10);
     const dailyCap = parseInt(process.env.DAILY_LEADERSHIP_BONUS_CAP || '5000', 10);
 
-    // Calculate bonus amount
     const bonusAmount = Math.floor((referralEarning * percent) / 100);
     if (bonusAmount <= 0) return null;
 
-    // Check daily limit (Strictly IST based)
-    const { todayStart, todayEnd } = istDayBounds();
+    const { todayStart } = istDayBounds();
 
-    let counter = await prismaClient.dailyLeadershipCounter.findFirst({
-        where: { userId: sponsorId, date: { gte: todayStart, lt: todayEnd } }
+    const counter = await tx.dailyLeadershipCounter.findUnique({
+        where: { userId_date: { userId: sponsorId, date: todayStart } }
     });
 
     const earnedToday = counter?.amount || 0;
     const remaining = Math.max(0, dailyCap - earnedToday);
-    if (remaining <= 0) {
-        // console.log(`[LEADERSHIP] Sponsor ${sponsorId} hit daily cap (${dailyCap})`);
-        return null;
-    }
+    if (remaining <= 0) return null;
 
     const actualBonus = Math.min(bonusAmount, remaining);
 
-    // Credit wallet
-    await prismaClient.wallet.upsert({
+    await tx.wallet.upsert({
         where: { userId: sponsorId },
         update: { balance: { increment: actualBonus } },
         create: { userId: sponsorId, balance: actualBonus }
@@ -46,15 +83,14 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
 
     let referralLabel = null;
     if (referralId) {
-        const referral = await prismaClient.user.findUnique({
+        const referral = await tx.user.findUnique({
             where: { id: referralId },
             select: { name: true, username: true, email: true }
         });
         referralLabel = referral?.name || referral?.username || referral?.email || null;
     }
 
-    // Create transaction
-    await prismaClient.transaction.create({
+    await tx.transaction.create({
         data: {
             userId: sponsorId,
             type: 'LEADERSHIP_BONUS',
@@ -65,33 +101,30 @@ async function creditLeadershipBonus(prismaClient, sponsorId, referralEarning, r
         }
     });
 
-    // Update daily counter
-    try {
-        await prismaClient.dailyLeadershipCounter.create({
-            data: { userId: sponsorId, date: todayStart, amount: actualBonus }
-        });
-    } catch (e) {
-        if (e?.code === 'P2002') {
-            await prismaClient.dailyLeadershipCounter.updateMany({
-                where: { userId: sponsorId, date: { gte: todayStart, lt: todayEnd } },
-                data: { amount: { increment: actualBonus } }
-            });
-        } else throw e;
-    }
+    // upsert, NOT create-then-catch-P2002. In Postgres a failed statement aborts
+    // the enclosing transaction, so the old fallback UPDATE would itself fail with
+    // "current transaction is aborted" and roll back the entire payout. The old
+    // form only worked because nothing here was transactional.
+    await tx.dailyLeadershipCounter.upsert({
+        where: { userId_date: { userId: sponsorId, date: todayStart } },
+        update: { amount: { increment: actualBonus } },
+        create: { userId: sponsorId, date: todayStart, amount: actualBonus }
+    });
 
-    // console.log(`[LEADERSHIP] Credited ${actualBonus} to sponsor ${sponsorId} (${percent}% of ${referralEarning})`);
     return { sponsorId, amount: actualBonus };
 }
+
 /**
- * Credit direct referral bonus to sponsor wallet.
+ * Credit a direct referral bonus. Transaction-only variant.
+ * Called from purchaseService inside the purchase transaction.
  */
-async function creditDirectBonus(prismaClient, sponsorId, bv, referralId = null) {
+async function creditDirectBonusInTx(tx, sponsorId, bv, referralId = null) {
+    assertTxClient(tx, 'creditDirectBonusInTx');
     const bonusAmount = parseInt(process.env.DIRECT_BONUS_AMOUNT || '500', 10);
-    const db = prismaClient || prisma;
 
     let referralLabel = null;
     if (referralId) {
-        const referral = await db.user.findUnique({
+        const referral = await tx.user.findUnique({
             where: { id: referralId },
             select: { name: true, username: true, email: true }
         });
@@ -102,166 +135,191 @@ async function creditDirectBonus(prismaClient, sponsorId, bv, referralId = null)
         ? `Direct bonus from ${referralLabel} (BV ${bv})`
         : `Direct bonus for referral (BV ${bv})`;
 
-    if (prismaClient) {
-        await prismaClient.transaction.create({
-            data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail }
-        });
-        await prismaClient.wallet.upsert({
-            where: { userId: sponsorId },
-            update: { balance: { increment: bonusAmount } },
-            create: { userId: sponsorId, balance: bonusAmount }
-        });
-        return;
-    }
-
-    await db.$transaction(async (tx) => {
-        await tx.transaction.create({
-            data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail }
-        });
-        await tx.wallet.upsert({
-            where: { userId: sponsorId },
-            update: { balance: { increment: bonusAmount } },
-            create: { userId: sponsorId, balance: bonusAmount }
-        });
+    await tx.transaction.create({
+        data: { userId: sponsorId, type: 'DIRECT_BONUS', amount: bonusAmount, detail }
     });
+    await tx.wallet.upsert({
+        where: { userId: sponsorId },
+        update: { balance: { increment: bonusAmount } },
+        create: { userId: sponsorId, balance: bonusAmount }
+    });
+
+    return { sponsorId, amount: bonusAmount };
+}
+
+/** Standalone direct bonus (admin/repair use). Owns its own transaction. */
+async function creditDirectBonus(sponsorId, bv, referralId = null) {
+    return prisma.$transaction(
+        (tx) => creditDirectBonusInTx(tx, sponsorId, bv, referralId),
+        MATCHING_TX
+    );
 }
 
 /**
- * Process matching bonus using 2:1 / 1:2 algorithm.
+ * The payout itself. Always runs inside a transaction, always under a row lock.
  */
-async function processMatchingBonus(prismaClient, userId, dailyPairCap = null) {
-    const db = prismaClient || prisma;
+async function runMatchingInTx(tx, userId, dailyPairCap) {
     const bonusPerMatch = parseInt(process.env.MATCHING_BONUS_PER_MATCH || '700', 10);
-    const cap = dailyPairCap === null ? parseInt(process.env.DAILY_PAIR_CAP || '10', 10) : dailyPairCap;
-    const lockKey = parseInt(crypto.createHash('sha256').update(userId).digest('hex').slice(0, 8), 16);
+    const cap = dailyPairCap === null || dailyPairCap === undefined
+        ? parseInt(process.env.DAILY_PAIR_CAP || '10', 10)
+        : dailyPairCap;
 
-    const runMatching = async (tx) => {
-        try { await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BigInt(lockKey)})`; } catch (e) { }
+    // Bound the lock wait so contention surfaces as a retryable error instead of
+    // pinning a pool connection for the full transaction timeout.
+    await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '${LOCK_TIMEOUT_MS}ms'`);
 
-        const user = await tx.user.findUnique({ where: { id: userId } });
-        if (!user) return null;
+    // Lock the row we are about to mutate.
+    //
+    // This replaces pg_advisory_xact_lock, which was broken three ways: it ran
+    // outside any transaction (so it released immediately), it was wrapped in an
+    // empty catch, and it passed a BigInt as an untyped bound parameter to an
+    // overloaded function — (bigint) vs (int,int) — so it could fail overload
+    // resolution outright. FOR UPDATE has no typing problem, shares no key space
+    // with placementService's advisory locks, and locks the actual resource.
+    let rows;
+    try {
+        rows = await tx.$queryRawUnsafe('SELECT id FROM "User" WHERE id = $1 FOR UPDATE', userId);
+    } catch (err) {
+        if (isLockTimeout(err)) throw new LockBusyError(userId);
+        throw err;
+    }
+    if (!rows.length) return null;
 
-        // Eligibility gate: user must have at least 2 direct referrals
-        const directReferralCount = await tx.user.count({ where: { sponsorId: userId } });
-        if (directReferralCount < 2) {
-            // console.log(`[MATCHING] User ${userId} has ${directReferralCount} referrals (need 2). Skipping.`);
-            return null;
+    const user = await tx.user.findUnique({ where: { id: userId } });
+    if (!user) return null;
+
+    // Eligibility gate: user must have at least 2 direct referrals
+    const directReferralCount = await tx.user.count({ where: { sponsorId: userId } });
+    if (directReferralCount < 2) return null;
+
+    const leftTotal = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
+    const rightTotal = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
+    if (leftTotal <= 0 || rightTotal <= 0) return null;
+
+    // Start of today, IST (see matchingMath.istDayBounds — TZ-independent)
+    const { todayStart } = istDayBounds();
+
+    const counter = await tx.dailyPairCounter.findUnique({
+        where: { userId_date: { userId, date: todayStart } }
+    });
+    const pairsToday = counter?.pairs || 0;
+    const remaining = Math.max(0, cap - pairsToday);
+    if (remaining <= 0) return null;
+
+    const result = calculate1to1TailMatching(leftTotal, rightTotal);
+    if (result.totalMatches <= 0) return null;
+
+    const matchesToPay = Math.min(result.totalMatches, remaining);
+    // Recalculate carry when capped
+    const actualLeftConsumed = matchesToPay;
+    const actualRightConsumed = matchesToPay;
+    const carryLeft = leftTotal - actualLeftConsumed;
+    const carryRight = rightTotal - actualRightConsumed;
+    const membersConsumed = matchesToPay * 2;
+    const bonus = matchesToPay * bonusPerMatch;
+
+    // Consume the matched members. Safe as an absolute write because we hold the
+    // row lock: any concurrent purchase incrementing these counts must wait.
+    await tx.user.update({
+        where: { id: userId },
+        data: {
+            leftMemberCount: 0, rightMemberCount: 0,
+            leftCarryCount: carryLeft, rightCarryCount: carryRight
         }
+    });
 
-        const leftTotal = (user.leftMemberCount || 0) + (user.leftCarryCount || 0);
-        const rightTotal = (user.rightMemberCount || 0) + (user.rightCarryCount || 0);
-        if (leftTotal <= 0 || rightTotal <= 0) return null;
+    await tx.wallet.upsert({
+        where: { userId },
+        update: { balance: { increment: bonus } },
+        create: { userId, balance: bonus }
+    });
 
-        // Use start and end of today for date comparison (Strictly IST based)
-        const { todayStart, todayEnd } = istDayBounds();
+    const payout = await tx.pairPayoutRecord.create({
+        data: {
+            userId, date: todayStart, pairs: matchesToPay, amount: bonus,
+            matchType: '1:1', membersConsumed,
+            leftConsumed: actualLeftConsumed,
+            rightConsumed: actualRightConsumed
+        }
+    });
 
-        let counter = await tx.dailyPairCounter.findFirst({
-            where: { userId, date: { gte: todayStart, lt: todayEnd } }
-        });
-        const pairsToday = counter?.pairs || 0;
-        const remaining = Math.max(0, cap - pairsToday);
-        if (remaining <= 0) return null;
+    await tx.transaction.create({
+        data: { userId, type: 'MATCHING_BONUS', amount: bonus, detail: `Matching bonus: ${matchesToPay} pairs (1:1)` }
+    });
 
-        const result = calculate1to1TailMatching(leftTotal, rightTotal);
-        if (result.totalMatches <= 0) return null;
+    await tx.dailyPairCounter.upsert({
+        where: { userId_date: { userId, date: todayStart } },
+        update: { pairs: { increment: matchesToPay } },
+        create: { userId, date: todayStart, pairs: matchesToPay }
+    });
 
-        const matchesToPay = Math.min(result.totalMatches, remaining);
-        // Recalculate carry when capped
-        const actualLeftConsumed = matchesToPay;
-        const actualRightConsumed = matchesToPay;
-        const carryLeft = leftTotal - actualLeftConsumed;
-        const carryRight = rightTotal - actualRightConsumed;
-        const membersConsumed = matchesToPay * 2;
-        const bonus = matchesToPay * bonusPerMatch;
+    // --- Rank ---
+    const newTotalPairs = (user.totalPairs || 0) + matchesToPay;
+    const newRank = rankForPairs(newTotalPairs);
 
-        // Update user counts
-        await tx.user.update({
-            where: { id: userId },
+    const updateData = { totalPairs: { increment: matchesToPay } };
+    if (newRank !== user.rank) {
+        updateData.rank = newRank;
+        await tx.rankChange.create({
             data: {
-                leftMemberCount: 0, rightMemberCount: 0,
-                leftCarryCount: carryLeft, rightCarryCount: carryRight
+                userId,
+                fromRank: user.rank || 'None',
+                toRank: newRank,
+                pairsAtChange: newTotalPairs
             }
         });
+    }
 
-        // Credit wallet
-        await tx.wallet.upsert({
-            where: { userId },
-            update: { balance: { increment: bonus } },
-            create: { userId, balance: bonus }
-        });
+    await tx.user.update({ where: { id: userId }, data: updateData });
 
-        // Create payout record
-        const payout = await tx.pairPayoutRecord.create({
-            data: {
-                userId, date: todayStart, pairs: matchesToPay, amount: bonus,
-                matchType: '1:1', membersConsumed,
-                leftConsumed: actualLeftConsumed,
-                rightConsumed: actualRightConsumed
-            }
-        });
+    // Leadership bonus for this user's sponsor, in the same transaction.
+    if (user.sponsorId && bonus > 0) {
+        await creditLeadershipBonusInTx(tx, user.sponsorId, bonus, userId);
+    }
 
-        // Create transaction
-        await tx.transaction.create({
-            data: { userId, type: 'MATCHING_BONUS', amount: bonus, detail: `Matching bonus: ${matchesToPay} pairs (1:1)` }
-        });
-
-        // Update daily counter
-        try {
-            await tx.dailyPairCounter.create({ data: { userId, date: todayStart, pairs: matchesToPay } });
-        } catch (e) {
-            if (e?.code === 'P2002') {
-                await tx.dailyPairCounter.updateMany({ where: { userId, date: { gte: todayStart, lt: todayEnd } }, data: { pairs: { increment: matchesToPay } } });
-            } else { throw e; }
-        }
-
-        // --- Rank Update Logic ---
-        // Increment total pairs (User.totalPairs doesn't exist on 'user' object from findUnique unless we re-fetch or optimistically update)
-        // We do an atomic increment to be safe and also check for rank upgrade
-
-        // 1. Calculate new total pairs
-        const currentTotalPairs = (user.totalPairs || 0);
-        const newTotalPairs = currentTotalPairs + matchesToPay;
-
-        // 2. Determine new rank
-        const newRank = rankForPairs(newTotalPairs);
-
-        // 3. Update User with new totalPairs and Rank (if changed)
-        const updateData = { totalPairs: { increment: matchesToPay } };
-        // Only update rank if it's "higher"? The logic implies simple threshold check is sufficient assuming pairs only go up.
-        if (newRank !== user.rank) {
-            updateData.rank = newRank;
-            // Create RankChange record for admin reward tracking
-            await tx.rankChange.create({
-                data: {
-                    userId,
-                    fromRank: user.rank || 'None',
-                    toRank: newRank,
-                    pairsAtChange: newTotalPairs
-                }
-            });
-            // console.log(`[RANK UPDATE] User ${userId} promoted from ${user.rank} to ${newRank} (${newTotalPairs} pairs)`);
-        }
-
-        await tx.user.update({
-            where: { id: userId },
-            data: updateData
-        });
-
-        // (Removed: an SSE broadcast used to run here via a circular
-        // require('../routes/sse'). Its body was a synchronous res.write loop over
-        // every subscriber, executing inside the payout's critical section, and it
-        // had zero consumers in the frontend or admin app.)
-
-        // Trigger leadership bonus for user's sponsor
-        if (user.sponsorId && bonus > 0) {
-            await creditLeadershipBonus(tx, user.sponsorId, bonus, userId);
-        }
-
-        return payout;
-    };
-
-    if (prismaClient) return await runMatching(prismaClient);
-    return await db.$transaction(runMatching);
+    return payout;
 }
 
-module.exports = { creditDirectBonus, processMatchingBonus, calculate1to1TailMatching, creditLeadershipBonus };
+/**
+ * Pay a user's matching bonus.
+ *
+ * @param {string} userId
+ * @param {{ dailyPairCap?: number|null, tx?: import('@prisma/client').Prisma.TransactionClient }} [opts]
+ * @returns {Promise<object|null>} the PairPayoutRecord, or null if nothing was owed
+ * @throws {LockBusyError} when another payout holds the row — safe to retry
+ *
+ * Pass opts.tx ONLY from inside an existing transaction. Never call this without
+ * opts.tx from within another transaction that has already touched this user's
+ * row: it would open a second connection and block on its own uncommitted write
+ * (lock_timeout turns that hang into a 4s error rather than a deadlock).
+ */
+async function processMatchingBonus(userId, opts = {}) {
+    if (typeof userId !== 'string' || !userId) {
+        throw new TypeError(
+            `processMatchingBonus: expected a userId string, got ${typeof userId}. ` +
+            `The signature changed — it no longer takes a Prisma client as the first argument.`
+        );
+    }
+
+    const { dailyPairCap = null, tx = null } = opts;
+
+    if (tx) {
+        assertTxClient(tx, 'processMatchingBonus');
+        return runMatchingInTx(tx, userId, dailyPairCap);
+    }
+
+    return prisma.$transaction(
+        (t) => runMatchingInTx(t, userId, dailyPairCap),
+        MATCHING_TX
+    );
+}
+
+module.exports = {
+    processMatchingBonus,
+    creditDirectBonus,
+    creditDirectBonusInTx,
+    creditLeadershipBonusInTx,
+    calculate1to1TailMatching,
+    LockBusyError,
+    MATCHING_TX
+};

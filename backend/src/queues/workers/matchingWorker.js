@@ -4,10 +4,9 @@
 require('dotenv').config();
 
 const { Worker } = require('bullmq');
-const { processMatchingBonus } = require('../../services/commissionService');
+const { processMatchingBonus, LockBusyError } = require('../../services/commissionService');
 const { workerConnection } = require('../redisConnection');
 const { info, error, rateLimited } = require('../../logger');
-const prisma = require('../../prismaClient');
 
 const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true';
 const CONCURRENCY = Number(process.env.MATCHING_CONCURRENCY || 5);
@@ -20,9 +19,17 @@ if (REDIS_ENABLED) {
     worker = new Worker('matching', async (job) => {
         const { userId } = job.data;
         try {
-            await processMatchingBonus(prisma, userId);
+            // processMatchingBonus owns its own transaction and row lock; do not
+            // hand it a client.
+            await processMatchingBonus(userId);
             info('matching_job_completed', { jobId: job.id, userId });
         } catch (err) {
+            if (err instanceof LockBusyError) {
+                // Another payout holds this user's row. Nothing was written.
+                // Rethrow so BullMQ retries with backoff rather than dropping it.
+                info('matching_job_lock_busy', { jobId: job.id, userId });
+                throw err;
+            }
             error('matching_job_failed', { jobId: job.id, userId, err: err.message });
             throw err; // let BullMQ retry (requires the QueueScheduler)
         }

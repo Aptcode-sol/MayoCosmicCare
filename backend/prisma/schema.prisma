@@ -56,6 +56,10 @@ model User {
   dailyLeadershipCounters DailyLeadershipCounter[]
   rankChanges      RankChange[]
   orders           Order[]
+
+  @@index([parentId])
+  @@index([sponsorId])
+  @@index([parentId, position])
 }
 
 model RankChange {

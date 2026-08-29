@@ -1,29 +1,17 @@
 "use client"
-import { useEffect, useState, useRef } from 'react'
-import { getMyTree, getTreeForUser } from '@/lib/services/referrals'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { getTreeForUser, searchMyNetwork } from '@/lib/services/referrals'
+import type { NetworkSearchMatch } from '@/lib/services/referrals'
 import { useRouter } from 'next/navigation'
 import { me } from '@/lib/services/auth'
 import TreeView from '@/components/TreeView'
+import TreeBreadcrumb from '@/components/TreeBreadcrumb'
+import type { BreadcrumbEntry } from '@/components/TreeBreadcrumb'
 import DashboardLayout from '@/components/DashboardLayout'
-import { SkeletonCard } from "@/components/ui/SkeletonCard"
 import { Card } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import AnimateOnScroll from '@/components/AnimateOnScroll'
-
-type TreeNodeData = {
-    id: string
-    name?: string
-    firstName?: string
-    username?: string
-    position?: string
-    leftMemberCount?: number
-    rightMemberCount?: number
-    walletBalance?: number
-    createdAt?: string
-    referredBy?: string
-    left?: TreeNodeData | null
-    right?: TreeNodeData | null
-}
+import type { TreeNodeData } from '@/lib/types/tree'
 
 function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: () => void }) {
     if (!node) return null
@@ -79,9 +67,11 @@ function ProfileModal({ node, onClose }: { node: TreeNodeData | null, onClose: (
     )
 }
 
+const FOCUS_DEPTH = 3
+
 export default function Tree() {
     const router = useRouter();
-    const [user, setUser] = useState<{ username?: string; email?: string } | null>(null)
+    const [user, setUser] = useState<{ id?: string; username?: string; email?: string; name?: string } | null>(null)
     const [tree, setTree] = useState<TreeNodeData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('')
@@ -91,6 +81,20 @@ export default function Tree() {
     const containerRef = useRef<HTMLDivElement>(null)
     const mouseStartRef = useRef<{ x: number; y: number } | null>(null)
     const isMouseDraggingRef = useRef(false)
+
+    // Focus/breadcrumb navigation state — the whole nav model. `focusedNodeId` is
+    // whichever node's subtree is currently rendered; `breadcrumb` is the ancestor
+    // chain from "Me" down to it, each entry clickable to jump back.
+    const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null)
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbEntry[]>([])
+    const [fetchError, setFetchError] = useState('')
+
+    // Search / "jump to member"
+    const [search, setSearch] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
+    const [searchResults, setSearchResults] = useState<NetworkSearchMatch[]>([])
+    const [searchOpen, setSearchOpen] = useState(false)
+    const [highlightedId, setHighlightedId] = useState<string | null>(null)
 
     // Handle wheel zoom (Ctrl + Scroll)
     const handleWheel = (e: React.WheelEvent) => {
@@ -235,8 +239,9 @@ export default function Tree() {
         }
     }, [])
 
+    // Initial load: resolve the logged-in user, then focus the view on them.
     useEffect(() => {
-        async function loadData() {
+        async function loadUser() {
             try {
                 const token = localStorage.getItem('accessToken')
                 if (!token) {
@@ -244,41 +249,97 @@ export default function Tree() {
                     return
                 }
                 const userRes = await me()
-                setUser(userRes?.user || userRes)
-                const res = await getMyTree(6)
-                setTree(res.tree)
+                const u = userRes?.user || userRes
+                setUser(u)
+                setBreadcrumb([{ id: u.id, username: u.username, name: u.name }])
+                setFocusedNodeId(u.id)
             } catch (err: unknown) {
                 const errorObj = err as { message?: string } | Error
                 const message = typeof errorObj === 'object' && errorObj !== null
                     ? (errorObj.message || 'Failed to load tree')
                     : String(err || 'Failed to load tree')
                 setError(message)
-            } finally {
                 setLoading(false)
             }
         }
-        loadData()
+        loadUser()
     }, [router])
 
-    async function fetchTree() {
+    const loadFocusedTree = useCallback(async () => {
+        if (!focusedNodeId) return
+        setFetchError('')
         try {
-            const token = localStorage.getItem('accessToken')
-            if (!token) {
-                router.push('/login')
-                return
-            }
-            const res = await getMyTree(6)
+            const res = await getTreeForUser(focusedNodeId, FOCUS_DEPTH)
             setTree(res.tree)
         } catch (err: unknown) {
-            // Handle both parsed error objects and regular errors
             const errorObj = err as { message?: string } | Error
             const message = typeof errorObj === 'object' && errorObj !== null
                 ? (errorObj.message || 'Failed to load tree')
                 : String(err || 'Failed to load tree')
-            setError(message)
+            setFetchError(message)
         } finally {
             setLoading(false)
         }
+    }, [focusedNodeId])
+
+    // Re-fetch whenever the focused node changes (drill-in, breadcrumb click, search jump)
+    useEffect(() => {
+        if (focusedNodeId) loadFocusedTree()
+    }, [focusedNodeId, loadFocusedTree])
+
+    // Once the newly-focused tree has actually rendered, scroll it into view and
+    // start the highlight-clear countdown — tied to the fetch completing rather
+    // than a fixed timeout guess made before the fetch even finished.
+    useEffect(() => {
+        if (!tree || !highlightedId) return
+        const el = document.getElementById(`tree-node-${highlightedId}`)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
+        const timer = setTimeout(() => setHighlightedId(null), 2000)
+        return () => clearTimeout(timer)
+    }, [tree, highlightedId])
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+        return () => clearTimeout(timer)
+    }, [search])
+
+    useEffect(() => {
+        let cancelled = false
+        async function runSearch() {
+            if (!debouncedSearch) {
+                setSearchResults([])
+                return
+            }
+            try {
+                const res = await searchMyNetwork(debouncedSearch)
+                if (!cancelled) setSearchResults(res.matches || [])
+            } catch {
+                if (!cancelled) setSearchResults([])
+            }
+        }
+        runSearch()
+        return () => { cancelled = true }
+    }, [debouncedSearch])
+
+    function jumpTo(path: BreadcrumbEntry[], targetId: string) {
+        setBreadcrumb(path)
+        setFocusedNodeId(targetId)
+        setSearch('')
+        setSearchOpen(false)
+        setHighlightedId(targetId)
+    }
+
+    function handleBreadcrumbNavigate(index: number) {
+        const entry = breadcrumb[index]
+        if (!entry) return
+        setBreadcrumb(breadcrumb.slice(0, index + 1))
+        setFocusedNodeId(entry.id)
+    }
+
+    function handleFocusNode(node: TreeNodeData) {
+        setBreadcrumb([...breadcrumb, { id: node.id, username: node.username, name: node.name }])
+        setFocusedNodeId(node.id)
     }
 
     return (
@@ -323,10 +384,10 @@ export default function Tree() {
                         </div>
                     </AnimateOnScroll>
 
-                    {/* Legend */}
+                    {/* Legend + Breadcrumb + Search */}
                     <AnimateOnScroll animation="fade-up" delay={100}>
                         <Card className="mb-8 border-gray-100 shadow-sm bg-white/50 backdrop-blur-sm">
-                            <div className="p-4 flex flex-wrap items-center gap-8 text-sm">
+                            <div className="p-4 flex flex-wrap items-center gap-8 text-sm border-b border-gray-100">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-gray-900 shadow-sm"></div>
                                     <span className="text-gray-600 font-medium">You</span>
@@ -344,21 +405,57 @@ export default function Tree() {
                                     <span className="text-gray-400">Empty Spot</span>
                                 </div>
                             </div>
+                            <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                                <TreeBreadcrumb path={breadcrumb} onNavigate={handleBreadcrumbNavigate} rootLabel="Me" />
+                                <div className="relative w-full sm:w-64">
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => { setSearch(e.target.value); setSearchOpen(true) }}
+                                        onFocus={() => setSearchOpen(true)}
+                                        placeholder="Find a member..."
+                                        className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                                    />
+                                    {searchOpen && search && (
+                                        <div className="absolute z-20 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-100 max-h-64 overflow-y-auto">
+                                            {searchResults.length === 0 ? (
+                                                <div className="px-3 py-2 text-xs text-gray-400">No members found</div>
+                                            ) : (
+                                                searchResults.map((m) => (
+                                                    <button
+                                                        key={m.id}
+                                                        onClick={() => jumpTo(m.path, m.id)}
+                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between"
+                                                    >
+                                                        <span className="font-medium text-gray-900">{m.name || m.username}</span>
+                                                        <span className="text-xs text-gray-400">{m.position || ''}</span>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </Card>
                     </AnimateOnScroll>
 
                     {/* Tree Container */}
-                    {error && (
-                        <div className="text-center py-12">
+                    {(error || fetchError) && (
+                        <div className="text-center py-12 space-y-3">
                             <div className="inline-flex items-center gap-2 bg-red-50 text-red-600 rounded-full px-6 py-2 text-sm font-medium border border-red-100">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                {error}
+                                {error || fetchError}
                             </div>
+                            {fetchError && (
+                                <div>
+                                    <Button variant="outline" onClick={() => loadFocusedTree()}>Retry</Button>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {tree ? (
-                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[600px] relative">
+                    {tree && !error ? (
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[400px] relative">
                             <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-25 pointer-events-none" />
 
                             {/* Zoom Controls */}
@@ -396,34 +493,31 @@ export default function Tree() {
                             {/* Zoomable Tree Container */}
                             <div
                                 ref={containerRef}
-                                className="overflow-auto h-[600px] touch-none"
+                                className="overflow-auto h-[420px] touch-none"
                                 style={{ cursor: 'grab', userSelect: 'none' }}
                                 onWheel={handleWheel}
                             >
                                 {/* This wrapper ensures the scrollable area doesn't shrink when zooming out */}
-                                <div style={{ minWidth: '100%', minHeight: '900px', display: 'flex', justifyContent: 'center' }}>
+                                <div style={{ minWidth: '100%', minHeight: '400px', display: 'flex', justifyContent: 'center' }}>
                                     <div
                                         style={{
                                             transform: `scale(${zoom})`,
                                             transformOrigin: 'top center',
                                             transition: 'transform 0.2s ease-out',
                                             width: `${100 / zoom}%`,
-                                            minHeight: `${600 / zoom}px`
                                         }}
                                     >
                                         <TreeView
                                             data={tree}
                                             onNodeClick={(node) => setSelected(node)}
-                                            onLoadChildren={async (nodeId) => {
-                                                const res = await getTreeForUser(nodeId, 4)
-                                                return res.tree
-                                            }}
+                                            onFocusNode={handleFocusNode}
+                                            highlightedId={highlightedId}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    ) : !error && (
+                    ) : !error && !fetchError && (
                         <div className="text-center py-32 bg-white rounded-2xl border border-dashed border-gray-200">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>

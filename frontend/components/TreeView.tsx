@@ -1,43 +1,26 @@
 "use client"
-import { useState } from 'react'
-
-type TreeNodeData = {
-    id: string
-    name?: string
-    firstName?: string
-    username?: string
-    position?: string
-    leftMemberCount?: number
-    rightMemberCount?: number
-    walletBalance?: number
-    createdAt?: string
-    left?: TreeNodeData | null
-    right?: TreeNodeData | null
-}
+import type { TreeNodeData } from '@/lib/types/tree'
 
 interface TreeViewProps {
     data: TreeNodeData
     onNodeClick?: (node: TreeNodeData) => void
-    onLoadChildren?: (nodeId: string) => Promise<TreeNodeData | null>
+    onFocusNode?: (node: TreeNodeData) => void
+    highlightedId?: string | null
 }
 
 function TreeNode({
     node,
-    level = 0,
     onNodeClick,
-    onLoadChildren,
+    onFocusNode,
+    highlightedId,
     isLeft
 }: {
     node: TreeNodeData | null
-    level: number
     onNodeClick?: (node: TreeNodeData) => void
-    onLoadChildren?: (nodeId: string) => Promise<TreeNodeData | null>
+    onFocusNode?: (node: TreeNodeData) => void
+    highlightedId?: string | null
     isLeft?: boolean
 }) {
-    const [expanded, setExpanded] = useState(level < 2)
-    const [loadedNode, setLoadedNode] = useState<TreeNodeData | null>(null)
-    const [loading, setLoading] = useState(false)
-
     if (!node) {
         return (
             <div className="flex flex-col items-center">
@@ -51,21 +34,15 @@ function TreeNode({
         )
     }
 
-    // Use loaded node if available, otherwise use original
-    const displayNode = loadedNode || node
+    const leftCount = Number(node.leftMemberCount || 0)
+    const rightCount = Number(node.rightMemberCount || 0)
 
-    const leftCount = Number((displayNode as any).leftMemberCount || 0)
-    const rightCount = Number((displayNode as any).rightMemberCount || 0)
+    // This node has descendants below it, but they weren't included in the
+    // currently-focused slice — show "View subtree" to drill in instead of them.
+    const hasMoreBelow = Boolean(!node.left && !node.right && (leftCount > 0 || rightCount > 0))
+    const hasChildren = Boolean(node.left || node.right || hasMoreBelow)
 
-    // Check if node has children - either loaded or indicated by member counts
-    const hasChildren = Boolean(displayNode.left || displayNode.right || leftCount > 0 || rightCount > 0)
-
-    // Check if children need to be loaded
-    const needsChildrenLoaded = hasChildren && !displayNode.left && !displayNode.right
-
-    const displayName = (displayNode as any).name
-        || displayNode.username
-        || 'User'
+    const displayName = node.name || node.username || 'User'
     const initials = displayName
         .split(/[\s_-]/)
         .map((s: string) => s[0] || '')
@@ -87,33 +64,15 @@ function TreeNode({
             ? 'from-indigo-500 to-indigo-600'
             : 'from-pink-500 to-pink-600'
 
-    const handleExpand = async (e: React.MouseEvent) => {
-        e.stopPropagation()
-
-        if (!expanded && needsChildrenLoaded && onLoadChildren) {
-            // Need to load children first
-            setLoading(true)
-            try {
-                const loaded = await onLoadChildren(displayNode.id)
-                if (loaded) {
-                    setLoadedNode(loaded)
-                }
-            } catch (err) {
-                console.error('Failed to load children:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        setExpanded(!expanded)
-    }
+    const isHighlighted = highlightedId === node.id
 
     return (
         <div className="flex flex-col items-center">
             {/* Node Card */}
             <div
-                className={`relative bg-white rounded-2xl shadow-lg border-2 ${borderColor} p-4 min-w-[160px] cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
-                onClick={() => onNodeClick?.(displayNode)}
+                id={`tree-node-${node.id}`}
+                className={`relative bg-white rounded-2xl shadow-lg border-2 ${borderColor} p-4 min-w-[160px] cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:scale-105 ${isHighlighted ? 'ring-4 ring-yellow-400' : ''}`}
+                onClick={() => onNodeClick?.(node)}
             >
                 {/* Avatar */}
                 <div className="flex items-center gap-3 mb-3">
@@ -122,53 +81,46 @@ function TreeNode({
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="font-semibold text-gray-900 text-sm truncate">{displayName}</div>
-                        <div className="text-xs text-gray-500">{displayNode.username || displayNode.position || 'ROOT'}</div>
+                        <div className="text-xs text-gray-500">{node.username || node.position || 'ROOT'}</div>
                     </div>
                 </div>
 
                 {/* Wallet Balance & Left/Right Counts */}
                 <div className="mt-3 space-y-2 w-full text-xs">
                     <div className="bg-green-50 rounded-lg px-2 py-1 text-center">
-                        <span className="font-medium text-green-700">₹{(displayNode.walletBalance || 0).toLocaleString()}</span>
+                        <span className="font-medium text-green-700">₹{(node.walletBalance || 0).toLocaleString()}</span>
                     </div>
-                    {/* Always show member counts even if both are zero */}
-                    <div className="grid grid-cols-2 gap-1">
-                        <div className="bg-indigo-50 rounded px-1.5 py-1 text-center">
-                            <div className="text-indigo-600 font-bold text-sm">{leftCount}</div>
-                            <div className="text-indigo-500 text-[10px]">Left</div>
+                    {showCounts && (
+                        <div className="grid grid-cols-2 gap-1">
+                            <div className="bg-indigo-50 rounded px-1.5 py-1 text-center">
+                                <div className="text-indigo-600 font-bold text-sm">{leftCount}</div>
+                                <div className="text-indigo-500 text-[10px]">Left</div>
+                            </div>
+                            <div className="bg-pink-50 rounded px-1.5 py-1 text-center">
+                                <div className="text-pink-600 font-bold text-sm">{rightCount}</div>
+                                <div className="text-pink-500 text-[10px]">Right</div>
+                            </div>
                         </div>
-                        <div className="bg-pink-50 rounded px-1.5 py-1 text-center">
-                            <div className="text-pink-600 font-bold text-sm">{rightCount}</div>
-                            <div className="text-pink-500 text-[10px]">Right</div>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Expand/Collapse Button */}
-                {hasChildren && (
+                {/* Drill-in affordance: re-centers the whole view on this node's subtree */}
+                {hasMoreBelow && (
                     <button
-                        onClick={handleExpand}
-                        disabled={loading}
-                        className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-6 h-6 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-50"
+                        onClick={(e) => { e.stopPropagation(); onFocusNode?.(node) }}
+                        className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-1 px-2 h-6 rounded-full bg-white border-2 border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors shadow-sm text-[10px] font-medium whitespace-nowrap"
+                        title="View this member's network"
                     >
-                        {loading ? (
-                            <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <svg
-                                className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        )}
+                        View subtree
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                     </button>
                 )}
             </div>
 
-            {/* Children */}
-            {hasChildren && expanded && (
+            {/* Children (always fully rendered — the current slice is bounded by fetch depth) */}
+            {hasChildren && (node.left || node.right) && (
                 <div className="relative mt-8">
                     {/* Vertical line from parent */}
                     <div className="absolute top-0 left-1/2 w-0.5 h-6 -mt-6 bg-gray-300 transform -translate-x-1/2"></div>
@@ -181,10 +133,10 @@ function TreeNode({
                         <div className="relative">
                             <div className="absolute top-0 left-1/2 w-0.5 h-6 -mt-6 bg-gray-300 transform -translate-x-1/2"></div>
                             <TreeNode
-                                node={displayNode.left || null}
-                                level={level + 1}
+                                node={node.left || null}
                                 onNodeClick={onNodeClick}
-                                onLoadChildren={onLoadChildren}
+                                onFocusNode={onFocusNode}
+                                highlightedId={highlightedId}
                                 isLeft={true}
                             />
                         </div>
@@ -193,10 +145,10 @@ function TreeNode({
                         <div className="relative">
                             <div className="absolute top-0 left-1/2 w-0.5 h-6 -mt-6 bg-gray-300 transform -translate-x-1/2"></div>
                             <TreeNode
-                                node={displayNode.right || null}
-                                level={level + 1}
+                                node={node.right || null}
                                 onNodeClick={onNodeClick}
-                                onLoadChildren={onLoadChildren}
+                                onFocusNode={onFocusNode}
+                                highlightedId={highlightedId}
                                 isLeft={false}
                             />
                         </div>
@@ -207,15 +159,15 @@ function TreeNode({
     )
 }
 
-export default function TreeView({ data, onNodeClick, onLoadChildren }: TreeViewProps) {
+export default function TreeView({ data, onNodeClick, onFocusNode, highlightedId }: TreeViewProps) {
     return (
         <div className="w-full overflow-x-auto pb-8">
             <div className="min-w-max flex justify-center p-8">
                 <TreeNode
                     node={data}
-                    level={0}
                     onNodeClick={onNodeClick}
-                    onLoadChildren={onLoadChildren}
+                    onFocusNode={onFocusNode}
+                    highlightedId={highlightedId}
                 />
             </div>
         </div>

@@ -1,11 +1,10 @@
-import { useState } from 'react';
+// TreeView component for admin dashboard.
+// Renders one focused slice of the binary tree (the currently-focused node plus a
+// fixed few levels below it) — NOT the whole network. Drilling into a member
+// re-centers the whole view via onFocusNode; see NetworkPage.jsx for the
+// focus/breadcrumb state this depends on.
 
-// TreeView component for admin dashboard - similar to user's network tree
-// Shows a binary tree structure with nodes that can be expanded
-
-function TreeNode({ node, level = 0, onNodeClick }) {
-    const [expanded, setExpanded] = useState(level < 2);
-
+function TreeNode({ node, onNodeClick, onFocusNode, highlightedId, isLeft }) {
     if (!node) {
         return (
             <div className="flex flex-col items-center">
@@ -31,8 +30,12 @@ function TreeNode({ node, level = 0, onNodeClick }) {
     const rightCount = Number(node.rightMemberCount || 0);
     const leftBV = Number(node.leftBV || 0);
     const rightBV = Number(node.rightBV || 0);
-    const hasChildren = Boolean(node.left || node.right || leftCount > 0 || rightCount > 0);
     const showBV = leftBV > 0 || rightBV > 0;
+
+    // This node has descendants below it that weren't included in the currently-
+    // focused slice — show "View subtree" to drill in instead of an expand toggle.
+    const hasMoreBelow = Boolean(!node.left && !node.right && (leftCount > 0 || rightCount > 0));
+    const hasChildren = Boolean(node.left || node.right || hasMoreBelow);
 
     const borderColor = node.position === 'LEFT'
         ? 'border-indigo-500'
@@ -46,11 +49,14 @@ function TreeNode({ node, level = 0, onNodeClick }) {
             ? 'from-pink-500 to-pink-600'
             : 'from-amber-500 to-amber-600';
 
+    const isHighlighted = highlightedId === node.id;
+
     return (
         <div className="flex flex-col items-center">
             {/* Node Card */}
             <div
-                className={`relative bg-white rounded-2xl shadow-lg border-2 ${borderColor} p-4 min-w-[160px] cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
+                id={`tree-node-${node.id}`}
+                className={`relative bg-white rounded-2xl shadow-lg border-2 ${borderColor} p-4 min-w-[160px] cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:scale-105 ${isHighlighted ? 'ring-4 ring-yellow-400' : ''}`}
                 onClick={() => onNodeClick?.(node)}
             >
                 {/* Avatar */}
@@ -105,26 +111,23 @@ function TreeNode({ node, level = 0, onNodeClick }) {
                     </div>
                 </div>
 
-                {/* Expand/Collapse Button */}
-                {hasChildren && (
+                {/* Drill-in affordance: re-centers the whole view on this node's subtree */}
+                {hasMoreBelow && (
                     <button
-                        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                        className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-6 h-6 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors shadow-sm"
+                        onClick={(e) => { e.stopPropagation(); onFocusNode?.(node); }}
+                        className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-1 px-2 h-6 rounded-full bg-white border-2 border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors shadow-sm text-[10px] font-medium whitespace-nowrap"
+                        title="View this member's network"
                     >
-                        <svg
-                            className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        View subtree
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                 )}
             </div>
 
-            {/* Children */}
-            {hasChildren && expanded && (
+            {/* Children (always fully rendered — the current slice is bounded by fetch depth) */}
+            {hasChildren && (node.left || node.right) && (
                 <div className="relative mt-8">
                     {/* Vertical line from parent */}
                     <div className="absolute top-0 left-1/2 w-0.5 h-6 -mt-6 bg-gray-300 transform -translate-x-1/2"></div>
@@ -138,8 +141,10 @@ function TreeNode({ node, level = 0, onNodeClick }) {
                             <div className="absolute top-0 left-1/2 w-0.5 h-6 -mt-6 bg-gray-300 transform -translate-x-1/2"></div>
                             <TreeNode
                                 node={node.left || null}
-                                level={level + 1}
                                 onNodeClick={onNodeClick}
+                                onFocusNode={onFocusNode}
+                                highlightedId={highlightedId}
+                                isLeft={true}
                             />
                         </div>
 
@@ -148,8 +153,10 @@ function TreeNode({ node, level = 0, onNodeClick }) {
                             <div className="absolute top-0 left-1/2 w-0.5 h-6 -mt-6 bg-gray-300 transform -translate-x-1/2"></div>
                             <TreeNode
                                 node={node.right || null}
-                                level={level + 1}
                                 onNodeClick={onNodeClick}
+                                onFocusNode={onFocusNode}
+                                highlightedId={highlightedId}
+                                isLeft={false}
                             />
                         </div>
                     </div>
@@ -159,7 +166,7 @@ function TreeNode({ node, level = 0, onNodeClick }) {
     );
 }
 
-export default function AdminTreeView({ data, onNodeClick }) {
+export default function AdminTreeView({ data, onNodeClick, onFocusNode, highlightedId }) {
     if (!data) {
         return (
             <div className="flex items-center justify-center p-12 text-gray-500">
@@ -173,8 +180,9 @@ export default function AdminTreeView({ data, onNodeClick }) {
             <div className="min-w-max flex justify-center p-8">
                 <TreeNode
                     node={data}
-                    level={0}
                     onNodeClick={onNodeClick}
+                    onFocusNode={onFocusNode}
+                    highlightedId={highlightedId}
                 />
             </div>
         </div>

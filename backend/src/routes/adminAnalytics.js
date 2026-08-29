@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../prismaClient');
 const { authenticate } = require('../middleware/authMiddleware');
+const { buildTreeForUser, findPlatformRoot, getAncestorPath, searchUsers } = require('../services/treeService');
 
 // Admin-only middleware
 const adminOnly = (req, res, next) => {
@@ -403,48 +404,77 @@ router.get('/stats', authenticate, adminOnly, async (req, res) => {
     }
 });
 
-// GET /api/admin/analytics/network - Get full binary tree for admin
+// GET /api/admin/analytics/network?rootId=&depth= - focused tree slice, defaults to
+// the platform root. This is now the PRIMARY way the admin tree loads data (not a
+// full-table dump) - every drill-in / breadcrumb click re-calls this or /network/:id.
 router.get('/network', authenticate, adminOnly, async (req, res) => {
     try {
-        // Get all users with their placement info and wallet balance
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                username: true,
-                name: true,
-                email: true,
-                rank: true,
-                hasPurchased: true,
-                createdAt: true,
-                sponsor: {
-                    select: {
-                        username: true
-                    }
-                },
-                parentId: true,
-                position: true,
-                leftMemberCount: true,
-                rightMemberCount: true,
-                wallet: {
-                    select: {
-                        balance: true
-                    }
-                }
-            },
-            orderBy: { createdAt: 'asc' }
-        });
-
-        // Flatten wallet.balance to walletBalance for frontend compatibility
-        const usersWithWallet = users.map(u => ({
-            ...u,
-            walletBalance: u.wallet?.balance || 0,
-            wallet: undefined // Remove wallet object to avoid confusion
-        }));
-
-        res.json({ ok: true, users: usersWithWallet });
+        const depth = parseInt(req.query.depth) || 3; // small: renders one focused slice, not the whole tree
+        let rootId = req.query.rootId;
+        if (!rootId) {
+            const root = await findPlatformRoot();
+            if (!root) return res.json({ ok: true, tree: null });
+            rootId = root.id;
+        }
+        const tree = await buildTreeForUser(rootId, depth);
+        res.json({ ok: true, tree });
     } catch (err) {
         console.error('[ADMIN_NETWORK]', err);
         res.status(500).json({ ok: false, error: 'Failed to fetch network' });
+    }
+});
+
+// GET /api/admin/analytics/network/summary - aggregate counts across the whole
+// network (independent of whatever node is currently focused), replaces the old
+// flat-array .filter() tiles that needed the entire user table client-side.
+router.get('/network/summary', authenticate, adminOnly, async (req, res) => {
+    try {
+        const [total, active, left, right] = await Promise.all([
+            prisma.user.count(),
+            prisma.user.count({ where: { hasPurchased: true } }),
+            prisma.user.count({ where: { position: 'LEFT' } }),
+            prisma.user.count({ where: { position: 'RIGHT' } })
+        ]);
+        res.json({ ok: true, total, active, left, right });
+    } catch (err) {
+        console.error('[ADMIN_NETWORK_SUMMARY]', err);
+        res.status(500).json({ ok: false, error: 'Failed to fetch network summary' });
+    }
+});
+
+// NOTE: /network/search and /network/path/:id must be registered BEFORE
+// /network/:id below, or Express would match "search"/"path" as the :id param.
+router.get('/network/search', authenticate, adminOnly, async (req, res) => {
+    try {
+        const q = String(req.query.q || '').trim();
+        if (!q) return res.json({ ok: true, matches: [] });
+        const matches = await searchUsers(q, 15); // admin has no downline restriction
+        res.json({ ok: true, matches });
+    } catch (err) {
+        console.error('[ADMIN_NETWORK_SEARCH]', err);
+        res.status(500).json({ ok: false, error: 'Failed to search network' });
+    }
+});
+
+router.get('/network/path/:id', authenticate, adminOnly, async (req, res) => {
+    try {
+        const path = await getAncestorPath(req.params.id);
+        res.json({ ok: true, path });
+    } catch (err) {
+        console.error('[ADMIN_NETWORK_PATH]', err);
+        res.status(500).json({ ok: false, error: 'Failed to fetch path' });
+    }
+});
+
+// Focus-fetch for any node - drill-in / breadcrumb clicks land here.
+router.get('/network/:id', authenticate, adminOnly, async (req, res) => {
+    try {
+        const depth = parseInt(req.query.depth) || 3;
+        const tree = await buildTreeForUser(req.params.id, depth);
+        res.json({ ok: true, tree });
+    } catch (err) {
+        console.error('[ADMIN_NETWORK_SUBTREE]', err);
+        res.status(500).json({ ok: false, error: 'Failed to fetch subtree' });
     }
 });
 

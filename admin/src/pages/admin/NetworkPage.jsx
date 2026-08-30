@@ -28,6 +28,7 @@ export default function NetworkPage() {
 
     // Zoom/pan — ported from the customer network page (frontend/app/dashboard/tree/page.tsx)
     const [zoom, setZoom] = useState(1);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const containerRef = useRef(null);
     const lastPinchDistanceRef = useRef(null);
     const mouseStartRef = useRef(null);
@@ -35,6 +36,21 @@ export default function NetworkPage() {
     const lastTouchRef = useRef(null);
     const lastTapTimeRef = useRef(0);
     const isDraggingRef = useRef(false);
+
+    // Fullscreen: lock the page behind the overlay and let Escape close it.
+    useEffect(() => {
+        if (!isFullscreen) return;
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') setIsFullscreen(false);
+        };
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [isFullscreen]);
 
     const handleWheel = (e) => {
         if (e.ctrlKey || e.metaKey) {
@@ -337,9 +353,40 @@ export default function NetworkPage() {
                             No network data available
                         </div>
                     ) : (
-                        <div className="relative bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className={isFullscreen
+                            ? "fixed inset-0 z-[300] bg-white overflow-hidden flex flex-col"
+                            : "relative bg-white rounded-xl border border-gray-100 overflow-hidden"}>
+                            {isFullscreen && (
+                                <div className="relative z-20 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+                                    <div className="flex-1 min-w-0 overflow-x-auto">
+                                        <TreeBreadcrumb path={breadcrumb} onNavigate={handleBreadcrumbNavigate} rootLabel="Root" />
+                                    </div>
+                                    <button
+                                        onClick={() => setIsFullscreen(false)}
+                                        className="shrink-0 px-3 py-1.5 text-sm font-medium border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors"
+                                    >
+                                        Exit Full Screen
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Zoom Controls */}
-                            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-2">
+                            <div className={`absolute right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-2 ${isFullscreen ? 'top-20' : 'top-4'}`}>
+                                <button
+                                    onClick={() => setIsFullscreen(f => !f)}
+                                    className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors"
+                                    title={isFullscreen ? 'Exit Full Screen (Esc)' : 'Full Screen'}
+                                >
+                                    {isFullscreen ? (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4m0 5H4m5 0L4 4m11 5h5m-5 0V4m0 5l5-5M9 15v5m0-5H4m5 0l-5 5m11-5h5m-5 0v5m0-5l5 5" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0-4h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                        </svg>
+                                    )}
+                                </button>
                                 <button
                                     onClick={() => setZoom(z => Math.min(z + 0.1, 2))}
                                     className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors"
@@ -370,7 +417,7 @@ export default function NetworkPage() {
 
                             <div
                                 ref={containerRef}
-                                className="overflow-auto h-[420px] touch-none"
+                                className={`overflow-auto touch-none ${isFullscreen ? 'flex-1 h-full' : 'h-[420px]'}`}
                                 style={{ cursor: 'grab', userSelect: 'none' }}
                                 onWheel={handleWheel}
                             >
@@ -391,7 +438,7 @@ export default function NetworkPage() {
             </div>
 
             {selectedNode && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95 pt-20" onClick={() => setSelectedNode(null)}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[400] p-4 animate-in fade-in zoom-in-95 pt-20" onClick={() => setSelectedNode(null)}>
                     <div className="w-full max-w-sm bg-white rounded-xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="p-6">
                             <div className="flex items-center gap-4 mb-6">

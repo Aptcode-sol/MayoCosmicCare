@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import { SkeletonTable } from '../../components/SkeletonCard';
+import { isDebitTx } from '../../utils/transactions';
 
 const TX_TYPES = [
     { value: 'all', label: 'All Types' },
@@ -255,8 +256,8 @@ export default function TransactionsPage() {
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4">
-                                        <span className={`font-bold ${tx.type === 'WITHDRAW' || tx.type === 'ADMIN_DEBIT' ? 'text-red-600' : 'text-green-600'}`}>
-                                            {tx.type === 'WITHDRAW' || tx.type === 'ADMIN_DEBIT' ? '-' : '+'}{formatIndian(tx.amount)}
+                                        <span className={`font-bold ${isDebitTx(tx.type, tx.amount) ? 'text-red-600' : 'text-green-600'}`}>
+                                            {isDebitTx(tx.type, tx.amount) ? '-' : '+'}{formatIndian(Math.abs(tx.amount))}
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600 text-[11px] sm:text-xs max-w-[200px] truncate" title={tx.detail || ''}>

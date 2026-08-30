@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import { formatIndian } from '../../utils/formatIndian';
+import { isDebitTx } from '../../utils/transactions';
 import { SkeletonCard } from '../../components/SkeletonCard';
 
 export default function UserProfilePage() {
@@ -178,8 +179,8 @@ export default function UserProfilePage() {
                                                 {tx.type.replace(/_/g, ' ')}
                                             </span>
                                         </td>
-                                        <td className={`px-4 py-3 text-right font-medium ${tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                            {tx.amount >= 0 ? '+' : ''}{formatIndian(tx.amount)}
+                                        <td className={`px-4 py-3 text-right font-medium ${isDebitTx(tx.type, tx.amount) ? 'text-red-600' : 'text-emerald-600'}`}>
+                                            {isDebitTx(tx.type, tx.amount) ? '-' : '+'}{formatIndian(Math.abs(tx.amount))}
                                         </td>
                                         <td className="px-4 py-3 text-right text-gray-500 text-xs">
                                             {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
